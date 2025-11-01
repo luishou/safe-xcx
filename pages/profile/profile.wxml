@@ -1,0 +1,85 @@
+<!-- 个人中心页面 -->
+<view class="profile-page">
+    <!-- 顶部区域 -->
+    <view class="header">
+        <view class="back-btn" bindtap="goBack">
+            <text class="iconfont icon-arrow-left"></text>
+            <text>返回</text>
+        </view>
+        <view class="title">个人中心</view>
+    </view>
+
+    <!-- 用户信息卡片 -->
+    <view class="user-card">
+        <view class="avatar">{{currentUser.avatar}}</view>
+        <view class="user-info">
+            <view class="name">{{currentUser.name}}</view>
+            <view class="department">{{currentUser.department}}</view>
+            <view class="section">第{{currentSection}}标段</view>
+        </view>
+    </view>
+
+    <!-- 功能菜单 -->
+    <view class="menu-list">
+        <!-- 我的举报 -->
+        <view class="menu-item" bindtap="goToMyReports">
+            <view class="menu-left">
+                <text class="iconfont icon-file-text"></text>
+                <text>我的举报</text>
+            </view>
+            <view class="menu-right">
+                <text class="count">{{myReportsCount}}</text>
+                <text class="iconfont icon-chevron-right"></text>
+            </view>
+        </view>
+
+        <!-- 统计数据 -->
+        <view class="menu-item" bindtap="goToStats">
+            <view class="menu-left">
+                <text class="iconfont icon-bar-chart"></text>
+                <text>统计数据</text>
+            </view>
+            <view class="menu-right">
+                <text class="iconfont icon-chevron-right"></text>
+            </view>
+        </view>
+
+        <!-- 安全知识 -->
+        <view class="menu-item" bindtap="showSafetyKnowledge">
+            <view class="menu-left">
+                <text class="iconfont icon-book-open"></text>
+                <text>安全知识</text>
+            </view>
+            <view class="menu-right">
+                <text class="iconfont icon-chevron-right"></text>
+            </view>
+        </view>
+
+        <!-- 联系电话 -->
+        <view class="menu-item">
+            <view class="menu-left">
+                <text class="iconfont icon-phone"></text>
+                <text>联系电话</text>
+            </view>
+            <view class="menu-right">
+                <text>{{currentUser.phone}}</text>
+            </view>
+        </view>
+
+        <!-- 版本信息 -->
+        <view class="menu-item">
+            <view class="menu-left">
+                <text class="iconfont icon-info"></text>
+                <text>版本信息</text>
+            </view>
+            <view class="menu-right">
+                <text>v1.0.0</text>
+            </view>
+        </view>
+    </view>
+
+    <!-- 退出登录 -->
+    <view class="logout-btn" bindtap="logout">
+        <text>退出登录</text>
+    </view>
+</view>

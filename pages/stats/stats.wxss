@@ -1,0 +1,248 @@
+/* 数据统计页面样式 */
+.stats-container {
+    min-height: 100vh;
+    background: #f5f5f5;
+}
+
+/* 顶部标题区域 */
+.header-section {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    padding: 60rpx 40rpx 40rpx;
+    text-align: center;
+}
+
+.page-title {
+    font-size: 44rpx;
+    font-weight: bold;
+    color: white;
+}
+
+/* 数据统计卡片 */
+.stats-cards {
+    display: flex;
+    gap: 20rpx;
+    padding: 40rpx;
+    margin-top: -20rpx;
+}
+
+.stat-card {
+    flex: 1;
+    background: white;
+    border-radius: 24rpx;
+    padding: 40rpx 30rpx;
+    text-align: center;
+    box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.blue-card {
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+    color: white;
+}
+
+.green-card {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+}
+
+.stat-number {
+    font-size: 72rpx;
+    font-weight: bold;
+    display: block;
+    margin-bottom: 12rpx;
+}
+
+.stat-label {
+    font-size: 28rpx;
+    opacity: 0.9;
+    display: block;
+}
+
+/* 时间筛选区域 */
+.time-filter-section {
+    background: white;
+    margin: 20rpx 40rpx;
+    border-radius: 24rpx;
+    padding: 40rpx;
+    box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.08);
+}
+
+.section-title {
+    font-size: 36rpx;
+    font-weight: bold;
+    color: #1f2937;
+    display: block;
+    margin-bottom: 30rpx;
+}
+
+.filter-buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20rpx;
+}
+
+.filter-btn {
+    background: #f3f4f6;
+    border-radius: 16rpx;
+    padding: 24rpx;
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.filter-btn text {
+    font-size: 28rpx;
+    color: #6b7280;
+    font-weight: 500;
+}
+
+.filter-btn.active {
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+}
+
+.filter-btn.active text {
+    color: white;
+}
+
+/* 隐患类型分布区域 */
+.hazard-distribution-section {
+    background: white;
+    margin: 20rpx 40rpx 40rpx;
+    border-radius: 24rpx;
+    padding: 40rpx;
+    box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.08);
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 40rpx;
+}
+
+.time-range {
+    font-size: 24rpx;
+    color: #9ca3af;
+}
+
+/* 图表容器 */
+.chart-container {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 40rpx 0;
+    position: relative;
+}
+
+.pie-chart {
+    width: 300rpx;
+    height: 300rpx;
+    margin-bottom: 40rpx;
+}
+
+.chart-empty {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 300rpx;
+    height: 300rpx;
+}
+
+.empty-text {
+    font-size: 28rpx;
+    color: #9ca3af;
+}
+
+/* 图例容器 */
+.legend-container {
+    margin-top: 40rpx;
+}
+
+.legend-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20rpx;
+    margin-bottom: 20rpx;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    flex: 1;
+    min-width: 160rpx;
+}
+
+.legend-color {
+    width: 24rpx;
+    height: 24rpx;
+    border-radius: 4rpx;
+    margin-right: 12rpx;
+}
+
+.legend-text {
+    font-size: 24rpx;
+    color: #374151;
+    flex: 1;
+}
+
+/* 响应式设计 */
+@media screen and (max-width: 750rpx) {
+    .stats-cards {
+        padding: 30rpx;
+        gap: 15rpx;
+    }
+    
+    .stat-card {
+        padding: 30rpx 20rpx;
+    }
+    
+    .stat-number {
+        font-size: 60rpx;
+    }
+    
+    .stat-label {
+        font-size: 24rpx;
+    }
+    
+    .time-filter-section,
+    .hazard-distribution-section {
+        margin: 15rpx 30rpx;
+        padding: 30rpx;
+    }
+    
+    .section-title {
+        font-size: 32rpx;
+    }
+    
+    .filter-btn {
+        padding: 20rpx;
+    }
+    
+    .filter-btn text {
+        font-size: 26rpx;
+    }
+    
+    .chart-container {
+        margin: 30rpx 0;
+    }
+    
+    .pie-chart {
+        width: 320rpx;
+        height: 320rpx;
+    }
+    
+    .legend-item {
+        min-width: 140rpx;
+    }
+    
+    .legend-text {
+        font-size: 22rpx;
+    }
+}

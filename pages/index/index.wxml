@@ -1,0 +1,57 @@
+<!-- 首页 - 授权和标段选择 -->
+<view class="container">
+    <!-- 顶部图标和标题 -->
+    <view class="header">
+        <view class="logo-container">
+            <view class="logo-circle">
+                <image src="/images/shield-icon.png" class="shield-icon" mode="aspectFit"></image>
+            </view>
+        </view>
+
+        <view class="title-section">
+            <text class="main-title">智慧安全隐患举报系统</text>
+            <text class="sub-title">320国道余杭中泰段工程项目</text>
+        </view>
+    </view>
+
+    <!-- 授权状态检查 -->
+    <view wx:if="{{!isAuthorized}}" class="auth-section">
+        <view class="auth-content">
+            <view class="auth-icon">👤</view>
+            <view class="auth-title">欢迎使用安全举报系统</view>
+            <view class="auth-desc">使用前需要获取您的个人信息以确保使用安全</view>
+        </view>
+
+        <view class="auth-buttons">
+            <button class="auth-btn" bindtap="getUserProfile">
+                <text class="btn-icon">✓</text>
+                <text class="btn-text">微信授权登录</text>
+            </button>
+        </view>
+    </view>
+
+    <!-- 用户信息展示 -->
+    <view wx:else class="user-info-section">
+        <view class="user-avatar">
+            <image wx:if="{{userInfo.avatarUrl}}" src="{{userInfo.avatarUrl}}" class="avatar-img" mode="aspectFill"></image>
+            <view wx:else class="default-avatar">👤</view>
+        </view>
+        <view class="user-details">
+            <view class="user-name">{{userInfo.nickName || '微信用户'}}</view>
+            <view class="user-tips">欢迎使用安全举报系统</view>
+        </view>
+    </view>
+
+    <!-- 标段选择卡片 -->
+    <view class="section-cards">
+        <block wx:for="{{sections}}" wx:key="id">
+            <view
+                class="section-card {{item.section_code === 'TJ01' ? 'tj01-card' : 'tj02-card'}}"
+                bindtap="selectSection"
+                data-section="{{item.section_code}}"
+                data-section-info="{{item}}">
+                <text class="card-title">{{item.section_name}}</text>
+            </view>
+        </block>
+    </view>
+</view>

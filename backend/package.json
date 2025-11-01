@@ -1,0 +1,33 @@
+{
+  "name": "safe-backend",
+  "version": "1.0.0",
+  "description": "智慧安全隐患举报系统后端接口",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "nodemon app.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "axios": "^1.6.2",
+    "bcryptjs": "^2.4.3",
+    "body-parser": "^1.20.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^2.0.2",
+    "mysql2": "^3.6.5"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  },
+  "keywords": [
+    "wechat",
+    "miniprogram",
+    "safety",
+    "reporting"
+  ],
+  "author": "Safe Team",
+  "license": "MIT"
+}

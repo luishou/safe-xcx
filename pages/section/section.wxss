@@ -1,0 +1,199 @@
+/* 标段选择页面样式 */
+.section-view {
+    padding: 24rpx;
+}
+
+.grid {
+    display: grid;
+}
+
+.grid-cols-2 {
+    grid-template-columns: 1fr 1fr;
+}
+
+.gap-4 {
+    gap: 32rpx;
+}
+
+.text-lg {
+    font-size: 36rpx;
+}
+
+.text-2xl {
+    font-size: 40rpx;
+}
+
+.from-red-500 {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+}
+
+.to-red-600 {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+}
+
+.from-green-500 {
+    background: linear-gradient(135deg, #10b981, #059669);
+}
+
+.to-green-600 {
+    background: linear-gradient(135deg, #10b981, #059669);
+}
+
+.from-blue-500 {
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+}
+
+.to-blue-600 {
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+}
+
+.from-purple-500 {
+    background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+}
+
+.to-purple-600 {
+    background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+}
+
+/* 其他样式继承自首页 */
+.text-center {
+    text-align: center;
+}
+
+.mb-8 {
+    margin-bottom: 64rpx;
+}
+
+.mb-4 {
+    margin-bottom: 32rpx;
+}
+
+.mb-3 {
+    margin-bottom: 24rpx;
+}
+
+.mb-1 {
+    margin-bottom: 8rpx;
+}
+
+.inline-flex {
+    display: inline-flex;
+}
+
+.items-center {
+    align-items: center;
+}
+
+.justify-center {
+    justify-content: center;
+}
+
+.w-16 {
+    width: 128rpx;
+}
+
+.h-16 {
+    height: 128rpx;
+}
+
+.bg-gradient-to-r {
+    background: linear-gradient(to right, #3b82f6, #8b5cf6);
+}
+
+.from-blue-500 {
+    background: linear-gradient(to right, #3b82f6, #8b5cf6);
+}
+
+.to-purple-600 {
+    background: linear-gradient(to right, #3b82f6, #8b5cf6);
+}
+
+.rounded-full {
+    border-radius: 9999rpx;
+}
+
+.text-white {
+    color: #ffffff;
+}
+
+.text-xl {
+    font-size: 40rpx;
+}
+
+.font-bold {
+    font-weight: bold;
+}
+
+.text-gray-800 {
+    color: #1f2937;
+}
+
+.text-gray-600 {
+    color: #6b7280;
+}
+
+.text-sm {
+    font-size: 28rpx;
+}
+
+.w-full {
+    width: 100%;
+}
+
+
+.rounded-2xl {
+    border-radius: 32rpx;
+}
+
+.p-6 {
+    padding: 48rpx;
+}
+
+.flex {
+    display: flex;
+}
+
+.flex-col {
+    flex-direction: column;
+}
+
+.text-4xl {
+    font-size: 64rpx;
+}
+
+.mb-3 {
+    margin-bottom: 24rpx;
+}
+
+.font-bold {
+    font-weight: bold;
+}
+
+.text-lg {
+    font-size: 36rpx;
+}
+
+/* 交互样式 */
+.hover-bg-gray-100 {
+    background-color: #f3f4f6;
+}
+
+.transition {
+    transition: all 0.3s ease;
+}
+
+.transition-all {
+    transition: all 0.3s ease;
+}
+
+.duration-300 {
+    transition-duration: 0.3s;
+}
+
+.hover-shadow-xl {
+    box-shadow: 0 20rpx 25rpx -5rpx rgba(0, 0, 0, 0.1), 0 10rpx 10rpx -5rpx rgba(0, 0, 0, 0.04);
+}
+
+.hover-scale-105 {
+    transform: scale(1.05);
+}

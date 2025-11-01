@@ -1,0 +1,162 @@
+<!-- 举报详情页面 -->
+<view class="report-detail-page">
+    <view class="header">
+        <view class="back-btn" bindtap="goBack">
+            <text>← 返回</text>
+        </view>
+        <view class="title">举报详情</view>
+    </view>
+
+    <!-- 加载状态 -->
+    <view class="loading" wx:if="{{loading}}">
+        <text>加载中...</text>
+    </view>
+
+    <!-- 错误状态 -->
+    <view class="error" wx:if="{{error}}">
+        <text>{{error}}</text>
+        <button class="retry-btn" bindtap="loadReportDetail">重试</button>
+    </view>
+
+    <!-- 举报内容 -->
+    <view wx:if="{{report && !loading && !error}}">
+        <!-- 隐患详情 -->
+        <view class="info-section">
+            <view class="info-header">
+                <view class="report-id">隐患详情 #{{report.id}}</view>
+                <view class="status-badge {{statusClass}}">{{statusText}}</view>
+            </view>
+
+            <view class="info-content">
+                <view class="info-row">
+                    <text class="info-label">隐患类型：</text>
+                    <text class="info-value">{{report.hazard_type_cn}}</text>
+                </view>
+                <view class="info-row">
+                    <text class="info-label">紧急程度：</text>
+                    <text class="info-value severity-{{report.severity}}">{{report.severity_cn}}</text>
+                </view>
+                <view class="info-row">
+                    <text class="info-label">所在位置：</text>
+                    <text class="info-value">{{report.location}}</text>
+                </view>
+                <view class="info-row">
+                    <text class="info-label">所属标段：</text>
+                    <text class="info-value">{{report.section}}</text>
+                </view>
+                <view class="info-row">
+                    <text class="info-label">举报人：</text>
+                    <text class="info-value">{{report.reporter_name}}</text>
+                </view>
+                <view class="info-row">
+                    <text class="info-label">举报时间：</text>
+                    <text class="info-value">{{report.created_at}}</text>
+                </view>
+                <view class="info-row description-row">
+                    <text class="info-label">隐患描述：</text>
+                    <text class="info-value description-text">{{report.description}}</text>
+                </view>
+            </view>
+        </view>
+
+        <!-- 现场照片 -->
+        <view class="photos-section" wx:if="{{report.initial_images && report.initial_images.length > 0}}">
+            <view class="section-title">现场照片</view>
+            <view class="photos-grid">
+                <view wx:for="{{report.initial_images}}" wx:key="*this" class="photo-item" bindtap="viewImage" data-src="{{item}}">
+                    <image src="{{item}}" mode="aspectFill" class="photo"></image>
+                </view>
+            </view>
+        </view>
+
+        
+        <!-- 处理方案 -->
+        <view class="plan-section" wx:if="{{report.plan}}">
+            <view class="section-title">处理方案</view>
+            <view class="plan-content">{{report.plan}}</view>
+        </view>
+
+        <!-- 处理结论 -->
+        <view class="conclusion-section" wx:if="{{report.status === 'completed' && report.rectified_images && report.rectified_images.length > 0}}">
+            <view class="section-title">处理结论</view>
+            <view class="conclusion-card">
+                <!-- 处理照片 -->
+                <view class="conclusion-photos" wx:if="{{report.rectified_images && report.rectified_images.length > 0}}">
+                    <view class="photos-grid">
+                        <view wx:for="{{report.rectified_images}}" wx:key="*this" class="photo-item" bindtap="viewImage" data-src="{{item}}">
+                            <image src="{{item}}" mode="aspectFill" class="photo"></image>
+                        </view>
+                    </view>
+                </view>
+
+                <!-- 处理结论文字 -->
+                <view class="conclusion-text">
+                    <text class="conclusion-label">处理结论：</text>
+                    <text class="conclusion-content">隐患已整改完成</text>
+                </view>
+            </view>
+        </view>
+
+        <!-- 处理历史时间轴 -->
+        <view class="history-section" wx:if="{{report.history && report.history.length > 0}}">
+            <view class="section-title">处理历史</view>
+            <view class="timeline">
+                <view class="timeline-item" wx:for="{{report.history}}" wx:key="id">
+                    <view class="timeline-dot"></view>
+                    <view class="timeline-content">
+                        <view class="timeline-header">
+                            <view class="timeline-action">{{item.action}}</view>
+                            <view class="timeline-time">{{item.created_at}}</view>
+                        </view>
+                        <view class="timeline-desc" wx:if="{{item.description}}">{{item.description}}</view>
+                        <view class="timeline-meta" wx:if="{{item.user_id}}">
+                            <text class="timeline-user">处理人员：{{item.user_name || '安全环保部'}}</text>
+                        </view>
+                    </view>
+                </view>
+            </view>
+        </view>
+
+        <!-- 待处理状态的操作按钮 - 仅安全环保部可见 -->
+        <view class="actions-section" wx:if="{{canOperate && (currentStatus === 'pending' || currentStatus === 'submitted')}}">
+            <view class="section-title">处理操作</view>
+            <view class="action-buttons">
+                <button class="action-btn confirm-btn" bindtap="confirmReport">
+                    <text class="btn-icon">✅</text>
+                    <text class="btn-text">确认处理</text>
+                </button>
+                <button class="action-btn reject-btn" bindtap="rejectReport">
+                    <text class="btn-icon">❌</text>
+                    <text class="btn-text">驳回办结</text>
+                </button>
+            </view>
+            <view class="action-tips">
+                <text>确认处理：状态将变为"处理中"，需要后续上传处理照片</text>
+                <text>驳回办结：直接标记为已办结，无需上传照片</text>
+            </view>
+        </view>
+
+        <!-- 处理中状态的操作按钮 - 仅安全环保部可见 -->
+        <view class="actions-section" wx:if="{{canOperate && (currentStatus === 'processing' || currentStatus === 'assigned')}}">
+            <view class="section-title">完成处理</view>
+            <view class="upload-section">
+                <view class="upload-title">上传处理照片</view>
+                <view class="upload-photos">
+                    <view wx:for="{{rectifiedImages}}" wx:key="index" class="uploaded-photo">
+                        <image src="{{item}}" mode="aspectFill" class="photo"></image>
+                        <view class="remove-btn" bindtap="removePhoto" data-index="{{index}}">×</view>
+                    </view>
+                    <view class="add-photo" bindtap="addPhoto" wx:if="{{rectifiedImages.length < 3}}">
+                        <text class="add-icon">+</text>
+                        <text class="add-text">添加照片</text>
+                    </view>
+                </view>
+            </view>
+
+            <button class="complete-btn" bindtap="completeReport">
+                <text class="btn-icon">✅</text>
+                <text class="btn-text">完成办结</text>
+            </button>
+        </view>
+    </view>
+</view>

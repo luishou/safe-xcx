@@ -1,0 +1,76 @@
+<!-- 数据统计页面 -->
+<view class="stats-container">
+    <!-- 顶部标题区域 -->
+    <view class="header-section">
+        <text class="page-title">数据统计</text>
+    </view>
+
+    <!-- 数据统计卡片 -->
+    <view class="stats-cards">
+        <view class="stat-card blue-card">
+            <text class="stat-number">{{totalReports}}</text>
+            <text class="stat-label">总举报数</text>
+        </view>
+        <view class="stat-card green-card">
+            <text class="stat-number">{{resolveRate}}%</text>
+            <text class="stat-label">解决率</text>
+        </view>
+    </view>
+
+    <!-- 时间筛选区域 -->
+    <view class="time-filter-section">
+        <text class="section-title">时间筛选</text>
+        <view class="filter-buttons">
+            <view class="filter-btn {{timeFilters[0].active ? 'active' : ''}}" 
+                  bindtap="onTimeFilterTap" data-id="week" data-label="最近一周">
+                <text>最近一周</text>
+            </view>
+            <view class="filter-btn {{timeFilters[1].active ? 'active' : ''}}" 
+                  bindtap="onTimeFilterTap" data-id="month" data-label="最近一月">
+                <text>最近一月</text>
+            </view>
+            <view class="filter-btn {{timeFilters[2].active ? 'active' : ''}}" 
+                  bindtap="onTimeFilterTap" data-id="quarter" data-label="最近三月">
+                <text>最近三月</text>
+            </view>
+            <view class="filter-btn {{timeFilters[3].active ? 'active' : ''}}" 
+                  bindtap="onTimeFilterTap" data-id="all" data-label="全部时间">
+                <text>全部时间</text>
+            </view>
+        </view>
+    </view>
+
+    <!-- 隐患类型分布 -->
+    <view class="hazard-distribution-section">
+        <view class="section-header">
+            <text class="section-title">隐患类型分布</text>
+            <text class="time-range">时间范围: {{selectedTimeRange}}</text>
+        </view>
+        
+        <!-- 环形图区域 -->
+        <view class="chart-container">
+            <canvas class="pie-chart" canvas-id="pieChart"
+                    style="width: {{canvasWidth || 300}}px; height: {{canvasHeight || 300}}px;"></canvas>
+            <!-- 空状态显示 -->
+            <view class="chart-empty" wx:if="{{hazardDistribution.length === 0 && !loading}}">
+                <text class="empty-text">暂无数据</text>
+            </view>
+        </view>
+
+        <!-- 图例 -->
+        <view class="legend-container">
+            <view class="legend-row">
+                <view class="legend-item" wx:for="{{hazardDistribution.slice(0, 4)}}" wx:key="name">
+                    <view class="legend-color" style="background-color: {{item.color}};"></view>
+                    <text class="legend-text">{{item.name}}</text>
+                </view>
+            </view>
+            <view class="legend-row">
+                <view class="legend-item" wx:for="{{hazardDistribution.slice(4)}}" wx:key="name">
+                    <view class="legend-color" style="background-color: {{item.color}};"></view>
+                    <text class="legend-text">{{item.name}}</text>
+                </view>
+            </view>
+        </view>
+    </view>
+</view>

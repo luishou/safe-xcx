@@ -1,0 +1,36 @@
+<!-- 标段页面 -->
+<view class="section-view">
+    <view class="text-center mb-8">
+        <view class="mb-4 p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition" bindtap="goBack">
+            <text class="mr-2">←</text>
+            <text>返回标段选择</text>
+        </view>
+        <text class="text-xl font-bold text-gray-800 mb-1">第{{section}}标段</text>
+    </view>
+
+    <view class="grid grid-cols-2 gap-4">
+        <!-- 我要举报 -->
+        <view class="bg-gradient-to-br from-red-500 to-red-600 rounded-2xl p-6 text-white transition-all duration-300 hover:shadow-xl hover:scale-105 flex flex-col items-center justify-center" bindtap="directToReport">
+            <text class="text-4xl mb-3">⚠️</text>
+            <text class="font-bold text-lg">我要举报</text>
+        </view>
+
+        <!-- 安全知识 -->
+        <view class="bg-gradient-to-br from-green-500 to-green-600 rounded-2xl p-6 text-white transition-all duration-300 hover:shadow-xl hover:scale-105 flex flex-col items-center justify-center" bindtap="showSafetyKnowledge">
+            <text class="text-4xl mb-3">📖</text>
+            <text class="font-bold text-lg">安全知识</text>
+        </view>
+
+        <!-- 个人中心 -->
+        <view class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl p-6 text-white transition-all duration-300 hover:shadow-xl hover:scale-105 flex flex-col items-center justify-center" bindtap="handlePersonalCenter">
+            <text class="text-4xl mb-3">👤</text>
+            <text class="font-bold text-lg">个人中心</text>
+        </view>
+
+        <!-- 安全环保部 -->
+        <view class="bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl p-6 text-white transition-all duration-300 hover:shadow-xl hover:scale-105 flex flex-col items-center justify-center" bindtap="loginAs" data-role="admin">
+            <text class="text-4xl mb-3">🛡️</text>
+            <text class="font-bold text-lg">安全环保部</text>
+        </view>
+    </view>
+</view>

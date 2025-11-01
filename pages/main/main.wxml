@@ -1,0 +1,80 @@
+<!-- 安全环保部管理界面 -->
+<view class="manager-view">
+    <!-- 顶部导航栏 -->
+    <view class="top-nav">
+        <view class="back-btn" bindtap="goBack">
+            <text>← 返回</text>
+        </view>
+        <view class="nav-title">第{{currentSection.section_name || currentSection}}标段 - 安全环保部</view>
+    </view>
+
+    <!-- 状态切换标签 -->
+    <view class="status-tabs">
+        <view class="status-tab {{currentTab === 'pending' ? 'active' : ''}}" bindtap="switchTab" data-tab="pending">
+            <text class="tab-count">{{pendingCount}}</text>
+            <text class="tab-label">待处理</text>
+        </view>
+        <view class="status-tab {{currentTab === 'processing' ? 'active' : ''}}" bindtap="switchTab" data-tab="processing">
+            <text class="tab-count">{{processingCount}}</text>
+            <text class="tab-label">处理中</text>
+        </view>
+        <view class="status-tab {{currentTab === 'completed' ? 'active' : ''}}" bindtap="switchTab" data-tab="completed">
+            <text class="tab-count">{{completedCount}}</text>
+            <text class="tab-label">已办结</text>
+        </view>
+    </view>
+
+    <!-- 举报工单列表 -->
+    <view class="reports-container">
+        <!-- 待处理列表 -->
+        <view class="reports-list" wx:if="{{currentTab === 'pending'}}">
+            <view wx:for="{{pendingReports}}" wx:key="id" class="report-item pending-item" bindtap="showReportDetail" data-id="{{item.id}}">
+                <view class="item-header">
+                    <view class="item-type">{{item.hazardType}}</view>
+                </view>
+                <view class="item-desc">{{item.description}}</view>
+                <view class="item-meta">
+                    <text class="reporter">举报人: {{item.reporter}}</text>
+                    <text class="time">{{item.reportTime}}</text>
+                </view>
+            </view>
+            <view class="empty-state" wx:if="{{pendingReports.length === 0}}">
+                <text class="empty-text">暂无待处理事项</text>
+            </view>
+        </view>
+
+        <!-- 处理中列表 -->
+        <view class="reports-list" wx:if="{{currentTab === 'processing'}}">
+            <view wx:for="{{processingReports}}" wx:key="id" class="report-item processing-item" bindtap="showReportDetail" data-id="{{item.id}}">
+                <view class="item-header">
+                    <view class="item-type">{{item.hazardType}}</view>
+                </view>
+                <view class="item-desc">{{item.description}}</view>
+                <view class="item-meta">
+                    <text class="reporter">举报人: {{item.reporter}}</text>
+                    <text class="time">处理时间: {{item.processTime}}</text>
+                </view>
+            </view>
+            <view class="empty-state" wx:if="{{processingReports.length === 0}}">
+                <text class="empty-text">暂无处理中事项</text>
+            </view>
+        </view>
+
+        <!-- 已办结列表 -->
+        <view class="reports-list" wx:if="{{currentTab === 'completed'}}">
+            <view wx:for="{{completedReports}}" wx:key="id" class="report-item completed-item" bindtap="showReportDetail" data-id="{{item.id}}">
+                <view class="item-header">
+                    <view class="item-type">{{item.hazardType}}</view>
+                </view>
+                <view class="item-desc">{{item.description}}</view>
+                <view class="item-meta">
+                    <text class="reporter">举报人: {{item.reporter}}</text>
+                    <text class="time">完成时间: {{item.completeTime}}</text>
+                </view>
+            </view>
+            <view class="empty-state" wx:if="{{completedReports.length === 0}}">
+                <text class="empty-text">暂无已办结事项</text>
+            </view>
+        </view>
+    </view>
+</view>

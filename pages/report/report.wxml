@@ -1,0 +1,97 @@
+<!-- 安全隐患举报页面 -->
+<view class="report-page">
+    <view class="header">
+        <view class="back-btn" bindtap="goBack">
+            <text>← 返回</text>
+        </view>
+        <view class="title">安全隐患举报</view>
+    </view>
+
+    <view class="form-container">
+        <!-- 隐患类型 -->
+        <view class="form-item">
+            <view class="label">隐患类型 <text class="required">*</text></view>
+            <picker bindchange="onHazardTypeChange" value="{{hazardTypeIndex}}" range="{{hazardTypes}}">
+                <view class="picker">
+                    {{hazardTypes[hazardTypeIndex] || '请选择隐患类型'}}
+                    <text class="iconfont icon-chevron-down"></text>
+                </view>
+            </picker>
+        </view>
+
+        <!-- 隐患位置 -->
+        <view class="form-item">
+            <view class="label">隐患位置 <text class="required">*</text></view>
+            <input class="input" placeholder="请详细描述隐患具体位置" value="{{location}}" bindinput="onLocationInput" />
+        </view>
+
+        <!-- 隐患描述 -->
+        <view class="form-item">
+            <view class="label">隐患描述 <text class="required">*</text></view>
+            <textarea class="textarea" placeholder="请详细描述发现的安全隐患情况，包括可能造成的危害等" value="{{description}}" bindinput="onDescriptionInput" maxlength="500"></textarea>
+            <view class="char-count">{{description.length}}/500</view>
+        </view>
+
+        <!-- 紧急程度 -->
+        <view class="form-item">
+            <view class="label">紧急程度 <text class="required">*</text></view>
+            <view class="urgency-options">
+                <view class="urgency-item {{urgency === 'low' ? 'active' : ''}}" bindtap="selectUrgency" data-urgency="low">
+                    <text class="dot low"></text>
+                    <text>一般</text>
+                </view>
+                <view class="urgency-item {{urgency === 'medium' ? 'active' : ''}}" bindtap="selectUrgency" data-urgency="medium">
+                    <text class="dot medium"></text>
+                    <text>紧急</text>
+                </view>
+                <view class="urgency-item {{urgency === 'high' ? 'active' : ''}}" bindtap="selectUrgency" data-urgency="high">
+                    <text class="dot high"></text>
+                    <text>非常紧急</text>
+                </view>
+            </view>
+        </view>
+
+        <!-- 现场照片 -->
+        <view class="form-item">
+            <view class="label">现场照片</view>
+            <view class="photo-upload">
+                <view class="photo-list">
+                    <view class="photo-item" wx:for="{{photos}}" wx:key="index">
+                        <image src="{{item}}" mode="aspectFill" bindtap="previewImage" data-index="{{index}}"></image>
+                        <view class="delete-btn" bindtap="deletePhoto" data-index="{{index}}">
+                            <text class="iconfont icon-close"></text>
+                        </view>
+                    </view>
+                    <view class="add-photo" bindtap="chooseImage" wx:if="{{photos.length < 6}}">
+                        <text class="iconfont icon-plus"></text>
+                        <text>添加照片</text>
+                    </view>
+                </view>
+                <view class="photo-tip">最多可上传6张照片，建议拍摄清晰的现场照片</view>
+            </view>
+        </view>
+
+        <!-- 联系方式 -->
+        <view class="form-item">
+            <view class="label">联系方式</view>
+            <input class="input" placeholder="请输入您的联系电话（选填）" value="{{contact}}" bindinput="onContactInput" type="number" />
+        </view>
+
+        <!-- 匿名举报 -->
+        <view class="form-item">
+            <view class="anonymous-option" bindtap="toggleAnonymous">
+                <text class="checkbox {{anonymous ? 'checked' : ''}}">
+                    <text class="iconfont icon-check" wx:if="{{anonymous}}"></text>
+                </text>
+                <text>匿名举报</text>
+            </view>
+        </view>
+    </view>
+
+    <!-- 提交按钮 -->
+    <view class="submit-container">
+        <button class="submit-btn" bindtap="submitReport" disabled="{{!canSubmit}}">
+            提交举报
+        </button>
+    </view>
+</view>

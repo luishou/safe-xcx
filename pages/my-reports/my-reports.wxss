@@ -1,0 +1,161 @@
+/* 我的页面 */
+.my-page {
+  background: #f8f9fa;
+  min-height: 100vh;
+}
+
+/* 顶部 */
+.header {
+  display: flex;
+  align-items: center;
+  padding: 20rpx 32rpx;
+  background: white;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.back-btn {
+  color: #6b7280;
+  font-size: 28rpx;
+  margin-right: 24rpx;
+}
+
+.title {
+  font-size: 36rpx;
+  font-weight: bold;
+  color: #1f2937;
+}
+
+/* 个人信息 */
+.profile-section {
+  background: white;
+  margin: 24rpx;
+  padding: 40rpx 32rpx;
+  border-radius: 16rpx;
+  display: flex;
+  align-items: center;
+  box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.06);
+}
+
+.avatar {
+  width: 100rpx;
+  height: 100rpx;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 24rpx;
+}
+
+.avatar-emoji {
+  font-size: 48rpx;
+}
+
+.user-info {
+  flex: 1;
+}
+
+.name {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #1f2937;
+  margin-bottom: 8rpx;
+}
+
+.dept {
+  font-size: 26rpx;
+  color: #6b7280;
+}
+
+/* 举报记录 */
+.reports-section {
+  margin: 0 24rpx;
+}
+
+.section-header {
+  font-size: 28rpx;
+  font-weight: bold;
+  color: #1f2937;
+  margin-bottom: 16rpx;
+}
+
+.report-list {
+  background: white;
+  border-radius: 16rpx;
+  overflow: hidden;
+}
+
+.report-item {
+  padding: 32rpx;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.report-item:last-child {
+  border-bottom: none;
+}
+
+.report-item:active {
+  background: #f9fafb;
+}
+
+.report-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12rpx;
+}
+
+.report-type {
+  font-size: 30rpx;
+  font-weight: bold;
+  color: #1f2937;
+}
+
+.report-status {
+  font-size: 24rpx;
+  padding: 6rpx 12rpx;
+  border-radius: 16rpx;
+}
+
+.status-processing {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.status-completed {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.status-evaluated {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.report-desc {
+  font-size: 28rpx;
+  color: #4b5563;
+  line-height: 1.5;
+  margin-bottom: 12rpx;
+}
+
+.report-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 24rpx;
+  color: #9ca3af;
+}
+
+/* 空状态 */
+.empty {
+  text-align: center;
+  padding: 80rpx 0;
+  background: white;
+  border-radius: 16rpx;
+}
+
+.empty-text {
+  font-size: 28rpx;
+  color: #9ca3af;
+}

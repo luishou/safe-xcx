@@ -1,0 +1,44 @@
+<!-- 员工个人中心 -->
+<view class="employee-center">
+    <!-- 顶部导航 -->
+    <view class="header">
+        <view class="back-btn" bindtap="goBack">
+            <text>← 返回</text>
+        </view>
+        <view class="title">个人中心</view>
+    </view>
+
+    <!-- 个人信息 -->
+    <view class="profile-section">
+        <view class="avatar">
+            <text class="avatar-emoji">👷</text>
+        </view>
+        <view class="user-info">
+            <view class="name">{{currentUser.nickName || '微信用户'}}</view>
+            <view class="dept">{{currentSection.section_name || '未选择标段'}}</view>
+        </view>
+    </view>
+
+    <!-- 举报记录 -->
+    <view class="reports-section">
+        <view class="section-header">举报记录</view>
+        <view class="report-list">
+            <view class="report-item" wx:for="{{reports}}" wx:key="id" bindtap="viewReportDetail" data-id="{{item.id}}">
+                <view class="report-row">
+                    <view class="report-type">{{item.hazard_type_cn}}</view>
+                    <view class="report-status status-{{item.status}}">{{item.status_cn}}</view>
+                </view>
+                <view class="report-desc">{{item.description}}</view>
+                <view class="report-meta">
+                    <text class="location">📍 {{item.location}}</text>
+                    <text class="time">{{item.created_at}}</text>
+                </view>
+            </view>
+        </view>
+
+        <!-- 空状态 -->
+        <view class="empty" wx:if="{{reports.length === 0}}">
+            <text class="empty-text">暂无举报记录</text>
+        </view>
+    </view>
+</view>

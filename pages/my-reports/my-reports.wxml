@@ -1,0 +1,50 @@
+<!-- 管理员举报管理页面 -->
+<view class="management-page">
+    <view class="header">
+        <view class="back-btn" bindtap="goBack">
+            <text>← 返回</text>
+        </view>
+        <view class="title">举报管理</view>
+    </view>
+
+    <!-- 管理员信息 -->
+    <view class="admin-section">
+        <view class="admin-avatar">
+            <text class="avatar-emoji">👩‍💼</text>
+        </view>
+        <view class="admin-info">
+            <view class="name">{{currentUser.name || '安全环保部'}}</view>
+            <view class="dept">{{currentUser.department || '安全部门'}} · 第{{currentSection}}标段</view>
+        </view>
+    </view>
+
+    <!-- 状态筛选 -->
+    <view class="filter-tabs">
+        <view class="filter-tab {{currentFilter === 'processing' ? 'active' : ''}}" bindtap="filterReports" data-filter="processing">
+            <text>处理中 ({{processingCount}})</text>
+        </view>
+        <view class="filter-tab {{currentFilter === 'completed' ? 'active' : ''}}" bindtap="filterReports" data-filter="completed">
+            <text>已办结 ({{completedCount}})</text>
+        </view>
+        <view class="filter-tab {{currentFilter === 'evaluated' ? 'active' : ''}}" bindtap="filterReports" data-filter="evaluated">
+            <text>已评价 ({{evaluatedCount}})</text>
+        </view>
+    </view>
+
+    <!-- 举报列表 -->
+    <view class="reports-list">
+        <view class="report-item" wx:for="{{filteredReports}}" wx:key="id" bindtap="viewReportDetail" data-id="{{item.id}}">
+            <view class="report-header">
+                <view class="report-type">{{item.hazardType}}</view>
+                <view class="report-priority" wx:if="{{item.priority === 'high'}}">紧急</view>
+            </view>
+            <view class="report-content">
+                <view class="report-desc">{{item.description}}</view>
+                <view class="report-meta">
+                    <text class="reporter">举报人: {{item.reporter}}</text>
+                    <text class="time">{{item.reportTime}}</text>
+                </view>
+            </view>
+        </view>
+    </view>
+</view>

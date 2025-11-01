@@ -1,0 +1,183 @@
+/* 安全环保部管理页面 */
+.manager-view {
+    background: #f8f9fa;
+    min-height: 100vh;
+}
+
+/* 顶部导航栏 */
+.top-nav {
+    display: flex;
+    align-items: center;
+    padding: 20rpx 32rpx;
+    background: white;
+    border-bottom: 1px solid #e5e7eb;
+    margin-bottom: 24rpx;
+}
+
+.back-btn {
+    display: flex;
+    align-items: center;
+    color: #6b7280;
+    font-size: 28rpx;
+    margin-right: 24rpx;
+}
+
+.nav-title {
+    font-size: 32rpx;
+    font-weight: bold;
+    color: #1f2937;
+    flex: 1;
+}
+
+/* 状态切换标签 */
+.status-tabs {
+    display: flex;
+    background: white;
+    margin: 0 24rpx 24rpx;
+    border-radius: 16rpx;
+    overflow: hidden;
+    box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.06);
+}
+
+.status-tab {
+    flex: 1;
+    padding: 24rpx 16rpx;
+    text-align: center;
+    border-bottom: 4rpx solid transparent;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.status-tab.active {
+    border-bottom-color: #3b82f6;
+    background: #f0f9ff;
+}
+
+.status-tab.active::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4rpx;
+    background: #3b82f6;
+}
+
+.tab-count {
+    display: block;
+    font-size: 36rpx;
+    font-weight: bold;
+    margin-bottom: 4rpx;
+}
+
+.status-tab.active .tab-count {
+    color: #3b82f6;
+}
+
+.status-tab:not(.active) .tab-count {
+    color: #6b7280;
+}
+
+.tab-label {
+    display: block;
+    font-size: 24rpx;
+}
+
+.status-tab.active .tab-label {
+    color: #3b82f6;
+    font-weight: 500;
+}
+
+.status-tab:not(.active) .tab-label {
+    color: #9ca3af;
+}
+
+/* 工单列表容器 */
+.reports-container {
+    padding: 0 24rpx;
+}
+
+.reports-list {
+    background: white;
+    border-radius: 16rpx;
+    overflow: hidden;
+}
+
+/* 工单项样式 */
+.report-item {
+    padding: 32rpx;
+    border-bottom: 1px solid #f3f4f6;
+    transition: all 0.3s ease;
+}
+
+.report-item:last-child {
+    border-bottom: none;
+}
+
+.report-item:active {
+    background: #f9fafb;
+}
+
+/* 待处理工单样式 */
+.pending-item {
+    border-left: 6rpx solid #f59e0b;
+}
+
+.pending-item .item-priority {
+    background: #fef2f2;
+    color: #dc2626;
+    font-size: 22rpx;
+    padding: 4rpx 12rpx;
+    border-radius: 12rpx;
+    font-weight: 500;
+}
+
+/* 处理中工单样式 */
+.processing-item {
+    border-left: 6rpx solid #3b82f6;
+}
+
+/* 已办结工单样式 */
+.completed-item {
+    border-left: 6rpx solid #10b981;
+}
+
+.item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12rpx;
+}
+
+.item-type {
+    font-size: 30rpx;
+    font-weight: bold;
+    color: #1f2937;
+}
+
+.item-desc {
+    font-size: 28rpx;
+    color: #4b5563;
+    line-height: 1.5;
+    margin-bottom: 12rpx;
+}
+
+.item-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 24rpx;
+    color: #9ca3af;
+}
+
+
+/* 空状态 */
+.empty-state {
+    text-align: center;
+    padding: 80rpx 0;
+}
+
+.empty-text {
+    font-size: 28rpx;
+    color: #9ca3af;
+}
