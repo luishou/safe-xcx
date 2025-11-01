@@ -98,7 +98,7 @@ PUT /api/report/:id/status
 在小程序的 `app.js` 中配置后端接口地址：
 
 ```javascript
-const BASE_URL = 'http://localhost:3000/api';
+const BASE_URL = 'http://localhost:3300/api';
 
 // 在登录方法中调用
 wx.login({

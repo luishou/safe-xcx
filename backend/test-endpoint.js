@@ -1,12 +1,12 @@
 // 测试后端接口的简单脚本
 const axios = require('axios');
 
-const BASE_URL = 'http://124.223.187.95:3000/api';
+const BASE_URL = 'http://124.223.187.95:3300/api';
 
 async function testAuth() {
   try {
     console.log('测试健康检查接口...');
-    const healthRes = await axios.get('http://124.223.187.95:3000/health');
+    const healthRes = await axios.get('http://124.223.187.95:3300/health');
     console.log('健康检查响应:', healthRes.data);
 
     console.log('\n测试验证接口...');

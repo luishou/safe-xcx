@@ -10,7 +10,7 @@ const sectionRoutes = require('./routes/section');
 const uploadRoutes = require('./routes/upload');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3300;
 
 // 中间件
 app.use(cors());
