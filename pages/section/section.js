@@ -73,12 +73,14 @@ Page({
         console.log('个人中心按钮被点击')
         console.log('当前标段信息:', this.data.sectionInfo)
 
-        // 设置用户信息
-        app.globalData.currentUser = {
-            nickName: '微信用户', // 使用微信用户昵称
-            role: 'employee',
-            avatar: '👷',
-            phone: '138****1234'
+        // 检查是否有授权用户信息，如果没有则不设置用户信息
+        if (!app.globalData.currentUser) {
+            wx.showToast({
+                title: '请先授权登录',
+                icon: 'none',
+                duration: 2000
+            });
+            return;
         }
 
         // 设置标段信息（使用完整的标段对象）
@@ -102,6 +104,17 @@ Page({
 
     loginAs: function(e) {
         console.log('loginAs被调用', e)
+
+        // 检查用户是否已授权，如果未授权则不允许设置用户信息
+        if (!app.globalData.currentUser) {
+            wx.showToast({
+                title: '请先授权登录',
+                icon: 'none',
+                duration: 2000
+            });
+            return;
+        }
+
         const role = e.currentTarget.dataset.role
         console.log('当前角色:', role)
         const userData = {

@@ -129,17 +129,46 @@ Page({
 
     // 手动重新授权
     reAuthorize: function() {
+        console.log('=== 调用wx.openSetting ===');
         wx.openSetting({
             success: (res) => {
+                // 打印完整的wx.openSetting成功返回信息
+                console.log('=== 微信wx.openSetting成功返回完整信息 ===');
+                console.log('完整返回对象:', JSON.stringify(res, null, 2));
+                console.log('返回对象类型:', typeof res);
+                console.log('返回对象键名:', Object.keys(res));
+                console.log('authSetting:', JSON.stringify(res.authSetting, null, 2));
+                console.log('authSetting类型:', typeof res.authSetting);
+                console.log('authSetting键名:', Object.keys(res.authSetting));
+                console.log('scope.userInfo授权状态:', res.authSetting['scope.userInfo']);
+                console.log('=== wx.openSetting成功信息打印结束 ===');
+
                 if (res.authSetting['scope.userInfo']) {
+                    console.log('用户重新授权了scope.userInfo，尝试获取用户信息');
                     // 用户重新授权了，尝试获取用户信息
                     this.getUserProfile();
                 } else {
+                    console.log('用户未授权scope.userInfo');
                     wx.showToast({
                         title: '需要授权才能使用',
                         icon: 'none'
                     });
                 }
+            },
+            fail: (err) => {
+                // 打印完整的wx.openSetting失败信息
+                console.log('=== 微信wx.openSetting失败返回完整信息 ===');
+                console.log('完整错误对象:', JSON.stringify(err, null, 2));
+                console.log('错误对象类型:', typeof err);
+                console.log('错误对象键名:', Object.keys(err));
+                console.log('errMsg:', err.errMsg);
+                console.log('errCode:', err.errCode);
+                console.log('=== wx.openSetting失败信息打印结束 ===');
+
+                wx.showToast({
+                    title: '打开设置失败',
+                    icon: 'none'
+                });
             }
         });
     },
@@ -153,12 +182,69 @@ Page({
         wx.getUserProfile({
             desc: '用于完善用户资料', // 声明获取用户个人信息后的用途
             success: (profileRes) => {
-                console.log('用户授权成功:', profileRes);
+                // 打印完整的微信授权返回信息
+                console.log('=== 微信getUserProfile成功返回完整信息 ===');
+                console.log('完整返回对象:', JSON.stringify(profileRes, null, 2));
+                console.log('返回对象类型:', typeof profileRes);
+                console.log('返回对象键名:', Object.keys(profileRes));
+
+                // 打印用户信息详情
+                if (profileRes.userInfo) {
+                    console.log('--- 用户信息详情 ---');
+                    console.log('userInfo完整对象:', JSON.stringify(profileRes.userInfo, null, 2));
+                    console.log('userInfo键名:', Object.keys(profileRes.userInfo));
+                    console.log('nickName:', profileRes.userInfo.nickName);
+                    console.log('gender:', profileRes.userInfo.gender);
+                    console.log('city:', profileRes.userInfo.city);
+                    console.log('province:', profileRes.userInfo.province);
+                    console.log('country:', profileRes.userInfo.country);
+                    console.log('avatarUrl:', profileRes.userInfo.avatarUrl);
+                    console.log('language:', profileRes.userInfo.language);
+                }
+
+                // 打印其他可能的信息
+                console.log('--- 其他返回信息 ---');
+                console.log('rawData:', profileRes.rawData);
+                console.log('signature:', profileRes.signature);
+                console.log('encryptedData:', profileRes.encryptedData);
+                console.log('iv:', profileRes.iv);
+                console.log('cloudID:', profileRes.cloudID);
+
+                console.log('=== 微信授权信息打印结束 ===');
+
+                // 准备发送到后端的完整用户授权信息
                 const userInfo = profileRes.userInfo;
+                const authData = {
+                    userInfo: userInfo,
+                    rawData: profileRes.rawData,
+                    signature: profileRes.signature,
+                    encryptedData: profileRes.encryptedData,
+                    iv: profileRes.iv,
+                    cloudID: profileRes.cloudID
+                };
+
+                console.log('=== 准备发送到后端的完整授权信息 ===');
+                console.log('用户基本信息:', JSON.stringify(userInfo, null, 2));
+                console.log('加密数据长度:', authData.encryptedData ? authData.encryptedData.length : 0);
+                console.log('签名:', authData.signature);
+                console.log('CloudID:', authData.cloudID);
+                console.log('=== 授权信息准备完成 ===');
+
+                // 继续登录流程，传递完整的授权信息
+                this.proceedWithAuthData(authData);
 
                 // 用户授权成功后，获取微信登录code
                 wx.login({
                     success: (loginRes) => {
+                        // 打印完整的wx.login返回信息
+                        console.log('=== 微信wx.login成功返回完整信息 ===');
+                        console.log('完整返回对象:', JSON.stringify(loginRes, null, 2));
+                        console.log('返回对象类型:', typeof loginRes);
+                        console.log('返回对象键名:', Object.keys(loginRes));
+                        console.log('code:', loginRes.code);
+                        console.log('errMsg:', loginRes.errMsg);
+                        console.log('=== wx.login信息打印结束 ===');
+
                         if (loginRes.code) {
                             console.log('获取微信登录code成功:', loginRes.code);
                             // 调用后端登录接口
@@ -172,7 +258,15 @@ Page({
                         }
                     },
                     fail: (err) => {
-                        console.error('wx.login失败:', err);
+                        // 打印完整的wx.login失败信息
+                        console.log('=== 微信wx.login失败返回完整信息 ===');
+                        console.log('完整错误对象:', JSON.stringify(err, null, 2));
+                        console.log('错误对象类型:', typeof err);
+                        console.log('错误对象键名:', Object.keys(err));
+                        console.log('errMsg:', err.errMsg);
+                        console.log('errCode:', err.errCode);
+                        console.log('=== wx.login失败信息打印结束 ===');
+
                         wx.showToast({
                             title: '登录失败，请重试',
                             icon: 'none'
@@ -181,15 +275,215 @@ Page({
                 });
             },
             fail: (err) => {
-                console.error('用户拒绝授权或授权失败:', err);
+                // 打印完整的授权失败信息
+                console.log('=== 微信getUserProfile失败返回完整信息 ===');
+                console.log('完整错误对象:', JSON.stringify(err, null, 2));
+                console.log('错误对象类型:', typeof err);
+                console.log('错误对象键名:', Object.keys(err));
+                console.log('errMsg:', err.errMsg);
+                console.log('errCode:', err.errCode);
+                console.log('=== getUserProfile失败信息打印结束 ===');
+
+                // 只显示授权失败提示，不执行其他逻辑
                 wx.showToast({
-                    title: '需要授权才能使用完整功能',
+                    title: '授权失败',
                     icon: 'none',
                     duration: 2000
                 });
 
-                // 记录授权日志
-                this.logAuthorization('reject', {});
+                // 授权失败时直接返回，不执行任何其他逻辑
+                return;
+            }
+        });
+    },
+
+    // 显示昵称输入弹窗
+    showNicknameInputModal: function(userInfo) {
+        console.log('=== 显示昵称输入弹窗 ===');
+        console.log('当前用户信息:', JSON.stringify(userInfo, null, 2));
+
+        wx.showModal({
+            title: '完善个人信息',
+            content: '微信隐私保护政策下，需要您手动输入真实昵称',
+            confirmText: '输入昵称',
+            cancelText: '跳过',
+            success: (res) => {
+                if (res.confirm) {
+                    console.log('用户选择输入昵称');
+                    // 这里可以跳转到昵称输入页面或使用输入框
+                    this.navigateNicknameInput(userInfo);
+                } else {
+                    console.log('用户选择跳过，使用默认昵称');
+                    // 用户选择跳过，继续使用默认昵称进行登录
+                    this.proceedWithLogin(userInfo);
+                }
+            }
+        });
+    },
+
+    // 跳转到昵称输入页面
+    navigateNicknameInput: function(userInfo) {
+        console.log('跳转到昵称输入页面');
+        // 使用简单的输入框方式
+        wx.showInputBox({
+            title: '请输入您的昵称',
+            placeholder: '请输入真实昵称',
+            success: (res) => {
+                if (res.content && res.content.trim()) {
+                    console.log('用户输入的昵称:', res.content);
+                    // 更新用户信息中的昵称
+                    userInfo.nickName = res.content.trim();
+                    console.log('更新后的用户信息:', JSON.stringify(userInfo, null, 2));
+
+                    // 继续登录流程
+                    this.proceedWithLogin(userInfo);
+                } else {
+                    wx.showToast({
+                        title: '昵称不能为空',
+                        icon: 'none'
+                    });
+                    // 重新尝试输入
+                    this.navigateNicknameInput(userInfo);
+                }
+            },
+            fail: () => {
+                console.log('用户取消输入昵称');
+                // 用户取消，使用默认昵称
+                this.proceedWithLogin(userInfo);
+            }
+        });
+    },
+
+    // 使用完整授权数据进行登录
+    proceedWithAuthData: function(authData) {
+        console.log('=== 使用完整授权数据登录流程 ===');
+        console.log('授权数据:', JSON.stringify(authData, null, 2));
+
+        // 用户授权成功后，获取微信登录code
+        wx.login({
+            success: (loginRes) => {
+                // 打印完整的wx.login返回信息
+                console.log('=== 微信wx.login成功返回完整信息 ===');
+                console.log('完整返回对象:', JSON.stringify(loginRes, null, 2));
+                console.log('返回对象类型:', typeof loginRes);
+                console.log('返回对象键名:', Object.keys(loginRes));
+                console.log('code:', loginRes.code);
+                console.log('errMsg:', loginRes.errMsg);
+                console.log('=== wx.login信息打印结束 ===');
+
+                if (loginRes.code) {
+                    console.log('获取微信登录code成功:', loginRes.code);
+                    // 调用后端登录接口，传递完整的授权数据
+                    this.wechatLoginWithFullData(loginRes.code, authData);
+                } else {
+                    console.error('获取微信登录code失败:', loginRes);
+                    wx.showToast({
+                        title: '登录失败，请重试',
+                        icon: 'none'
+                    });
+                }
+            },
+            fail: (err) => {
+                // 打印完整的wx.login失败信息
+                console.log('=== 微信wx.login失败返回完整信息 ===');
+                console.log('完整错误对象:', JSON.stringify(err, null, 2));
+                console.log('错误对象类型:', typeof err);
+                console.log('错误对象键名:', Object.keys(err));
+                console.log('errMsg:', err.errMsg);
+                console.log('errCode:', err.errCode);
+                console.log('=== wx.login失败信息打印结束 ===');
+
+                wx.showToast({
+                    title: '登录失败，请重试',
+                    icon: 'none'
+                });
+            }
+        });
+    },
+
+    // 使用完整授权数据的后端登录接口
+    wechatLoginWithFullData: function(code, authData) {
+        const app = getApp();
+
+        console.log('=== 准备发送完整授权数据到后端 ===');
+        console.log('code:', code);
+        console.log('authData包含的字段:', Object.keys(authData));
+        console.log('用户基本信息:', JSON.stringify(authData.userInfo, null, 2));
+        console.log('encryptedData长度:', authData.encryptedData ? authData.encryptedData.length : 0);
+        console.log('iv:', authData.iv);
+        console.log('signature:', authData.signature);
+        console.log('=== 发送数据准备完成 ===');
+
+        wx.showLoading({
+            title: '登录中...'
+        });
+
+        wx.request({
+            url: app.globalData.baseUrl + '/auth/login',
+            method: 'POST',
+            data: {
+                code: code,
+                userInfo: authData.userInfo,
+                rawData: authData.rawData,
+                signature: authData.signature,
+                encryptedData: authData.encryptedData,
+                iv: authData.iv,
+                cloudID: authData.cloudID
+            },
+            success: (res) => {
+                console.log('=== 后端登录接口返回完整信息 ===');
+                console.log('完整返回对象:', JSON.stringify(res, null, 2));
+                console.log('statusCode:', res.statusCode);
+                console.log('data:', JSON.stringify(res.data, null, 2));
+                console.log('=== 后端返回信息打印结束 ===');
+
+                if (res.data && res.data.success) {
+                    console.log('后端登录成功');
+                    console.log('后端返回的用户信息:', JSON.stringify(res.data.data.user, null, 2));
+                    console.log('后端返回的token:', res.data.data.token);
+
+                    // 存储token和用户信息
+                    wx.setStorageSync('token', res.data.data.token);
+                    wx.setStorageSync('userInfo', authData.userInfo);
+                    app.globalData.token = res.data.data.token;
+                    app.globalData.currentUser = res.data.data.user;
+
+                    wx.hideLoading();
+                    wx.showToast({
+                        title: '登录成功',
+                        icon: 'success'
+                    });
+
+                    // 记录授权日志
+                    this.logAuthorization('success', authData.userInfo);
+
+                    // 跳转到标段选择页面
+                    wx.navigateTo({
+                        url: '/pages/section/section'
+                    });
+                } else {
+                    console.error('后端登录失败:', res.data);
+                    wx.hideLoading();
+                    wx.showToast({
+                        title: res.data?.message || '登录失败',
+                        icon: 'none'
+                    });
+                }
+            },
+            fail: (err) => {
+                console.log('=== 后端登录请求失败信息 ===');
+                console.log('完整错误对象:', JSON.stringify(err, null, 2));
+                console.log('错误对象类型:', typeof err);
+                console.log('错误对象键名:', Object.keys(err));
+                console.log('errMsg:', err.errMsg);
+                console.log('statusCode:', err.statusCode);
+                console.log('=== 后端登录失败信息打印结束 ===');
+
+                wx.hideLoading();
+                wx.showToast({
+                    title: '网络错误，请重试',
+                    icon: 'none'
+                });
             }
         });
     },

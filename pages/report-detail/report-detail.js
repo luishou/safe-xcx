@@ -41,44 +41,45 @@ Page({
 
     console.log('当前用户信息:', currentUser);
 
-    // 如果没有设置用户信息，根据页面来源判断默认角色
+    // 如果没有授权用户信息，只显示默认用户ID信息，不设置currentUser
     if (!currentUser) {
-      // 从页面栈判断来源
-      const pages = getCurrentPages();
-      const prevPage = pages[pages.length - 2];
+      console.log('用户未授权，不设置用户角色');
 
-      if (prevPage && prevPage.route === 'pages/main/main') {
-        // 从main页面进入，默认为管理员
-        currentUser = {
-          name: '安全环保部',
-          role: 'manager',
-          department: '安全部门'
-        };
-      } else {
-        // 其他页面进入，默认为普通员工
-        currentUser = {
-          name: '员工',
-          role: 'employee',
-          department: '生产车间'
-        };
-      }
+      // 仅用于显示的默认用户信息，不实际设置到全局状态
+      const displayUser = {
+        id: 'default_user', // 默认用户ID
+        name: '未授权用户',
+        role: 'guest',
+        department: '未授权'
+      };
 
-      console.log('设置默认用户角色:', currentUser.role);
+      // 用于显示用户ID信息
+      this.setData({
+        displayUserInfo: displayUser
+      });
     }
 
     // 根据用户角色确定权限
     let canOperate = false;
+    let displayRole = 'guest';
+
     if (currentUser && currentUser.role) {
       // 只有admin角色可以操作
       canOperate = currentUser.role === 'admin';
+      displayRole = currentUser.role;
+    } else {
+      // 未授权用户无法操作
+      canOperate = false;
+      displayRole = 'guest';
     }
 
     this.setData({
       canOperate: canOperate,
-      userRole: currentUser ? currentUser.role : 'employee'
+      userRole: displayRole,
+      displayUserId: currentUser ? currentUser.id || 'authorized_user' : 'default_user'
     });
 
-    console.log('页面初始化 - canOperate:', canOperate, 'userRole:', currentUser.role);
+    console.log('页面初始化 - canOperate:', canOperate, 'userRole:', currentUser ? currentUser.role : 'none');
 
     // 加载举报详情
     this.loadReportDetail();

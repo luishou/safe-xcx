@@ -6,7 +6,7 @@ App({
     currentSection: null,
     sections: [], // 标段列表
     notifications: [],
-    baseUrl: 'http://localhost:3300/api', // 后端接口地址
+    baseUrl: 'https://safe.sulei.xyz/api', // 后端接口地址
     token: null, // JWT token
     db: {
       users: {
@@ -107,18 +107,46 @@ App({
   },
 
   onLaunch() {
-    // 展示本地存储能力
-    const logs = wx.getStorageSync('logs') || []
-    logs.unshift(Date.now())
-    wx.setStorageSync('logs', logs)
+    try {
+      // 展示本地存储能力 - 限制日志数量避免存储问题
+      const logs = wx.getStorageSync('logs') || []
+      logs.unshift(Date.now())
+      // 只保留最近50条日志记录
+      if (logs.length > 50) {
+        logs.splice(50)
+      }
+      wx.setStorageSync('logs', logs)
+    } catch (error) {
+      console.warn('日志存储失败:', error)
+    }
 
     // 初始化用户信息
     this.initUserInfo()
 
     // 登录
+    console.log('=== app.js中调用wx.login ===');
     wx.login({
       success: res => {
+        // 打印完整的app.js中wx.login返回信息
+        console.log('=== app.js中微信wx.login成功返回完整信息 ===');
+        console.log('完整返回对象:', JSON.stringify(res, null, 2));
+        console.log('返回对象类型:', typeof res);
+        console.log('返回对象键名:', Object.keys(res));
+        console.log('code:', res.code);
+        console.log('errMsg:', res.errMsg);
+        console.log('=== app.js中wx.login成功信息打印结束 ===');
+
         // 发送 res.code 到后台换取 openId, sessionKey, unionId
+      },
+      fail: err => {
+        // 打印完整的app.js中wx.login失败信息
+        console.log('=== app.js中微信wx.login失败返回完整信息 ===');
+        console.log('完整错误对象:', JSON.stringify(err, null, 2));
+        console.log('错误对象类型:', typeof err);
+        console.log('错误对象键名:', Object.keys(err));
+        console.log('errMsg:', err.errMsg);
+        console.log('errCode:', err.errCode);
+        console.log('=== app.js中wx.login失败信息打印结束 ===');
       }
     })
 
@@ -152,21 +180,45 @@ App({
 
   // 验证token
   verifyToken(token) {
+    console.log('=== 开始验证token ===');
+    console.log('待验证的token:', token);
+    console.log('请求URL:', this.globalData.baseUrl + '/auth/verify');
+
     wx.request({
       url: this.globalData.baseUrl + '/auth/verify',
       method: 'POST',
       data: { token },
       success: (res) => {
-        if (res.data.success) {
+        // 打印完整的token验证成功返回信息
+        console.log('=== Token验证成功返回完整信息 ===');
+        console.log('完整返回对象:', JSON.stringify(res, null, 2));
+        console.log('返回对象类型:', typeof res);
+        console.log('返回对象键名:', Object.keys(res));
+        console.log('statusCode:', res.statusCode);
+        console.log('data:', JSON.stringify(res.data, null, 2));
+
+        if (res.data && res.data.success) {
           console.log('Token验证成功');
+          console.log('验证后的用户信息:', JSON.stringify(res.data.data.user, null, 2));
           this.globalData.currentUser = res.data.data.user;
         } else {
           console.log('Token验证失败，清除本地存储');
+          console.log('失败原因:', res.data ? res.data.message : '未知错误');
           wx.removeStorageSync('token');
           this.globalData.token = null;
         }
+        console.log('=== Token验证成功信息打印结束 ===');
       },
       fail: (err) => {
+        // 打印完整的token验证失败信息
+        console.log('=== Token验证失败返回完整信息 ===');
+        console.log('完整错误对象:', JSON.stringify(err, null, 2));
+        console.log('错误对象类型:', typeof err);
+        console.log('错误对象键名:', Object.keys(err));
+        console.log('errMsg:', err.errMsg);
+        console.log('statusCode:', err.statusCode);
+        console.log('=== Token验证失败信息打印结束 ===');
+
         console.error('Token验证请求失败:', err);
         wx.removeStorageSync('token');
         this.globalData.token = null;

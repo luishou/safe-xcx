@@ -62,13 +62,17 @@ Page({
    */
   loadUserInfo() {
     const app = getApp();
-    const currentUser = app.globalData.currentUser || {
-      name: '员工',
-      role: 'employee',
-      department: '生产车间',
-      avatar: '/images/default-avatar.png',
-      phone: '138****1234'
-    };
+    const currentUser = app.globalData.currentUser;
+
+    // 如果用户未授权，显示默认用户ID信息但不设置用户角色
+    if (!currentUser) {
+      this.setData({
+        displayUserId: 'default_user',
+        userRole: 'guest',
+        canOperate: false
+      });
+      return;
+    }
 
     const currentSection = app.globalData.currentSection || 'TJ01';
 
