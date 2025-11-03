@@ -1,7 +1,8 @@
 const jwt = require('jsonwebtoken');
+const { User } = require('../models/database');
 
 // JWT认证中间件
-const authenticateToken = (req, res, next) => {
+const authenticateToken = async (req, res, next) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
 
@@ -12,17 +13,35 @@ const authenticateToken = (req, res, next) => {
     });
   }
 
-  jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
-    if (err) {
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    
+    // 从数据库获取最新的用户信息
+    const user = await User.findById(decoded.userId);
+    
+    if (!user) {
       return res.status(403).json({
         success: false,
-        message: '访问令牌无效或已过期'
+        message: '用户不存在'
       });
     }
 
-    req.user = decoded;
+    // 设置完整的用户信息到req.user
+    req.user = {
+      userId: user.id,
+      openid: user.openid,
+      role: user.role,
+      nickName: user.nickName,
+      avatarUrl: user.avatarUrl
+    };
+    
     next();
-  });
+  } catch (err) {
+    return res.status(403).json({
+      success: false,
+      message: '访问令牌无效或已过期'
+    });
+  }
 };
 
 // 角色权限检查中间件

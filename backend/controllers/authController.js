@@ -107,7 +107,9 @@ class AuthController {
         {
           userId: user.id,
           openid: user.openid,
-          role: user.role
+          role: user.role,
+          nickName: user.nickName,
+          avatarUrl: user.avatarUrl
         },
         process.env.JWT_SECRET,
         { expiresIn: process.env.JWT_EXPIRES_IN }
