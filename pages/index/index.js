@@ -4,7 +4,10 @@ Page({
         currentSection: null,
         isAuthorized: false,
         userInfo: {},
-        sections: [] // 标段列表
+        sections: [], // 标段列表
+        showNicknameModal: false,
+        tempNickname: '',
+        tempAvatarUrl: '/images/user.png'
     },
 
     onLoad: function (options) {
@@ -28,10 +31,17 @@ Page({
         console.log('页面loadSections - 标段数量:', sections ? sections.length : 0);
 
         if (sections && sections.length > 0) {
+            // 转换数据格式以匹配模板期望的结构
+            const formattedSections = sections.map(section => ({
+                code: section.section_code,
+                name: section.section_name,
+                info: section
+            }));
+            
             this.setData({
-                sections: sections
+                sections: formattedSections
             });
-            console.log('页面加载标段配置成功:', sections);
+            console.log('页面加载标段配置成功:', formattedSections);
         } else {
             console.log('标段配置尚未加载完成，尝试延迟加载');
             // 延迟500ms再次尝试
@@ -39,10 +49,26 @@ Page({
                 const retrySections = app.globalData.sections;
                 console.log('延迟重试 - 标段数据:', retrySections);
                 if (retrySections && retrySections.length > 0) {
+                    // 转换数据格式以匹配模板期望的结构
+                    const formattedRetrySections = retrySections.map(section => ({
+                        code: section.section_code,
+                        name: section.section_name,
+                        info: section
+                    }));
+                    
                     this.setData({
-                        sections: retrySections
+                        sections: formattedRetrySections
                     });
-                    console.log('延迟加载标段配置成功:', retrySections);
+                    console.log('延迟加载标段配置成功:', formattedRetrySections);
+                } else {
+                    console.log('标段配置加载失败，使用默认配置');
+                    // 使用默认标段配置
+                    this.setData({
+                        sections: [
+                            { code: 'TJ01', name: '第TJ01标段', info: { section_code: 'TJ01', section_name: '第TJ01标段' } },
+                            { code: 'TJ02', name: '第TJ02标段', info: { section_code: 'TJ02', section_name: '第TJ02标段' } }
+                        ]
+                    });
                 }
             }, 500);
         }
@@ -74,11 +100,7 @@ Page({
         }
     },
 
-    // 获取用户信息授权
-    onGetUserInfo: function(e) {
-        // 兼容旧的调用方式，但现在改为调用 getUserProfile
-        this.getUserProfile();
-    },
+    // 注意：已移除旧的 onGetUserInfo 方法，现在统一使用新的 getUserProfile 接口
 
     // 记录授权日志
     logAuthorization: function(type, userInfo) {
@@ -175,6 +197,114 @@ Page({
 
     // 获取用户信息（主要授权方法）
     getUserProfile: function() {
+        console.log('开始获取用户信息');
+        const app = getApp();
+
+        // 使用微信官方推荐的头像昵称填写能力
+        this.showNicknameAvatarModal();
+    },
+
+    // 显示头像昵称填写弹窗
+    showNicknameAvatarModal: function() {
+        console.log('显示头像昵称填写弹窗');
+        this.setData({
+            showNicknameModal: true,
+            tempNickname: '',
+            tempAvatarUrl: '/images/user.png' // 默认头像
+        });
+    },
+
+    // 选择头像
+    chooseAvatar: function(e) {
+        console.log('选择头像:', e.detail.avatarUrl);
+        this.setData({
+            tempAvatarUrl: e.detail.avatarUrl
+        });
+    },
+
+    // 输入昵称
+    onNicknameInput: function(e) {
+        console.log('输入昵称:', e.detail.value);
+        this.setData({
+            tempNickname: e.detail.value
+        });
+    },
+
+    // 确认提交用户信息
+    confirmUserInfo: function() {
+        const { tempNickname, tempAvatarUrl } = this.data;
+        
+        if (!tempNickname || tempNickname.trim() === '') {
+            wx.showToast({
+                title: '请输入昵称',
+                icon: 'none'
+            });
+            return;
+        }
+
+        // 构造用户信息
+        const userInfo = {
+            nickName: tempNickname.trim(),
+            avatarUrl: tempAvatarUrl,
+            gender: 0,
+            city: '',
+            province: '',
+            country: '',
+            language: 'zh_CN'
+        };
+
+        console.log('用户填写的信息:', userInfo);
+
+        // 关闭弹窗
+        this.setData({
+            showNicknameModal: false
+        });
+
+        // 继续登录流程
+        this.proceedWithLogin(userInfo);
+    },
+
+    // 取消填写
+    cancelUserInfo: function() {
+        this.setData({
+            showNicknameModal: false
+        });
+    },
+
+    // 继续登录流程
+    proceedWithLogin: function(userInfo) {
+        // 获取微信登录code
+        wx.login({
+            success: (loginRes) => {
+                console.log('=== 微信wx.login成功返回完整信息 ===');
+                console.log('完整返回对象:', JSON.stringify(loginRes, null, 2));
+                console.log('code:', loginRes.code);
+
+                if (loginRes.code) {
+                    console.log('获取微信登录code成功:', loginRes.code);
+                    // 调用后端登录接口
+                    this.wechatLogin(loginRes.code, userInfo);
+                } else {
+                    console.error('获取微信登录code失败:', loginRes);
+                    wx.showToast({
+                        title: '登录失败，请重试',
+                        icon: 'none'
+                    });
+                }
+            },
+            fail: (err) => {
+                console.log('=== 微信wx.login失败返回完整信息 ===');
+                console.log('完整错误对象:', JSON.stringify(err, null, 2));
+                wx.showToast({
+                    title: '登录失败，请重试',
+                    icon: 'none'
+                });
+            }
+        });
+    },
+
+    // 旧的getUserProfile方法（保留作为备用）
+    getUserProfileOld: function() {
         console.log('开始获取用户信息');
         const app = getApp();
 

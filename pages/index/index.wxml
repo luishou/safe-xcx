@@ -37,21 +37,61 @@
             <view wx:else class="default-avatar">👤</view>
         </view>
         <view class="user-details">
-            <view class="user-name">{{userInfo.nickName || '微信用户'}}</view>
-            <view class="user-tips">欢迎使用安全举报系统</view>
+            <text class="user-name">{{userInfo.nickName || '微信用户'}}</text>
+            <text class="user-status">已授权登录</text>
         </view>
     </view>
 
-    <!-- 标段选择卡片 -->
-    <view class="section-cards">
-        <block wx:for="{{sections}}" wx:key="id">
-            <view
-                class="section-card {{item.section_code === 'TJ01' ? 'tj01-card' : 'tj02-card'}}"
-                bindtap="selectSection"
-                data-section="{{item.section_code}}"
-                data-section-info="{{item}}">
-                <text class="card-title">{{item.section_name}}</text>
+    <!-- 标段选择 -->
+    <view wx:if="{{isAuthorized}}" class="section-selection">
+        <view class="section-title">请选择您所在的标段</view>
+        <view class="section-list">
+            <view wx:for="{{sections}}" wx:key="code" class="section-item" 
+                  data-section="{{item.code}}" 
+                  data-section-info="{{item.info}}" 
+                  bindtap="selectSection">
+                <view class="section-name">{{item.name}}</view>
+                <view class="section-code">{{item.code}}</view>
             </view>
-        </block>
+        </view>
+    </view>
+</view>
+
+<!-- 昵称头像填写弹窗 -->
+<view wx:if="{{showNicknameModal}}" class="nickname-modal-overlay">
+    <view class="nickname-modal">
+        <view class="modal-header">
+            <text class="modal-title">完善个人信息</text>
+            <text class="modal-subtitle">请填写您的昵称和选择头像</text>
+        </view>
+        
+        <view class="modal-content">
+            <!-- 头像选择 -->
+            <view class="avatar-section">
+                <text class="section-label">头像</text>
+                <button class="avatar-btn" open-type="chooseAvatar" bindchooseavatar="chooseAvatar">
+                    <image class="avatar-preview" src="{{tempAvatarUrl}}" mode="aspectFill"></image>
+                    <text class="avatar-tip">点击选择头像</text>
+                </button>
+            </view>
+            
+            <!-- 昵称输入 -->
+            <view class="nickname-section">
+                <text class="section-label">昵称</text>
+                <input 
+                    class="nickname-input" 
+                    type="nickname" 
+                    placeholder="请输入您的昵称" 
+                    value="{{tempNickname}}"
+                    bindinput="onNicknameInput"
+                    maxlength="20"
+                />
+            </view>
+        </view>
+        
+        <view class="modal-buttons">
+            <button class="cancel-btn" bindtap="cancelUserInfo">取消</button>
+            <button class="confirm-btn" bindtap="confirmUserInfo">确认</button>
+        </view>
     </view>
 </view>
