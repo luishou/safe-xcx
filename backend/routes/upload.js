@@ -48,8 +48,9 @@ router.post('/image', authenticateToken, upload.single('image'), (req, res) => {
       });
     }
 
-    // 构建文件访问URL
-    const fileUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
+    // 构建文件访问URL - 优先使用环境变量中的BASE_URL
+    const baseUrl = process.env.BASE_URL || `${req.protocol}://${req.get('host')}`;
+    const fileUrl = `${baseUrl}/uploads/${req.file.filename}`;
 
     res.json({
       success: true,
@@ -83,7 +84,8 @@ router.post('/images', authenticateToken, upload.array('images', 5), (req, res) 
     }
 
     const uploadedFiles = req.files.map(file => {
-      const fileUrl = `${req.protocol}://${req.get('host')}/uploads/${file.filename}`;
+      const baseUrl = process.env.BASE_URL || `${req.protocol}://${req.get('host')}`;
+      const fileUrl = `${baseUrl}/uploads/${file.filename}`;
       return {
         filename: file.filename,
         originalName: file.originalname,
@@ -118,8 +120,9 @@ router.post('/', authenticateToken, upload.single('file'), (req, res) => {
       });
     }
 
-    // 构建文件访问URL
-    const fileUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
+    // 构建文件访问URL - 优先使用环境变量中的BASE_URL
+    const baseUrl = process.env.BASE_URL || `${req.protocol}://${req.get('host')}`;
+    const fileUrl = `${baseUrl}/uploads/${req.file.filename}`;
 
     res.json({
       success: true,

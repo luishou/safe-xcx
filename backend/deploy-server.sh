@@ -37,8 +37,10 @@ if [ "$ENV" = "production" ]; then
     if [ -f ".env.production" ]; then
         cp .env.production .env
         echo "✅ 已复制生产环境配置"
+        echo "⚠️  请确保在 .env 文件中设置正确的 BASE_URL (如: https://your-domain.com)"
     else
         echo "⚠️  .env.production 文件不存在，请手动配置 .env 文件"
+        echo "⚠️  重要：请设置 BASE_URL 环境变量为您的域名"
     fi
 else
     echo "⚙️  配置开发环境..."

@@ -64,7 +64,15 @@ nano .env
 # 配置数据库连接信息
 # 配置微信小程序 AppID 和 Secret
 # 设置强密码的 JWT Secret
+# 重要：设置 BASE_URL 为您的域名，如 https://your-domain.com
 ```
+
+**重要配置项说明：**
+
+- `WECHAT_APP_ID` 和 `WECHAT_APP_SECRET`: 微信小程序的AppID和AppSecret
+- `BASE_URL`: **重要！** 设置为您的域名，如 `https://your-domain.com`，确保图片URL使用HTTPS协议
+- `DB_HOST`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`: 数据库连接信息
+- `JWT_SECRET`: JWT密钥，建议使用长随机字符串
 
 ### 步骤 4: 数据库初始化
 ```bash
