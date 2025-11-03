@@ -189,10 +189,45 @@ class ReportController {
       const safeParseJSON = (jsonString) => {
         try {
           if (!jsonString) return [];
-          const parsed = JSON.parse(jsonString);
+          
+          // 如果是字符串，先尝试直接解析
+          let cleanedString = jsonString;
+          
+          // 如果包含反引号，尝试清理数据
+          if (typeof jsonString === 'string' && jsonString.includes('`')) {
+            console.log('检测到包含反引号的数据，尝试清理:', jsonString);
+            
+            // 移除反引号并清理空格
+            cleanedString = jsonString
+              .replace(/`/g, '"')  // 将反引号替换为双引号
+              .replace(/\s+/g, ' ') // 规范化空格
+              .trim();
+            
+            // 如果数据看起来像是数组格式但格式不正确，尝试修复
+            if (cleanedString.startsWith('[') && cleanedString.endsWith(']')) {
+              // 尝试提取URL并重新构建数组
+              const urlMatch = cleanedString.match(/https?:\/\/[^\s"'`]+/g);
+              if (urlMatch) {
+                cleanedString = JSON.stringify(urlMatch);
+                console.log('修复后的数据:', cleanedString);
+              }
+            }
+          }
+          
+          const parsed = JSON.parse(cleanedString);
           return Array.isArray(parsed) ? parsed : [];
         } catch (error) {
-          console.error('JSON解析失败:', error, '数据:', jsonString);
+          console.error('JSON解析失败:', error, '原始数据:', jsonString);
+          
+          // 最后的尝试：如果数据看起来包含URL，尝试提取URL
+          if (typeof jsonString === 'string') {
+            const urlMatch = jsonString.match(/https?:\/\/[^\s"'`\]]+/g);
+            if (urlMatch) {
+              console.log('从错误数据中提取到URL:', urlMatch);
+              return urlMatch;
+            }
+          }
+          
           return [];
         }
       };
