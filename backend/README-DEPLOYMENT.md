@@ -35,16 +35,21 @@ sudo apt install git nginx mysql-server -y
 
 ### 步骤 2: 部署代码
 ```bash
-# 创建项目目录
-sudo mkdir -p /var/www/safe-backend
-sudo chown $USER:$USER /var/www/safe-backend
+# 创建项目目录 (如果不存在)
+sudo mkdir -p /home/ubuntu/safe-xcx/backend
+sudo chown ubuntu:ubuntu /home/ubuntu/safe-xcx/backend
 
-# 克隆代码
-cd /var/www/safe-backend
+# 进入项目目录
+cd /home/ubuntu/safe-xcx/backend
+
+# 克隆代码 (如果使用Git)
 git clone <your-repository-url> .
 
 # 安装依赖
 npm install --production
+
+# 创建日志目录
+mkdir -p Log
 
 # 设置执行权限
 chmod +x deploy.sh monitor.sh
@@ -124,7 +129,7 @@ sudo crontab -e
 ```bash
 # 设置监控脚本定时执行
 crontab -e
-# 添加: */5 * * * * /var/www/safe-backend/monitor.sh
+# 添加: */5 * * * * /home/ubuntu/safe-xcx/backend/monitor.sh
 ```
 
 ### 常用命令
@@ -146,7 +151,7 @@ curl http://localhost:3300/health
 ```
 
 ### 日志位置
-- 应用日志: `/var/log/safe-backend/`
+- 应用日志: `/home/ubuntu/safe-xcx/backend/Log/`
 - Nginx 日志: `/var/log/nginx/`
 - PM2 日志: `~/.pm2/logs/`
 

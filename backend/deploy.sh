@@ -6,8 +6,8 @@
 set -e
 
 ENV=${1:-production}
-PROJECT_DIR="/var/www/safe-backend"
-LOG_DIR="/var/log/safe-backend"
+PROJECT_DIR="/home/ubuntu/safe-xcx/backend"
+LOG_DIR="/home/ubuntu/safe-xcx/backend/Log"
 
 echo "🚀 开始部署 Safe Backend ($ENV 环境)..."
 

@@ -3,7 +3,7 @@
 # Safe Backend 监控脚本
 # 可以设置为 cron 任务定期执行
 
-LOG_FILE="/var/log/safe-backend/monitor.log"
+LOG_FILE="/home/ubuntu/safe-xcx/backend/Log/monitor.log"
 APP_NAME="safe-backend"
 HEALTH_URL="http://localhost:3300/health"
 
