@@ -2,8 +2,8 @@ module.exports = {
   apps: [{
     name: 'safe-backend',
     script: 'app.js',
-    instances: 'max', // 使用所有CPU核心
-    exec_mode: 'cluster', // 集群模式
+    instances: 1, // 改为单实例，避免资源不足
+    exec_mode: 'fork', // 改为fork模式，更稳定
     env: {
       NODE_ENV: 'development',
       PORT: 3300
