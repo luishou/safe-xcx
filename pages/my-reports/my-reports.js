@@ -7,40 +7,15 @@ Page({
   data: {
     currentUser: {},
     currentSection: 'TJ01',
+    loading: true,
 
-    // 举报数据 - 参考图片中的三种状态
-    reports: [
-      {
-        id: 1,
-        hazardType: '消防安全隐患',
-        location: 'A区仓库',
-        description: '发现灭火器过期，需要及时更换',
-        reportTime: '2024-01-10 09:30',
-        status: 'processing',
-        statusText: '处理中',
-        statusClass: 'status-processing'
-      },
-      {
-        id: 2,
-        hazardType: '高空作业安全隐患',
-        location: 'B区施工现场',
-        description: '脚手架防护网破损，存在坠物风险',
-        reportTime: '2024-01-08 14:20',
-        status: 'completed',
-        statusText: '已办结',
-        statusClass: 'status-completed'
-      },
-      {
-        id: 3,
-        hazardType: '电气安全隐患',
-        location: 'C区配电房',
-        description: '临时用电线路私拉乱接，存在安全隐患',
-        reportTime: '2024-01-05 16:45',
-        status: 'evaluated',
-        statusText: '已评价',
-        statusClass: 'status-evaluated'
-      }
-    ]
+    // 举报数据 - 从后端获取
+    reports: [],
+    filteredReports: [],
+    currentFilter: 'processing', // processing, completed, evaluated
+    processingCount: 0,
+    completedCount: 0,
+    evaluatedCount: 0
   },
 
   /**
@@ -48,6 +23,7 @@ Page({
    */
   onLoad(options) {
     this.loadUserInfo();
+    this.loadReports();
   },
 
   /**
@@ -55,6 +31,7 @@ Page({
    */
   onShow() {
     this.loadUserInfo();
+    this.loadReports();
   },
 
   /**
@@ -64,9 +41,17 @@ Page({
     const app = getApp();
     const currentUser = app.globalData.currentUser;
 
-    // 如果用户未授权，显示默认用户ID信息但不设置用户角色
+    const currentSection = app.globalData.currentSection || 'TJ01';
+
     if (!currentUser) {
+      // 设置默认用户信息
       this.setData({
+        currentUser: {
+          name: '微信用户',
+          department: '未设置部门',
+          avatar: '👷'
+        },
+        currentSection: currentSection,
         displayUserId: 'default_user',
         userRole: 'guest',
         canOperate: false
@@ -74,11 +59,184 @@ Page({
       return;
     }
 
-    const currentSection = app.globalData.currentSection || 'TJ01';
-
     this.setData({
       currentUser: currentUser,
       currentSection: currentSection
+    });
+  },
+
+  /**
+   * 加载举报数据
+   */
+  loadReports() {
+    const app = getApp();
+
+    if (!app.globalData.token) {
+      console.log('未登录，无法加载数据');
+      this.setData({
+        loading: false
+      });
+      return;
+    }
+
+    this.setData({
+      loading: true
+    });
+
+    wx.request({
+      url: app.globalData.baseUrl + '/report/list',
+      method: 'GET',
+      header: {
+        'Authorization': 'Bearer ' + app.globalData.token
+      },
+      data: {
+        ownOnly: true, // 只查看自己的举报
+        section: app.globalData.currentSection?.section_code
+      },
+      success: (res) => {
+        this.setData({
+          loading: false
+        });
+
+        if (res.data.success) {
+          console.log('获取个人举报记录成功:', res.data.data.reports);
+          const reports = res.data.data.reports;
+
+          // 映射函数
+          const mapHazardType = (type) => {
+            const mapping = {
+              'fire': '消防安全隐患',
+              'electric': '电气安全隐患',
+              'chemical': '化学品安全隐患',
+              'mechanical': '机械设备安全隐患',
+              'height': '高空作业安全隐患',
+              'traffic': '交通安全隐患',
+              'environment': '环境安全隐患',
+              'other': '其他安全隐患'
+            };
+            return mapping[type] || type;
+          };
+
+          const mapStatus = (status) => {
+            const mapping = {
+              'submitted': '已提交',
+              'pending': '待处理',
+              'assigned': '已分配',
+              'processing': '处理中',
+              'completed': '已办结',
+              'rejected': '已驳回'
+            };
+            return mapping[status] || status;
+          };
+
+          const { formatBeijing } = require('../../utils/time.js');
+
+          // 安全解析JSON数据
+          const safeParseJSON = (jsonString) => {
+            try {
+              if (!jsonString) return [];
+              return JSON.parse(jsonString);
+            } catch (error) {
+              console.error('JSON解析失败:', error, '原始数据:', jsonString);
+              return [];
+            }
+          };
+
+          const processReports = (reports) => {
+            return reports.map(report => {
+              console.log('处理举报记录:', report);
+              return {
+                ...report,
+                hazardType: mapHazardType(report.hazard_type),
+                status: mapStatus(report.status),
+                reporter: report.reporter_name || '未知',
+                reportTime: formatBeijing(report.created_at),
+                location: report.location,
+                initialImages: safeParseJSON(report.initial_images),
+                rectifiedImages: safeParseJSON(report.rectified_images)
+              };
+            });
+          };
+
+          const processedReports = processReports(reports);
+
+          // 按状态分类
+          const processingReports = processedReports.filter(report => report.status === '处理中' || report.status === '已分配');
+          const completedReports = processedReports.filter(report => report.status === '已办结' || report.status === '已驳回');
+          const evaluatedReports = completedReports.filter(report => report.status === '已办结'); // 假设已办结的就是已评价的
+
+          console.log('状态统计:', {
+            总数: processedReports.length,
+            处理中: processingReports.length,
+            已办结: completedReports.length,
+            已评价: evaluatedReports.length
+          });
+
+          // 默认显示处理中的记录，如果没有则显示全部
+          const defaultFilteredReports = processingReports.length > 0 ? processingReports : processedReports;
+          const defaultFilter = processingReports.length > 0 ? 'processing' : 'all';
+
+          this.setData({
+            reports: processedReports,
+            filteredReports: defaultFilteredReports,
+            currentFilter: defaultFilter,
+            processingCount: processingReports.length,
+            completedCount: completedReports.length,
+            evaluatedCount: evaluatedReports.length
+          });
+
+          console.log('处理后的举报数据:', processedReports);
+          console.log('当前显示的举报数据:', defaultFilteredReports);
+        } else {
+          console.error('获取举报记录失败:', res.data.message);
+          wx.showToast({
+            title: '获取举报记录失败',
+            icon: 'none'
+          });
+        }
+      },
+      fail: (err) => {
+        console.error('获取举报记录请求失败:', err);
+        this.setData({
+          loading: false
+        });
+        wx.showToast({
+          title: '网络错误',
+          icon: 'none'
+        });
+      }
+    });
+  },
+
+  /**
+   * 筛选举报记录
+   */
+  filterReports(e) {
+    const filter = e.currentTarget.dataset.filter;
+    let filteredReports = [];
+
+    switch (filter) {
+      case 'processing':
+        filteredReports = this.data.reports.filter(report => report.status === '处理中' || report.status === '已分配');
+        break;
+      case 'completed':
+        filteredReports = this.data.reports.filter(report => report.status === '已办结' || report.status === '已驳回');
+        break;
+      case 'evaluated':
+        filteredReports = this.data.reports.filter(report => report.status === '已办结');
+        break;
+      case 'all':
+        filteredReports = this.data.reports;
+        break;
+      default:
+        filteredReports = this.data.reports;
+    }
+
+    console.log(`筛选 ${filter} 状态的记录:`, filteredReports);
+
+    this.setData({
+      currentFilter: filter,
+      filteredReports: filteredReports
     });
   },
 
@@ -94,7 +252,20 @@ Page({
   viewReportDetail(e) {
     const id = e.currentTarget.dataset.id;
     wx.navigateTo({
-      url: `/pages/detail/detail?id=${id}`
+      url: `/pages/report-detail/report-detail?id=${id}&readonly=1`
+    });
+  },
+
+  /**
+   * 查看图片
+   */
+  viewImage(e) {
+    const src = e.currentTarget.dataset.src;
+    const list = e.currentTarget.dataset.list;
+    const urls = Array.isArray(list) ? list : (typeof list === 'string' ? list.split(',') : [src]);
+    wx.previewImage({
+      current: src,
+      urls: urls
     });
   }
 })

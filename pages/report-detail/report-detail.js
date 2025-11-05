@@ -14,7 +14,8 @@ Page({
     loading: true,
     error: '',
     canOperate: false, // 是否可以操作
-    userRole: '' // 用户角色
+    userRole: '', // 用户角色
+    readonly: false // 是否只读（来自个人中心）
   },
 
   /**
@@ -31,8 +32,12 @@ Page({
       return;
     }
 
+    // 解析只读参数（来自个人中心）
+    const readonly = options.readonly === '1' || options.readonly === 'true';
+
     this.setData({
-      reportId: parseInt(id)
+      reportId: parseInt(id),
+      readonly: readonly
     });
 
     // 获取用户角色
@@ -64,8 +69,8 @@ Page({
     let displayRole = 'guest';
 
     if (currentUser && currentUser.role) {
-      // 只有admin角色可以操作
-      canOperate = currentUser.role === 'admin';
+      // 只有admin角色可以操作，且页面非只读
+      canOperate = currentUser.role === 'admin' && !readonly;
       displayRole = currentUser.role;
     } else {
       // 未授权用户无法操作
@@ -140,8 +145,8 @@ Page({
           // 根据用户角色确定权限
           let canOperate = false;
           if (currentUser && currentUser.role) {
-            // 只有admin角色可以操作
-            canOperate = currentUser.role === 'admin';
+            // 只有admin角色可以操作，且页面非只读
+            canOperate = currentUser.role === 'admin' && !this.data.readonly;
           }
 
           this.setData({
@@ -191,6 +196,9 @@ Page({
       'electric': '电气安全隐患',
       'chemical': '化学品安全隐患',
       'mechanical': '机械设备安全隐患',
+      'height': '高空作业安全隐患',
+      'traffic': '交通安全隐患',
+      'environment': '环境安全隐患',
       'other': '其他安全隐患'
     };
     return mapping[type] || type;
@@ -223,9 +231,11 @@ Page({
   // 查看大图
   viewImage(e) {
     const src = e.currentTarget.dataset.src;
+    const list = e.currentTarget.dataset.list;
+    const urls = Array.isArray(list) ? list : (typeof list === 'string' ? list.split(',') : [src]);
     wx.previewImage({
       current: src,
-      urls: [src]
+      urls: urls
     });
   },
 

@@ -59,13 +59,18 @@
             </view>
         </view>
 
-        <!-- 现场照片 -->
-        <view class="photos-section" wx:if="{{report.initial_images && report.initial_images.length > 0}}">
+        <!-- 现场照片：始终显示版块；无照片时显示空态提示 -->
+        <view class="photos-section" wx:if="{{report}}">
             <view class="section-title">现场照片</view>
-            <view class="photos-grid">
-                <view wx:for="{{report.initial_images}}" wx:key="*this" class="photo-item" bindtap="viewImage" data-src="{{item}}">
-                    <image src="{{item}}" mode="aspectFill" class="photo"></image>
+            <view wx:if="{{report.initial_images && report.initial_images.length > 0}}">
+                <view class="photos-grid">
+                    <view wx:for="{{report.initial_images}}" wx:key="*this" class="photo-item" bindtap="viewImage" data-src="{{item}}" data-list="{{report.initial_images}}">
+                        <image src="{{item}}" mode="aspectFill" class="photo"></image>
+                    </view>
                 </view>
+            </view>
+            <view class="photos-empty" wx:if="{{!report.initial_images || report.initial_images.length === 0}}">
+                <text>暂无现场照片</text>
             </view>
         </view>
 

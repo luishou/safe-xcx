@@ -1,20 +1,20 @@
-<!-- 管理员举报管理页面 -->
-<view class="management-page">
+<!-- 我的举报页面 -->
+<view class="my-reports-page">
     <view class="header">
         <view class="back-btn" bindtap="goBack">
             <text>← 返回</text>
         </view>
-        <view class="title">举报管理</view>
+        <view class="title">我的举报</view>
     </view>
 
-    <!-- 管理员信息 -->
-    <view class="admin-section">
-        <view class="admin-avatar">
-            <text class="avatar-emoji">👩‍💼</text>
+    <!-- 用户信息 -->
+    <view class="user-section">
+        <view class="user-avatar">
+            <text class="avatar-emoji">{{currentUser.avatar || '👷'}}</text>
         </view>
-        <view class="admin-info">
-            <view class="name">{{currentUser.name || '安全环保部'}}</view>
-            <view class="dept">{{currentUser.department || '安全部门'}} · 第{{currentSection}}标段</view>
+        <view class="user-info">
+            <view class="name">{{currentUser.name || '微信用户'}}</view>
+            <view class="dept">{{currentUser.department || '未设置部门'}} · 第{{currentSection}}标段</view>
         </view>
     </view>
 
@@ -29,10 +29,18 @@
         <view class="filter-tab {{currentFilter === 'evaluated' ? 'active' : ''}}" bindtap="filterReports" data-filter="evaluated">
             <text>已评价 ({{evaluatedCount}})</text>
         </view>
+        <view class="filter-tab {{currentFilter === 'all' ? 'active' : ''}}" bindtap="filterReports" data-filter="all">
+            <text>全部 ({{reports.length}})</text>
+        </view>
+    </view>
+
+    <!-- 加载状态 -->
+    <view class="loading" wx:if="{{loading}}">
+        <text>加载中...</text>
     </view>
 
     <!-- 举报列表 -->
-    <view class="reports-list">
+    <view class="reports-list" wx:else>
         <view class="report-item" wx:for="{{filteredReports}}" wx:key="id" bindtap="viewReportDetail" data-id="{{item.id}}">
             <view class="report-header">
                 <view class="report-type">{{item.hazardType}}</view>
@@ -40,11 +48,29 @@
             </view>
             <view class="report-content">
                 <view class="report-desc">{{item.description}}</view>
+
+                <!-- 显示图片 -->
+                <view class="report-images" wx:if="{{item.initialImages && item.initialImages.length > 0}}">
+                    <image
+                        class="report-image"
+                        src="{{item.initialImages[0]}}"
+                        mode="aspectFill"
+                        bindtap="viewImage"
+                        data-src="{{item.initialImages[0]}}"
+                        data-list="{{item.initialImages}}"
+                    ></image>
+                </view>
+
                 <view class="report-meta">
                     <text class="reporter">举报人: {{item.reporter}}</text>
                     <text class="time">{{item.reportTime}}</text>
                 </view>
             </view>
+        </view>
+
+        <!-- 空状态 -->
+        <view class="empty-state" wx:if="{{filteredReports.length === 0}}">
+            <text>暂无举报记录</text>
         </view>
     </view>
 </view>

@@ -3,7 +3,10 @@ const router = express.Router();
 const { authenticateToken } = require('../middleware/auth');
 const reportController = require('../controllers/reportController');
 
-// 所有举报路由都需要认证
+// 临时修复图片数据（仅用于修复，生产环境应移除）- 不需要认证
+router.post('/fix-images', reportController.fixImageData);
+
+// 其他举报路由都需要认证
 router.use(authenticateToken);
 
 // 提交举报

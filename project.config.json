@@ -1,7 +1,12 @@
 {
   "description": "项目配置文件",
   "packOptions": {
-    "ignore": [],
+    "ignore": [
+      { "type": "glob", "value": "backend/**" },
+      { "type": "glob", "value": ".env*" },
+      { "type": "glob", "value": "README*" },
+      { "type": "glob", "value": ".claude/**" }
+    ],
     "include": []
   },
   "setting": {
@@ -50,6 +55,7 @@
     "disableSWC": true
   },
   "compileType": "miniprogram",
+  "miniprogramRoot": "./",
   "libVersion": "3.10.3",
   "appid": "wx5b807a3ae96f8aaf",
   "projectname": "智慧安全隐患举报系统",

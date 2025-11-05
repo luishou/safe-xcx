@@ -31,7 +31,7 @@ Page({
     currentPanel: 'tasks',
 
     // 统计筛选
-    statsFilterType: 'month', // month | year | custom
+    statsFilterType: 'all', // all | month | year | custom
     customStartDate: '',
     customEndDate: '',
 
@@ -140,6 +140,15 @@ Page({
           const processingReports = reports.filter(report => report.status === 'processing' || report.status === 'assigned');
           const completedReports = reports.filter(report => report.status === 'completed' || report.status === 'rejected');
 
+          console.log('任务中心状态分类结果:', {
+            总数: reports.length,
+            待处理: pendingReports.length,
+            处理中: processingReports.length,
+            已办结: completedReports.length,
+            待处理状态: pendingReports.map(r => ({ id: r.id, status: r.status })),
+            处理中状态: processingReports.map(r => ({ id: r.id, status: r.status }))
+          });
+
           // 为每个举报添加中文映射
           const mapHazardType = (type) => {
             const mapping = {
@@ -147,6 +156,9 @@ Page({
               'electric': '电气安全隐患',
               'chemical': '化学品安全隐患',
               'mechanical': '机械设备安全隐患',
+              'height': '高空作业安全隐患',
+              'traffic': '交通安全隐患',
+              'environment': '环境安全隐患',
               'other': '其他安全隐患'
             };
             return mapping[type] || type;
@@ -174,6 +186,7 @@ Page({
             return mapping[status] || status;
           };
 
+          const { formatBeijing } = require('../../utils/time.js');
           const processReports = (reports) => {
             return reports.map(report => ({
               ...report,
@@ -181,12 +194,12 @@ Page({
               severity: mapSeverity(report.severity),
               status: mapStatus(report.status),
               reporter: report.reporter_name || '未知',
-              reportTime: report.created_at,
+              reportTime: formatBeijing(report.created_at),
               location: report.location,
               priority: report.severity,
               assignee: report.assignee_name,
-              processTime: report.processed_at,
-              completeTime: report.completed_at,
+              processTime: formatBeijing(report.processed_at),
+              completeTime: formatBeijing(report.completed_at),
               resultType: report.status === 'rejected' ? 'rejected' : 'confirmed'
             }));
           };
@@ -367,7 +380,10 @@ Page({
   computeDateRange(type) {
     const now = new Date();
     let start = new Date();
-    if (type === 'month') {
+    if (type === 'all') {
+      // 显示所有数据，返回null表示不限制时间
+      return { startDate: null, endDate: null };
+    } else if (type === 'month') {
       start = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
     } else if (type === 'year') {
       start = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
@@ -416,23 +432,39 @@ Page({
     }
 
     const range = this.computeDateRange(this.data.statsFilterType);
+    const requestData = {
+      section: currentSection.section_code
+    };
+
+    // 只有当时间范围不为null时才添加时间参数
+    if (range.startDate && range.endDate) {
+      requestData.startDate = range.startDate;
+      requestData.endDate = range.endDate;
+    }
+
+    console.log('统计数据请求参数:', requestData);
+
     wx.request({
       url: app.globalData.baseUrl + '/report/stats',
       method: 'GET',
       header: { 'Authorization': 'Bearer ' + app.globalData.token },
-      data: {
-        section: currentSection.section_code,
-        startDate: range.startDate,
-        endDate: range.endDate
-      },
+      data: requestData,
       success: (res) => {
         if (res.data && res.data.success) {
           const { statusCounts, hazardDistribution, totalReports, resolutionRate } = res.data.data || {};
 
-          // 映射到三类统计卡片
-          const pending = (statusCounts.pending || 0) + (statusCounts.submitted || 0) + (statusCounts.assigned || 0);
-          const processing = (statusCounts.processing || 0);
+          console.log('统计数据返回的状态分布:', statusCounts);
+
+          // 映射到三类统计卡片（与任务中心保持一致）
+          const pending = (statusCounts.pending || 0) + (statusCounts.submitted || 0);
+          const processing = (statusCounts.processing || 0) + (statusCounts.assigned || 0);
           const completed = (statusCounts.completed || 0) + (statusCounts.rejected || 0);
+
+          console.log('统计卡片计算结果:', {
+            pending: `${pending} = (${statusCounts.pending || 0}) + (${statusCounts.submitted || 0})`,
+            processing: `${processing} = (${statusCounts.processing || 0}) + (${statusCounts.assigned || 0})`,
+            completed: `${completed} = (${statusCounts.completed || 0}) + (${statusCounts.rejected || 0})`
+          });
 
           // 将后端的类型分布(count)转为百分比供环形图使用
           const total = hazardDistribution.reduce((sum, item) => sum + (item.count || 0), 0);
@@ -498,5 +530,28 @@ Page({
     wx.navigateTo({
       url: `/pages/report-detail/report-detail?id=${id}&status=${status}`
     });
+  },
+
+  // 刷新所有数据
+  refreshAllData() {
+    wx.showLoading({
+      title: '刷新中...'
+    });
+
+    // 刷新任务中心数据
+    this.loadData();
+
+    // 如果当前在统计面板，也刷新统计数据
+    if (this.data.currentPanel === 'stats') {
+      this.fetchStats();
+    }
+
+    setTimeout(() => {
+      wx.hideLoading();
+      wx.showToast({
+        title: '刷新完成',
+        icon: 'success'
+      });
+    }, 1000);
   }
 })

@@ -150,6 +150,13 @@
     height: 100%;
 }
 
+/* 现场照片空态 */
+.photos-empty {
+    margin-top: 12rpx;
+    color: #9ca3af;
+    font-size: 26rpx;
+}
+
 /* 操作按钮区域 */
 .action-buttons {
     display: flex;

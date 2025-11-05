@@ -147,15 +147,196 @@
   color: #9ca3af;
 }
 
+/* 我的举报页面 */
+.my-reports-page {
+  background: #f8f9fa;
+  min-height: 100vh;
+}
+
+/* 顶部 */
+.header {
+  display: flex;
+  align-items: center;
+  padding: 20rpx 32rpx;
+  background: white;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.back-btn {
+  color: #6b7280;
+  font-size: 28rpx;
+  margin-right: 24rpx;
+}
+
+.title {
+  font-size: 36rpx;
+  font-weight: bold;
+  color: #1f2937;
+}
+
+/* 用户信息 */
+.user-section {
+  background: white;
+  margin: 24rpx;
+  padding: 40rpx 32rpx;
+  border-radius: 16rpx;
+  display: flex;
+  align-items: center;
+  box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.06);
+}
+
+.user-avatar {
+  width: 100rpx;
+  height: 100rpx;
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 24rpx;
+}
+
+.avatar-emoji {
+  font-size: 48rpx;
+}
+
+.user-info {
+  flex: 1;
+}
+
+.name {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #1f2937;
+  margin-bottom: 8rpx;
+}
+
+.dept {
+  font-size: 26rpx;
+  color: #6b7280;
+}
+
+/* 状态筛选 */
+.filter-tabs {
+  display: flex;
+  margin: 0 24rpx 24rpx;
+  background: white;
+  border-radius: 16rpx;
+  padding: 8rpx;
+  box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.06);
+}
+
+.filter-tab {
+  flex: 1;
+  text-align: center;
+  padding: 16rpx 8rpx;
+  font-size: 24rpx;
+  color: #6b7280;
+  border-radius: 12rpx;
+  transition: all 0.3s;
+}
+
+.filter-tab.active {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  font-weight: bold;
+}
+
+/* 举报列表 */
+.reports-list {
+  margin: 0 24rpx;
+}
+
+.report-item {
+  background: white;
+  border-radius: 16rpx;
+  padding: 32rpx;
+  margin-bottom: 16rpx;
+  box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.06);
+}
+
+.report-item:active {
+  transform: scale(0.98);
+  transition: transform 0.1s;
+}
+
+.report-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16rpx;
+}
+
+.report-type {
+  font-size: 30rpx;
+  font-weight: bold;
+  color: #1f2937;
+  flex: 1;
+}
+
+.report-priority {
+  background: #ef4444;
+  color: white;
+  font-size: 24rpx;
+  padding: 6rpx 12rpx;
+  border-radius: 16rpx;
+  margin-left: 16rpx;
+}
+
+.report-content {
+
+}
+
+.report-desc {
+  font-size: 28rpx;
+  color: #4b5563;
+  line-height: 1.5;
+  margin-bottom: 16rpx;
+}
+
+/* 图片样式 */
+.report-images {
+  margin: 16rpx 0;
+}
+
+.report-image {
+  width: 160rpx;
+  height: 160rpx;
+  border-radius: 12rpx;
+  object-fit: cover;
+}
+
+.report-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 24rpx;
+  color: #9ca3af;
+}
+
+.reporter {
+  color: #6b7280;
+}
+
+.time {
+
+}
+
+/* 加载状态 */
+.loading {
+  text-align: center;
+  padding: 80rpx 0;
+  color: #9ca3af;
+  font-size: 28rpx;
+}
+
 /* 空状态 */
-.empty {
+.empty-state {
   text-align: center;
   padding: 80rpx 0;
   background: white;
   border-radius: 16rpx;
-}
-
-.empty-text {
-  font-size: 28rpx;
+  margin: 0 24rpx;
   color: #9ca3af;
+  font-size: 28rpx;
 }

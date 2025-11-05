@@ -134,12 +134,15 @@ Page({
         });
 
         if (res.data.success) {
+          const { formatBeijing } = require('../../utils/time.js');
           console.log('获取举报记录成功:', res.data.data.reports);
           // 为每个举报添加中文映射
           const reportsWithMapping = res.data.data.reports.map(report => ({
             ...report,
             hazard_type_cn: this.mapHazardType(report.hazard_type),
-            status_cn: this.mapStatus(report.status)
+            status_cn: this.mapStatus(report.status),
+            created_at: formatBeijing(report.created_at),
+            updated_at: formatBeijing(report.updated_at)
           }));
 
           // 前端双保险：仅保留本人举报
@@ -208,7 +211,7 @@ Page({
     const id = e.currentTarget.dataset.id;
     console.log('点击举报详情，ID:', id);
     wx.navigateTo({
-      url: `/pages/report-detail/report-detail?id=${id}`
+      url: `/pages/report-detail/report-detail?id=${id}&readonly=1`
     });
   }
 })

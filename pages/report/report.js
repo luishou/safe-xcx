@@ -94,16 +94,47 @@ Page({
    * 选择图片
    */
   chooseImage() {
+    // 仅允许上传一张图片
+    if (this.data.photos.length >= 1) {
+      wx.showToast({
+        title: '仅允许上传一张照片',
+        icon: 'none'
+      });
+      return;
+    }
+
     const that = this;
     wx.chooseImage({
-      count: 6 - this.data.photos.length,
+      count: 1 - this.data.photos.length,
       sizeType: ['compressed'],
       sourceType: ['album', 'camera'],
       success(res) {
         console.log('选择图片成功:', res.tempFilePaths);
+        // 只取第一张图片并在必要时进行压缩再上传
+        const firstPath = res.tempFilePaths[0];
+        const firstFile = res.tempFiles && res.tempFiles[0];
 
-        // 上传每张图片到后端
-        that.uploadImages(res.tempFilePaths);
+        // 如果原始大小超过5MB，先压缩再上传
+        const FIVE_MB = 5 * 1024 * 1024;
+        if (firstFile && firstFile.size > FIVE_MB) {
+          console.log('图片超过5MB，开始压缩');
+          wx.compressImage({
+            src: firstPath,
+            quality: 60,
+            success: (cmp) => {
+              console.log('压缩成功，路径:', cmp.tempFilePath);
+              that.uploadImages([cmp.tempFilePath]);
+            },
+            fail: (err) => {
+              console.error('压缩失败:', err);
+              // 压缩失败则尝试直接上传
+              that.uploadImages([firstPath]);
+            }
+          });
+        } else {
+          // 直接上传
+          that.uploadImages([firstPath]);
+        }
       }
     });
   },
@@ -124,7 +155,10 @@ Page({
       title: '上传图片中...'
     });
 
-    const uploadPromises = tempFilePaths.map(tempFilePath => {
+    // 仅上传第一张图片
+    const limitedPaths = (tempFilePaths || []).slice(0, 1);
+
+    const uploadPromises = limitedPaths.map(tempFilePath => {
       return new Promise((resolve, reject) => {
         wx.uploadFile({
           url: app.globalData.baseUrl + '/upload/image',
@@ -133,7 +167,28 @@ Page({
           header: {
             'Authorization': 'Bearer ' + app.globalData.token
           },
+          timeout: 30000,
           success: (res) => {
+            // 先检查HTTP状态码
+            const status = res.statusCode;
+            if (status !== 200) {
+              let msg = '上传失败';
+              // 尝试解析返回体
+              try {
+                const payload = JSON.parse(res.data || '{}');
+                msg = payload.message || msg;
+              } catch (e) {
+                // 保留默认
+              }
+              // 根据常见状态码提示更清晰信息
+              if (status === 401 || status === 403) msg = '登录已过期，请重新登录';
+              if (status === 413) msg = '图片过大（>5MB），请压缩后重试';
+              console.error('图片上传失败，status:', status, 'message:', msg);
+              reject(new Error(msg));
+              return;
+            }
+
+            // 状态码200，解析业务返回
             try {
               const data = JSON.parse(res.data);
               if (data.success) {
@@ -141,7 +196,7 @@ Page({
                 resolve(data.data.url);
               } else {
                 console.error('图片上传失败:', data.message);
-                reject(new Error(data.message));
+                reject(new Error(data.message || '上传失败'));
               }
             } catch (err) {
               console.error('解析上传响应失败:', err);
@@ -150,7 +205,8 @@ Page({
           },
           fail: (err) => {
             console.error('图片上传请求失败:', err);
-            reject(err);
+            const msg = (err && err.errMsg) ? ('上传失败：' + err.errMsg) : '上传失败，请稍后重试';
+            reject(new Error(msg));
           }
         });
       });
@@ -160,8 +216,10 @@ Page({
       .then(imageUrls => {
         wx.hideLoading();
         const photos = this.data.photos.concat(imageUrls);
+        // 只保留第一张照片
+        const limited = photos.slice(0, 1);
         this.setData({
-          photos: photos
+          photos: limited
         });
         console.log('所有图片上传成功:', imageUrls);
         wx.showToast({
@@ -173,7 +231,7 @@ Page({
         wx.hideLoading();
         console.error('图片上传失败:', err);
         wx.showToast({
-          title: '图片上传失败',
+          title: err.message || '图片上传失败',
           icon: 'none'
         });
       });
@@ -326,13 +384,13 @@ Page({
   // 映射隐患类型
   mapHazardType(type) {
     const mapping = {
-      '高空作业安全隐患': 'mechanical',
+      '高空作业安全隐患': 'height',
       '电气安全隐患': 'electric',
       '机械设备安全隐患': 'mechanical',
       '消防安全隐患': 'fire',
       '化学品安全隐患': 'chemical',
-      '交通安全隐患': 'other',
-      '环境安全隐患': 'other',
+      '交通安全隐患': 'traffic',
+      '环境安全隐患': 'environment',
       '其他安全隐患': 'other'
     };
     return mapping[type] || 'other';

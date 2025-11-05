@@ -1,4 +1,5 @@
 const pool = require('../config/database');
+const { formatDateTimeBeijing } = require('../utils/time');
 
 class ReportController {
   // 提交举报
@@ -134,10 +135,16 @@ class ReportController {
         ${whereClause}
       `, params);
 
+      const formattedRows = rows.map((r) => ({
+        ...r,
+        created_at: formatDateTimeBeijing(r.created_at),
+        updated_at: formatDateTimeBeijing(r.updated_at)
+      }));
+
       res.json({
         success: true,
         data: {
-          reports: rows,
+          reports: formattedRows,
           pagination: {
             total: countRows[0].total,
             page: parseInt(page),
@@ -195,36 +202,58 @@ class ReportController {
       const safeParseJSON = (jsonString) => {
         try {
           if (!jsonString) return [];
-          
+
+          // 如果已经是数组，直接返回
+          if (Array.isArray(jsonString)) {
+            return jsonString;
+          }
+
+          console.log('尝试解析JSON数据:', jsonString);
+
           // 如果是字符串，先尝试直接解析
           let cleanedString = jsonString;
-          
-          // 如果包含反引号，尝试清理数据
-          if (typeof jsonString === 'string' && jsonString.includes('`')) {
-            console.log('检测到包含反引号的数据，尝试清理:', jsonString);
-            
-            // 移除反引号并清理空格
-            cleanedString = jsonString
-              .replace(/`/g, '"')  // 将反引号替换为双引号
-              .replace(/\s+/g, ' ') // 规范化空格
-              .trim();
-            
-            // 如果数据看起来像是数组格式但格式不正确，尝试修复
+
+          // 处理JavaScript数组格式（单引号问题）
+          if (typeof jsonString === 'string') {
+            // 如果包含反引号，尝试清理数据
+            if (jsonString.includes('`')) {
+              console.log('检测到包含反引号的数据，尝试清理:', jsonString);
+
+              // 移除反引号并清理空格
+              cleanedString = jsonString
+                .replace(/`/g, '"')  // 将反引号替换为双引号
+                .replace(/\s+/g, ' ') // 规范化空格
+                .trim();
+            }
+
+            // 处理JavaScript数组的单引号问题 [ 'url' ] -> [ "url" ]
             if (cleanedString.startsWith('[') && cleanedString.endsWith(']')) {
-              // 尝试提取URL并重新构建数组
-              const urlMatch = cleanedString.match(/https?:\/\/[^\s"'`]+/g);
-              if (urlMatch) {
+              console.log('检测到JavaScript数组格式，尝试修复:', cleanedString);
+
+              // 先尝试简单的单引号替换
+              try {
+                cleanedString = cleanedString.replace(/'/g, '"');
+                const testParsed = JSON.parse(cleanedString);
+                console.log('通过单引号替换成功解析:', testParsed);
+                return Array.isArray(testParsed) ? testParsed : [];
+              } catch (e) {
+                console.log('单引号替换失败，尝试更复杂的修复');
+              }
+
+              // 如果简单替换失败，尝试提取URL并重新构建有效的JSON数组
+              const urlMatch = cleanedString.match(/https?:\/\/[^\s"'\]]+/g);
+              if (urlMatch && urlMatch.length > 0) {
                 cleanedString = JSON.stringify(urlMatch);
-                console.log('修复后的数据:', cleanedString);
+                console.log('通过URL提取修复后的JSON数据:', cleanedString);
               }
             }
           }
-          
+
           const parsed = JSON.parse(cleanedString);
           return Array.isArray(parsed) ? parsed : [];
         } catch (error) {
           console.error('JSON解析失败:', error, '原始数据:', jsonString);
-          
+
           // 最后的尝试：如果数据看起来包含URL，尝试提取URL
           if (typeof jsonString === 'string') {
             const urlMatch = jsonString.match(/https?:\/\/[^\s"'`\]]+/g);
@@ -233,16 +262,28 @@ class ReportController {
               return urlMatch;
             }
           }
-          
+
           return [];
         }
       };
 
+      // 格式化时间字段为北京时间
+      const formattedReport = {
+        ...report,
+        created_at: formatDateTimeBeijing(report.created_at),
+        updated_at: formatDateTimeBeijing(report.updated_at)
+      };
+
+      const formattedHistory = (historyRows || []).map(h => ({
+        ...h,
+        created_at: formatDateTimeBeijing(h.created_at)
+      }));
+
       res.json({
         success: true,
         data: {
-          ...report,
-          history: historyRows,
+          ...formattedReport,
+          history: formattedHistory,
           initial_images: safeParseJSON(report.initial_images),
           rectified_images: safeParseJSON(report.rectified_images)
         }
@@ -563,39 +604,52 @@ class ReportController {
         return res.status(400).json({ success: false, message: '请提供标段代码 section' });
       }
 
-      // 时间范围处理：默认近一月
-      const end = endDate ? new Date(endDate) : new Date();
-      const start = startDate ? new Date(startDate) : new Date(end.getTime() - 30 * 24 * 60 * 60 * 1000);
+      // 时间范围处理
+      let whereClause = 'WHERE section = ?';
+      const params = [section];
+      let start, end; // 声明在外面以便后续使用
 
-      // 规范化为 MySQL DATETIME 格式
-      const toMySQLDateTime = (d) => new Date(d).toISOString().slice(0, 19).replace('T', ' ');
-      const startStr = toMySQLDateTime(start);
-      const endStr = toMySQLDateTime(end);
+      console.log('统计接口请求参数:', { section, startDate, endDate });
+
+      if (startDate && endDate) {
+        // 如果提供了时间范围，则添加时间条件
+        end = new Date(endDate);
+        start = new Date(startDate);
+
+        // 规范化为 MySQL DATETIME 格式（用于查询范围）
+        const toMySQLDateTime = (d) => new Date(d).toISOString().slice(0, 19).replace('T', ' ');
+        const startStr = toMySQLDateTime(start);
+        const endStr = toMySQLDateTime(end);
+
+        whereClause += ' AND created_at BETWEEN ? AND ?';
+        params.push(startStr, endStr);
+
+        console.log('使用时间范围:', { start: startStr, end: endStr });
+      } else {
+        // 如果没有提供时间范围，使用当前时间作为范围显示
+        end = new Date();
+        start = new Date(2020, 0, 1); // 2020年1月1日作为起始时间
+        console.log('使用默认时间范围（全部数据）');
+      }
 
       // 状态数量汇总
-      const [statusRows] = await pool.execute(
-        `SELECT status, COUNT(*) AS count
-         FROM reports
-         WHERE section = ? AND created_at BETWEEN ? AND ?
-         GROUP BY status`,
-        [section, startStr, endStr]
-      );
+      const statusQuery = `SELECT status, COUNT(*) AS count FROM reports ${whereClause} GROUP BY status`;
+      console.log('状态查询SQL:', statusQuery);
+      console.log('查询参数:', params);
+      const [statusRows] = await pool.execute(statusQuery, params);
 
       // 隐患类型分布
-      const [hazardRows] = await pool.execute(
-        `SELECT hazard_type AS type, COUNT(*) AS count
-         FROM reports
-         WHERE section = ? AND created_at BETWEEN ? AND ?
-         GROUP BY hazard_type`,
-        [section, startStr, endStr]
-      );
+      const hazardQuery = `SELECT hazard_type AS type, COUNT(*) AS count FROM reports ${whereClause} GROUP BY hazard_type`;
+      const [hazardRows] = await pool.execute(hazardQuery, params);
 
-      const [totalRows] = await pool.execute(
-        `SELECT COUNT(*) AS total
-         FROM reports
-         WHERE section = ? AND created_at BETWEEN ? AND ?`,
-        [section, startStr, endStr]
-      );
+      const totalQuery = `SELECT COUNT(*) AS total FROM reports ${whereClause}`;
+      const [totalRows] = await pool.execute(totalQuery, params);
+
+      console.log('查询结果:', {
+        状态统计: statusRows,
+        类型统计: hazardRows,
+        总数: totalRows[0]?.total
+      });
 
       const total = (totalRows && totalRows[0] && totalRows[0].total) ? totalRows[0].total : 0;
 
@@ -618,6 +672,12 @@ class ReportController {
       const completedOrRejected = statusCounts.completed + statusCounts.rejected;
       const resolutionRate = total > 0 ? Math.round((completedOrRejected / total) * 100) : 0;
 
+      // 返回北京时间格式的范围
+      const range = {
+        start: formatDateTimeBeijing(start),
+        end: formatDateTimeBeijing(end)
+      };
+
       res.json({
         success: true,
         data: {
@@ -625,7 +685,7 @@ class ReportController {
           hazardDistribution,
           totalReports: total,
           resolutionRate,
-          range: { start: startStr, end: endStr }
+          range
         }
       });
     } catch (error) {
@@ -636,3 +696,115 @@ class ReportController {
 }
 
 module.exports = new ReportController();
+
+// 临时修复数据的方法
+module.exports.fixImageData = async (req, res) => {
+  try {
+    console.log('开始修复图片数据...');
+
+    // 获取所有包含initial_images的记录
+    const [rows] = await pool.execute(`
+      SELECT id, initial_images, rectified_images
+      FROM reports
+      WHERE initial_images IS NOT NULL OR rectified_images IS NOT NULL
+    `);
+
+    console.log(`找到 ${rows.length} 条记录需要检查`);
+
+    let fixedCount = 0;
+
+    for (const row of rows) {
+      console.log(`处理记录 ID: ${row.id}`);
+
+      let needUpdate = false;
+      let newInitialImages = row.initial_images;
+      let newRectifiedImages = row.rectified_images;
+
+      // 修复initial_images
+      if (row.initial_images) {
+        const fixedImages = fixImageArray(row.initial_images);
+        if (fixedImages !== row.initial_images) {
+          newInitialImages = fixedImages;
+          needUpdate = true;
+          console.log(`修复 initial_images: ${row.initial_images} -> ${fixedImages}`);
+        }
+      }
+
+      // 修复rectified_images
+      if (row.rectified_images) {
+        const fixedImages = fixImageArray(row.rectified_images);
+        if (fixedImages !== row.rectified_images) {
+          newRectifiedImages = fixedImages;
+          needUpdate = true;
+          console.log(`修复 rectified_images: ${row.rectified_images} -> ${fixedImages}`);
+        }
+      }
+
+      // 如果需要更新，执行更新
+      if (needUpdate) {
+        await pool.execute(`
+          UPDATE reports
+          SET initial_images = ?, rectified_images = ?
+          WHERE id = ?
+        `, [newInitialImages, newRectifiedImages, row.id]);
+
+        fixedCount++;
+        console.log(`✓ 更新记录 ID: ${row.id}`);
+      }
+    }
+
+    console.log(`✅ 修复完成！共修复 ${fixedCount} 条记录`);
+
+    res.json({
+      success: true,
+      message: `修复完成！共检查 ${rows.length} 条记录，修复 ${fixedCount} 条记录`
+    });
+
+  } catch (error) {
+    console.error('修复失败:', error);
+    res.status(500).json({
+      success: false,
+      message: '修复失败',
+      error: error.message
+    });
+  }
+};
+
+function fixImageArray(data) {
+  if (!data) return null;
+
+  // 如果已经是数组，转换为JSON字符串
+  if (Array.isArray(data)) {
+    return JSON.stringify(data);
+  }
+
+  // 如果是字符串
+  if (typeof data === 'string') {
+    try {
+      // 尝试直接解析JSON
+      JSON.parse(data);
+      return data; // 如果解析成功，说明已经是有效JSON
+    } catch (e) {
+      // 解析失败，尝试修复
+
+      // 处理JavaScript数组格式 [ 'url' ] -> ["url"]
+      if (data.startsWith('[') && data.endsWith(']')) {
+        // 将单引号替换为双引号
+        let fixed = data.replace(/'/g, '"');
+
+        try {
+          JSON.parse(fixed); // 验证修复后的数据
+          return fixed;
+        } catch (e2) {
+          // 如果还是失败，尝试提取URL
+          const urlMatch = data.match(/https?:\/\/[^\s"'\]]+/g);
+          if (urlMatch && urlMatch.length > 0) {
+            return JSON.stringify(urlMatch);
+          }
+        }
+      }
+    }
+  }
+
+  return data; // 如果无法修复，返回原数据
+}

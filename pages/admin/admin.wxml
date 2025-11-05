@@ -30,10 +30,16 @@
     <!-- 统计面板 -->
     <view class="stats-panel" wx:if="{{currentPanel === 'stats'}}">
         <!-- 筛选时间 -->
-        <view class="filter-bar">
-            <view class="filter-option {{statsFilterType === 'month' ? 'active' : ''}}" data-type="month" bindtap="onChangeStatsFilter">近一月</view>
-            <view class="filter-option {{statsFilterType === 'year' ? 'active' : ''}}" data-type="year" bindtap="onChangeStatsFilter">近一年</view>
-            <view class="filter-option {{statsFilterType === 'custom' ? 'active' : ''}}" data-type="custom" bindtap="onChangeStatsFilter">自定义</view>
+        <view class="filter-header">
+            <view class="filter-bar">
+                <view class="filter-option {{statsFilterType === 'all' ? 'active' : ''}}" data-type="all" bindtap="onChangeStatsFilter">全部</view>
+                <view class="filter-option {{statsFilterType === 'month' ? 'active' : ''}}" data-type="month" bindtap="onChangeStatsFilter">近一月</view>
+                <view class="filter-option {{statsFilterType === 'year' ? 'active' : ''}}" data-type="year" bindtap="onChangeStatsFilter">近一年</view>
+                <view class="filter-option {{statsFilterType === 'custom' ? 'active' : ''}}" data-type="custom" bindtap="onChangeStatsFilter">自定义</view>
+            </view>
+            <view class="refresh-btn" bindtap="refreshAllData">
+                <text>刷新数据</text>
+            </view>
         </view>
 
         <!-- 自定义日期范围选择 -->

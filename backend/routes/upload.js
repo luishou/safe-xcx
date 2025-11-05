@@ -38,39 +38,56 @@ const upload = multer({
   }
 });
 
-// 图片上传接口
-router.post('/image', authenticateToken, upload.single('image'), (req, res) => {
-  try {
-    if (!req.file) {
+// 图片上传接口（带错误捕获，更明确的状态码与信息）
+router.post('/image', authenticateToken, (req, res) => {
+  upload.single('image')(req, res, (err) => {
+    if (err) {
+      // 处理multer错误
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        return res.status(413).json({
+          success: false,
+          message: '图片过大，超过5MB限制'
+        });
+      }
+      // 非multer错误
       return res.status(400).json({
         success: false,
-        message: '没有上传文件'
+        message: err.message || '上传失败'
       });
     }
 
-    // 构建文件访问URL - 优先使用环境变量中的BASE_URL
-    const baseUrl = process.env.BASE_URL || `${req.protocol}://${req.get('host')}`;
-    const fileUrl = `${baseUrl}/uploads/${req.file.filename}`;
-
-    res.json({
-      success: true,
-      message: '文件上传成功',
-      data: {
-        filename: req.file.filename,
-        originalName: req.file.originalname,
-        size: req.file.size,
-        url: fileUrl,
-        localPath: req.file.path
+    try {
+      if (!req.file) {
+        return res.status(400).json({
+          success: false,
+          message: '没有上传文件'
+        });
       }
-    });
-  } catch (error) {
-    console.error('文件上传失败:', error);
-    res.status(500).json({
-      success: false,
-      message: '文件上传失败',
-      error: error.message
-    });
-  }
+
+      // 构建文件访问URL - 优先使用环境变量中的BASE_URL
+      const baseUrl = process.env.BASE_URL || `${req.protocol}://${req.get('host')}`;
+      const fileUrl = `${baseUrl}/uploads/${req.file.filename}`;
+
+      res.json({
+        success: true,
+        message: '文件上传成功',
+        data: {
+          filename: req.file.filename,
+          originalName: req.file.originalname,
+          size: req.file.size,
+          url: fileUrl,
+          localPath: req.file.path
+        }
+      });
+    } catch (error) {
+      console.error('文件上传失败:', error);
+      res.status(500).json({
+        success: false,
+        message: '文件上传失败',
+        error: error.message
+      });
+    }
+  });
 });
 
 // 多图片上传接口

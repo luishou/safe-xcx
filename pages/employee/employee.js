@@ -156,6 +156,7 @@ Page({
             return mapping[status] || status;
           };
 
+          const { formatBeijing } = require('../../utils/time.js');
           const processReports = (reports) => {
             return reports.map(report => ({
               ...report,
@@ -163,12 +164,12 @@ Page({
               severity: mapSeverity(report.severity),
               status: mapStatus(report.status),
               reporter: report.reporter_name || '未知',
-              reportTime: report.created_at,
+              reportTime: formatBeijing(report.created_at),
               location: report.location,
               priority: report.severity,
               assignee: report.assignee_name,
-              processTime: report.processed_at,
-              completeTime: report.completed_at,
+              processTime: formatBeijing(report.processed_at),
+              completeTime: formatBeijing(report.completed_at),
               resultType: report.status === 'rejected' ? 'rejected' : 'confirmed'
             }));
           };

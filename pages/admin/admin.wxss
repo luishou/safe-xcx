@@ -77,10 +77,26 @@
     padding: 24rpx;
 }
 
+.filter-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16rpx;
+}
+
 .filter-bar {
     display: flex;
     gap: 16rpx;
-    margin-bottom: 16rpx;
+    flex: 1;
+}
+
+.refresh-btn {
+    background: #10b981;
+    color: white;
+    padding: 16rpx 24rpx;
+    border-radius: 12rpx;
+    font-size: 24rpx;
+    margin-left: 16rpx;
 }
 
 .filter-option {
@@ -88,8 +104,9 @@
     background: #eef2ff;
     color: #4f46e5;
     text-align: center;
-    padding: 20rpx 16rpx;
+    padding: 16rpx 8rpx;
     border-radius: 12rpx;
+    font-size: 24rpx;
 }
 
 .filter-option.active {
