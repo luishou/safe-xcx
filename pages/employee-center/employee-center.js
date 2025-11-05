@@ -124,7 +124,8 @@ Page({
         'Authorization': 'Bearer ' + app.globalData.token
       },
       data: {
-        section: sectionCode
+        section: sectionCode,
+        ownOnly: true
       },
       success: (res) => {
         this.setData({
@@ -140,8 +141,12 @@ Page({
             status_cn: this.mapStatus(report.status)
           }));
 
+          // 前端双保险：仅保留本人举报
+          const currentUser = app.globalData.currentUser || {};
+          const myReports = reportsWithMapping.filter(r => r.reporter_id === currentUser.id || r.reporter_openid === currentUser.openid);
+
           this.setData({
-            reports: reportsWithMapping
+            reports: myReports
           });
         } else {
           console.error('获取举报记录失败:', res.data.message);

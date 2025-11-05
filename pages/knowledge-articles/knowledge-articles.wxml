@@ -1,0 +1,17 @@
+<!-- 安全知识文章管理 -->
+<view class="page">
+  <view class="top-nav">
+    <view class="back-btn" bindtap="goBack"><text>← 返回</text></view>
+    <view class="title">{{categoryName}} - 安全知识管理</view>
+  </view>
+
+  <scroll-view class="content" scroll-y="true">
+    <!-- 分类与安全知识统一编辑 -->
+    <view class="form-card">
+      <view class="form-title">分类与安全知识</view>
+      <input class="input" placeholder="安全分类" value="{{category.name}}" bindinput="onCategoryNameInput" />
+      <textarea class="textarea" placeholder="请输入安全知识内容" value="{{knowledge.content}}" bindinput="onKnowledgeInput" />
+      <button class="primary-btn" bindtap="saveAll">保存</button>
+    </view>
+  </scroll-view>
+</view>

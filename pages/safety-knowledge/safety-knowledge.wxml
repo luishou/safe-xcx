@@ -25,60 +25,19 @@
         <view class="categories-section">
             <view class="section-title">安全知识分类</view>
             <view class="categories-grid">
-                <!-- 消防安全 -->
-                <view class="category-item fire" bindtap="showCategory" data-category="fire">
-                    <view class="category-icon">🔥</view>
-                    <text class="category-name">消防安全</text>
-                </view>
-
-                <!-- 用电安全 -->
-                <view class="category-item electric" bindtap="showCategory" data-category="electric">
-                    <view class="category-icon">⚡</view>
-                    <text class="category-name">用电安全</text>
-                </view>
-
-                <!-- 设备安全 -->
-                <view class="category-item mechanical" bindtap="showCategory" data-category="mechanical">
-                    <view class="category-icon">⚙️</view>
-                    <text class="category-name">设备安全</text>
-                </view>
-
-                <!-- 高处作业 -->
-                <view class="category-item height" bindtap="showCategory" data-category="height">
-                    <view class="category-icon">🏔️</view>
-                    <text class="category-name">高处作业</text>
-                </view>
-
-                <!-- 临边防护 -->
-                <view class="category-item edge" bindtap="showCategory" data-category="edge">
-                    <view class="category-icon">📏</view>
-                    <text class="category-name">临边防护</text>
-                </view>
-
-                <!-- 环境保护 -->
-                <view class="category-item environment" bindtap="showCategory" data-category="environment">
-                    <view class="category-icon">🌿</view>
-                    <text class="category-name">环境保护</text>
-                </view>
-
-                <!-- 防护装备 -->
-                <view class="category-item ppe" bindtap="showCategory" data-category="ppe">
-                    <view class="category-icon">👷</view>
-                    <text class="category-name">防护装备</text>
-                </view>
-
-                <!-- 其他安全 -->
-                <view class="category-item other" bindtap="showCategory" data-category="other">
-                    <view class="category-icon">➕</view>
-                    <text class="category-name">其他安全</text>
-                </view>
+                <block wx:for="{{categories}}" wx:key="id">
+                    <view class="category-item" bindtap="showCategory" data-id="{{item.id}}" data-name="{{item.name}}">
+                        <view class="category-icon">{{item.icon || '📚'}}</view>
+                        <text class="category-name">{{item.name}}</text>
+                    </view>
+                </block>
             </view>
         </view>
 
         <!-- 知识内容显示区域 -->
-        <view class="knowledge-content-section {{showContent ? 'show' : ''}}" wx:if="{{selectedCategory}}">
+        <view class="knowledge-content-section {{showContent ? 'show' : ''}}" wx:if="{{selectedCategoryId}}">
             <view class="content-header">
-                <text class="content-title">{{categoryTitle}}</text>
+                <text class="content-title">{{selectedCategoryName}}</text>
                 <view class="close-btn" bindtap="closeCategory">
                     <text>✕</text>
                 </view>
@@ -104,43 +63,6 @@
             </view>
         </view>
 
-        <!-- 安全须知 -->
-        <view class="notice-section">
-            <view class="section-title">安全须知</view>
-            <view class="notice-card">
-                <view class="notice-item">
-                    <text class="notice-icon">⚠️</text>
-                    <text class="notice-text">进入施工现场必须佩戴安全帽</text>
-                </view>
-                <view class="notice-item">
-                    <text class="notice-icon">👷</text>
-                    <text class="notice-text">高空作业必须系好安全带</text>
-                </view>
-                <view class="notice-item">
-                    <text class="notice-icon">🔥</text>
-                    <text class="notice-text">严禁在施工现场吸烟和使用明火</text>
-                </view>
-                <view class="notice-item">
-                    <text class="notice-icon">⚡</text>
-                    <text class="notice-text">用电设备必须有可靠接地保护</text>
-                </view>
-                <view class="notice-item">
-                    <text class="notice-icon">🚧</text>
-                    <text class="notice-text">危险区域必须设置警示标志</text>
-                </view>
-                <view class="notice-item">
-                    <text class="notice-icon">📋</text>
-                    <text class="notice-text">特种作业人员必须持证上岗</text>
-                </view>
-                <view class="notice-item">
-                    <text class="notice-icon">🛡️</text>
-                    <text class="notice-text">正确使用个人防护用品</text>
-                </view>
-                <view class="notice-item">
-                    <text class="notice-icon">🔍</text>
-                    <text class="notice-text">发现隐患及时报告处理</text>
-                </view>
-            </view>
-        </view>
+        <!-- 安全须知模块已移除，内容改由后端维护的安全知识提供 -->
     </scroll-view>
 </view>

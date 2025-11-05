@@ -54,16 +54,14 @@ Page({
                 'Authorization': 'Bearer ' + app.globalData.token
             },
             data: {
-                section: currentSection.section_code
+                section: currentSection.section_code,
+                ownOnly: true
             },
             success: (res) => {
                 if (res.data.success) {
-                    const reports = res.data.data.reports;
-                    const userReports = reports.filter(report =>
-                        report.reporter_openid === app.globalData.currentUser.openid
-                    );
+                    const total = res.data.data.pagination?.total || (res.data.data.reports?.length || 0);
                     this.setData({
-                        myReportsCount: userReports.length
+                        myReportsCount: total
                     });
                 } else {
                     console.error('获取举报记录失败:', res.data.message);

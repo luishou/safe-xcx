@@ -12,7 +12,9 @@
     "pages/profile/profile",
     "pages/employee-center/employee-center",
     "pages/report-detail/report-detail",
-    "pages/safety-knowledge/safety-knowledge"
+    "pages/safety-knowledge/safety-knowledge",
+    "pages/knowledge-admin/knowledge-admin",
+    "pages/knowledge-articles/knowledge-articles"
   ],
   "window": {
     "backgroundTextStyle": "light",

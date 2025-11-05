@@ -67,6 +67,11 @@
     color: #374151;
 }
 
+/* 选中状态淡色背景 */
+.icon-card.selected {
+    background: #eef2ff;
+}
+
 /* 统计面板 */
 .stats-panel {
     padding: 24rpx;
@@ -163,6 +168,12 @@
 .section-title { font-size: 28rpx; color: #374151; margin-bottom: 8rpx; }
 .chart-container { background: white; border-radius: 16rpx; padding: 16rpx; box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.06); }
 .pie-chart { display: block; margin: 0 auto; }
+
+/* 饼图图例 */
+.chart-legend { display: flex; flex-wrap: wrap; gap: 12rpx 24rpx; margin-top: 12rpx; }
+.legend-item { display: flex; align-items: center; gap: 8rpx; }
+.legend-color { width: 20rpx; height: 20rpx; border-radius: 4rpx; box-shadow: 0 1rpx 3rpx rgba(0,0,0,0.1); }
+.legend-label { font-size: 24rpx; color: #374151; }
 
 /* 状态标签 */
 .status-tabs {

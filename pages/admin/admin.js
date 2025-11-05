@@ -272,13 +272,11 @@ Page({
 
     const systemInfo = wx.getSystemInfoSync();
     const screenWidth = systemInfo.screenWidth;
-    const pixelRatio = systemInfo.pixelRatio || 1;
-    const canvasSize = screenWidth * 0.8;
-    const actualSize = canvasSize * pixelRatio;
+    const canvasSize = Math.round(screenWidth * 0.72);
 
     this.setData({
-      canvasWidth: actualSize,
-      canvasHeight: actualSize
+      canvasWidth: canvasSize,
+      canvasHeight: canvasSize
     });
 
     setTimeout(() => {
@@ -290,9 +288,7 @@ Page({
   drawPieChart() {
     if (!this.data.hazardDistribution || this.data.hazardDistribution.length === 0) return;
 
-    const systemInfo = wx.getSystemInfoSync();
-    const pixelRatio = systemInfo.pixelRatio || 1;
-    const canvasSize = this.data.canvasWidth / pixelRatio;
+    const canvasSize = this.data.canvasWidth;
     const centerX = canvasSize / 2;
     const centerY = canvasSize / 2;
     const radius = canvasSize * 0.35;
@@ -342,6 +338,11 @@ Page({
     ctx.stroke();
 
     ctx.draw(true);
+  },
+
+  // 进入安全知识管理
+  goKnowledgeAdmin() {
+    wx.navigateTo({ url: '/pages/knowledge-admin/knowledge-admin' });
   },
 
   goBack: function() {

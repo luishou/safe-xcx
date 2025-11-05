@@ -1,0 +1,21 @@
+/* 简洁管理样式 */
+.page { background: #f8f9fa; min-height: 100vh; }
+.top-nav { display:flex; align-items:center; padding:20rpx 32rpx; background:#fff; border-bottom:1px solid #e5e7eb; }
+.back-btn { color:#6b7280; font-size:28rpx; margin-right:24rpx; }
+.title { font-size:36rpx; font-weight:bold; color:#1f2937; }
+.content { height: calc(100vh - 88rpx); padding: 24rpx; }
+
+.form-card, .list-card { background:#fff; border-radius:16rpx; padding:24rpx; box-shadow:0 2rpx 8rpx rgba(0,0,0,0.06); margin-bottom:24rpx; }
+.form-title, .list-title { font-size:32rpx; font-weight:600; color:#1f2937; margin-bottom:16rpx; }
+.input { background:#f3f4f6; border-radius:12rpx; padding:20rpx; margin-bottom:16rpx; font-size:28rpx; }
+.primary-btn { background:#3b82f6; color:#fff; border-radius:12rpx; padding:20rpx; }
+.primary-btn:active { opacity:.85; }
+
+.category-row { display:flex; justify-content:space-between; align-items:center; padding:20rpx 0; border-bottom:1px solid #e5e7eb; }
+.category-row:last-child { border-bottom:none; }
+.left { display:flex; align-items:center; }
+.name { font-size:28rpx; color:#374151; }
+.right { display:flex; gap:12rpx; }
+.mini-btn { background:#eef2ff; color:#111827; }
+.mini-btn.danger { background:#fee2e2; color:#b91c1c; }
+.empty { text-align:center; color:#6b7280; padding:40rpx 0; }

@@ -11,6 +11,7 @@ const userRoutes = require('./routes/user');
 const reportRoutes = require('./routes/report');
 const sectionRoutes = require('./routes/section');
 const uploadRoutes = require('./routes/upload');
+const safetyRoutes = require('./routes/safety');
 
 const app = express();
 const PORT = process.env.PORT || 3300;
@@ -29,6 +30,7 @@ app.use('/api/user', userRoutes);
 app.use('/api/report', reportRoutes);
 app.use('/api/section', sectionRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/safety', safetyRoutes);
 
 // 健康检查
 app.get('/health', (req, res) => {

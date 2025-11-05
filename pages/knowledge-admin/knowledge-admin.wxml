@@ -1,0 +1,32 @@
+<!-- 安全知识分类管理 -->
+<view class="page">
+  <view class="top-nav">
+    <view class="back-btn" bindtap="goBack"><text>← 返回</text></view>
+    <view class="title">安全知识 - 分类管理</view>
+  </view>
+
+  <scroll-view class="content" scroll-y="true">
+    <view class="form-card">
+      <view class="form-title">新增分类</view>
+      <input class="input" placeholder="分类名称" value="{{form.name}}" bindinput="onNameInput" />
+      <input class="input" placeholder="描述(可选)" value="{{form.description}}" bindinput="onDescInput" />
+      <button class="primary-btn" bindtap="createCategory">新增分类</button>
+    </view>
+
+    <view class="list-card">
+      <view class="list-title">分类列表</view>
+      <block wx:for="{{categories}}" wx:key="id">
+        <view class="category-row">
+          <view class="left" bindtap="openArticles" data-id="{{item.id}}" data-name="{{item.name}}">
+            <text class="name">{{item.name}}</text>
+          </view>
+          <view class="right">
+            <button class="mini-btn" size="mini" data-id="{{item.id}}" bindtap="editCategory">编辑</button>
+            <button class="mini-btn danger" size="mini" data-id="{{item.id}}" bindtap="deleteCategory">删除</button>
+          </view>
+        </view>
+      </block>
+      <view class="empty" wx:if="{{categories.length === 0}}">暂无分类</view>
+    </view>
+  </scroll-view>
+</view>

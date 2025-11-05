@@ -79,7 +79,7 @@ class ReportController {
   // 获取举报列表
   async getReports(req, res) {
     try {
-      const { page = 1, limit = 20, status, section, severity } = req.query;
+      const { page = 1, limit = 20, status, section, severity, ownOnly } = req.query;
       const offset = (page - 1) * limit;
 
       let whereClause = 'WHERE 1=1';
@@ -102,6 +102,12 @@ class ReportController {
 
       // 普通用户只能看自己的举报
       if (req.user.role === 'employee') {
+        whereClause += ' AND reporter_id = ?';
+        params.push(req.user.userId);
+      }
+
+      // 若指定仅查看本人，强制过滤，无论角色
+      if (ownOnly === 'true') {
         whereClause += ' AND reporter_id = ?';
         params.push(req.user.userId);
       }

@@ -10,13 +10,20 @@
 
     <!-- 顶部图标菜单：统计 / 任务中心 -->
     <view class="icon-menu">
-        <view class="icon-card" bindtap="showStatsPanel">
+        <!-- 左侧：任务中心 -->
+        <view class="icon-card {{currentPanel === 'tasks' ? 'selected' : ''}}" bindtap="showTasksPanel">
+            <text class="icon-emoji">🗂️</text>
+            <text class="icon-label">任务中心</text>
+        </view>
+        <!-- 右侧：统计 -->
+        <view class="icon-card {{currentPanel === 'stats' ? 'selected' : ''}}" bindtap="showStatsPanel">
             <text class="icon-emoji">📈</text>
             <text class="icon-label">统计</text>
         </view>
-        <view class="icon-card" bindtap="showTasksPanel">
-            <text class="icon-emoji">🗂️</text>
-            <text class="icon-label">任务中心</text>
+        <!-- 新增：安全知识管理入口 -->
+        <view class="icon-card" bindtap="goKnowledgeAdmin">
+            <text class="icon-emoji">📚</text>
+            <text class="icon-label">安全知识</text>
         </view>
     </view>
 
@@ -73,6 +80,14 @@
             <view class="section-title">隐患类型分布</view>
             <view class="chart-container">
                 <canvas class="pie-chart" canvas-id="adminPieChart" style="width: {{canvasWidth || 300}}px; height: {{canvasHeight || 300}}px;"></canvas>
+                <view class="chart-legend" wx:if="{{hazardDistribution && hazardDistribution.length > 0}}">
+                    <block wx:for="{{hazardDistribution}}" wx:key="name">
+                        <view class="legend-item">
+                            <view class="legend-color" style="background: {{item.color}};"></view>
+                            <text class="legend-label">{{item.name}} {{item.percentage}}%</text>
+                        </view>
+                    </block>
+                </view>
             </view>
         </view>
     </view>

@@ -6,7 +6,7 @@ App({
     currentSection: null,
     sections: [], // 标段列表
     notifications: [],
-    baseUrl: 'https://safe.sulei.xyz/api', // 后端接口地址
+    baseUrl: 'http://localhost:3300/api', // 后端接口地址
     token: null, // JWT token
     db: {
       users: {
