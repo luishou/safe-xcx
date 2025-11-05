@@ -7,7 +7,7 @@ App({
     sections: [], // 标段列表
     notifications: [],
     //baseUrl: 'http://localhost:3300/api', // 后端接口地址
-    baseUrl: 'https://safe.sulei.xyz/api', 
+    baseUrl: 'https://safe.luishou.top/api', 
     token: null, // JWT token
     db: {
       users: {
@@ -201,7 +201,16 @@ App({
         if (res.data && res.data.success) {
           console.log('Token验证成功');
           console.log('验证后的用户信息:', JSON.stringify(res.data.data.user, null, 2));
-          this.globalData.currentUser = res.data.data.user;
+
+          // 映射字段名以保持一致性
+          const user = res.data.data.user;
+          this.globalData.currentUser = {
+            ...user,
+            name: user.nickName, // 将nickName映射为name
+            department: user.department || '未设置部门',
+            avatar: user.avatarUrl || '👷'
+          };
+          console.log('映射后的用户信息:', JSON.stringify(this.globalData.currentUser, null, 2));
         } else {
           console.log('Token验证失败，清除本地存储');
           console.log('失败原因:', res.data ? res.data.message : '未知错误');

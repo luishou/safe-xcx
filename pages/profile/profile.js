@@ -10,14 +10,25 @@ Page({
     },
 
     onLoad: function (options) {
+        console.log('个人中心页面加载，当前用户信息:', app.globalData.currentUser);
+        console.log('微信用户信息:', app.globalData.userInfo);
+
+        // 合并用户信息，优先使用currentUser，fallback到userInfo
+        const currentUser = app.globalData.currentUser;
+        const wechatUserInfo = app.globalData.userInfo;
+
+        const mergedUser = {
+            name: currentUser?.name || wechatUserInfo?.nickName || '微信用户',
+            role: currentUser?.role || 'employee',
+            department: currentUser?.department || '未设置部门',
+            avatar: currentUser?.avatar || wechatUserInfo?.avatarUrl || '👷',
+            phone: currentUser?.phone || '138****1234'
+        };
+
+        console.log('合并后的用户信息:', mergedUser);
+
         this.setData({
-            currentUser: app.globalData.currentUser || {
-                name: '员工',
-                role: 'employee',
-                department: '生产车间',
-                avatar: '👷',
-                phone: '138****1234'
-            },
+            currentUser: mergedUser,
             currentSection: app.globalData.currentSection || 'TJ01'
         })
 
@@ -30,10 +41,50 @@ Page({
     },
 
     onShow: function () {
+        console.log('个人中心页面显示，当前用户信息:', app.globalData.currentUser);
+        console.log('微信用户信息:', app.globalData.userInfo);
+
+        // 合并用户信息，优先使用currentUser，fallback到userInfo
+        const currentUser = app.globalData.currentUser;
+        const wechatUserInfo = app.globalData.userInfo;
+
+        const mergedUser = {
+            // 使用登录后的用户信息，如果不存在则使用微信用户信息
+            name: currentUser?.name || wechatUserInfo?.nickName || '微信用户',
+            role: currentUser?.role || 'employee',
+            department: currentUser?.department || '未设置部门',
+            avatar: currentUser?.avatar || wechatUserInfo?.avatarUrl || '👷',
+            phone: currentUser?.phone || '138****1234'
+        };
+
+        console.log('合并后的用户信息:', mergedUser);
+
         this.setData({
-            currentUser: app.globalData.currentUser,
-            currentSection: app.globalData.currentSection
+            currentUser: mergedUser,
+            currentSection: app.globalData.currentSection || 'TJ01'
         })
+
+        // 如果还没有登录用户信息，延迟检查一下（等待token验证完成）
+        if (!currentUser) {
+            console.log('登录用户信息还未加载，延迟检查...');
+            setTimeout(() => {
+                console.log('延迟检查后的登录用户信息:', app.globalData.currentUser);
+                if (app.globalData.currentUser) {
+                    const updatedUser = {
+                        ...mergedUser,
+                        name: app.globalData.currentUser.name || mergedUser.name,
+                        role: app.globalData.currentUser.role || mergedUser.role,
+                        department: app.globalData.currentUser.department || mergedUser.department,
+                        avatar: app.globalData.currentUser.avatar || mergedUser.avatar,
+                        phone: app.globalData.currentUser.phone || mergedUser.phone
+                    };
+                    this.setData({
+                        currentUser: updatedUser
+                    });
+                }
+            }, 1000);
+        }
+
         this.loadMyReportsCount()
     },
 
