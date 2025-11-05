@@ -22,7 +22,13 @@
     <!-- 举报记录 -->
     <view class="reports-section">
         <view class="section-header">举报记录</view>
-        <view class="report-list">
+        <!-- 加载状态 -->
+        <view class="loading" wx:if="{{loading}}">
+            <text class="loading-text">加载中…</text>
+        </view>
+
+        <!-- 举报列表，仅在加载完成后显示 -->
+        <view class="report-list" wx:if="{{!loading}}">
             <view class="report-item" wx:for="{{reports}}" wx:key="id" bindtap="viewReportDetail" data-id="{{item.id}}">
                 <view class="report-row">
                     <view class="report-type">{{item.hazard_type_cn}}</view>
@@ -36,8 +42,8 @@
             </view>
         </view>
 
-        <!-- 空状态 -->
-        <view class="empty" wx:if="{{reports.length === 0}}">
+        <!-- 空状态，仅在加载完成后判断显示 -->
+        <view class="empty" wx:if="{{!loading && reports.length === 0}}">
             <text class="empty-text">暂无举报记录</text>
         </view>
     </view>

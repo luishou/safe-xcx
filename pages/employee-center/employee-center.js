@@ -116,6 +116,7 @@ Page({
     this.setData({
       loading: true
     });
+    wx.showNavigationBarLoading();
 
     wx.request({
       url: app.globalData.baseUrl + '/report/list',
@@ -165,6 +166,9 @@ Page({
           title: '网络错误',
           icon: 'none'
         });
+      },
+      complete: () => {
+        wx.hideNavigationBarLoading();
       }
     });
   },

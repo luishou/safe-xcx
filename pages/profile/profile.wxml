@@ -28,7 +28,12 @@
                 <text>我的举报</text>
             </view>
             <view class="menu-right">
-                <text class="count">{{myReportsCount}}</text>
+                <block wx:if="{{isLoadingMyReports}}">
+                    <text class="loading-text">加载中…</text>
+                </block>
+                <block wx:else>
+                    <text class="count">{{myReportsCount}}</text>
+                </block>
                 <text class="iconfont icon-chevron-right"></text>
             </view>
         </view>

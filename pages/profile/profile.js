@@ -5,7 +5,8 @@ Page({
     data: {
         currentUser: null,
         currentSection: '',
-        myReportsCount: 0
+        myReportsCount: 0,
+        isLoadingMyReports: false
     },
 
     onLoad: function (options) {
@@ -42,11 +43,14 @@ Page({
 
         if (!app.globalData.token || !currentSection) {
             this.setData({
-                myReportsCount: 0
+                myReportsCount: 0,
+                isLoadingMyReports: false
             });
             return;
         }
 
+        this.setData({ isLoadingMyReports: true });
+        wx.showNavigationBarLoading();
         wx.request({
             url: app.globalData.baseUrl + '/report/list',
             method: 'GET',
@@ -75,6 +79,10 @@ Page({
                 this.setData({
                     myReportsCount: 0
                 });
+            },
+            complete: () => {
+                this.setData({ isLoadingMyReports: false });
+                wx.hideNavigationBarLoading();
             }
         });
     },
