@@ -12,6 +12,9 @@ router.post('/submit', reportController.submitReport);
 // 获取举报列表
 router.get('/list', reportController.getReports);
 
+// 获取统计数据
+router.get('/stats', reportController.getStats);
+
 // 获取举报详情
 router.get('/:id', reportController.getReportDetail);
 

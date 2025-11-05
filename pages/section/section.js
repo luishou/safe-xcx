@@ -4,7 +4,8 @@ const app = getApp()
 Page({
     data: {
         section: '',
-        sectionInfo: null
+        sectionInfo: null,
+        isAdmin: false
     },
 
     onLoad: function (options) {
@@ -35,10 +36,20 @@ Page({
         wx.setNavigationBarTitle({
             title: sectionInfo ? sectionInfo.section_name : `第${sectionCode}标段`
         })
+
+        // 初始化角色标识
+        this.updateRoleFlags();
     },
 
     goBack: function() {
         wx.navigateBack()
+    },
+
+    // 根据全局用户信息更新角色标识
+    updateRoleFlags: function() {
+        const currentUser = app.globalData.currentUser;
+        const isAdmin = !!(currentUser && currentUser.role === 'admin');
+        this.setData({ isAdmin });
     },
 
     directToReport: function() {
@@ -100,6 +111,43 @@ Page({
         wx.navigateTo({
             url: `/pages/employee-center/employee-center?section=${this.data.section}`
         })
+    },
+
+    // 仅管理员可见的菜单点击，进入安全环保部
+    goToAdmin: function() {
+        // 检查是否已授权登录
+        if (!app.globalData.currentUser) {
+            wx.showToast({
+                title: '请先授权登录',
+                icon: 'none',
+                duration: 2000
+            });
+            return;
+        }
+
+        const currentUser = app.globalData.currentUser;
+        if (currentUser.role !== 'admin') {
+            wx.showToast({
+                title: '权限不足，仅管理员可访问',
+                icon: 'none',
+                duration: 2000
+            });
+            return;
+        }
+
+        // 设置标段信息
+        if (this.data.sectionInfo) {
+            app.globalData.currentSection = this.data.sectionInfo;
+        } else {
+            app.globalData.currentSection = {
+                section_code: this.data.section,
+                section_name: `第${this.data.section}标段`
+            };
+        }
+
+        wx.navigateTo({
+            url: '/pages/admin/admin'
+        });
     },
 
     loginAs: function(e) {
@@ -188,7 +236,8 @@ Page({
     },
 
     onShow: function () {
-        // 页面显示
+        // 页面显示时同步角色标识
+        this.updateRoleFlags();
     },
 
     onHide: function () {

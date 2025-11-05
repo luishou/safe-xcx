@@ -539,6 +539,94 @@ class ReportController {
       });
     }
   }
+
+  // 统计接口：按标段与时间范围返回状态数量与隐患类型分布
+  async getStats(req, res) {
+    try {
+      const { section, startDate, endDate } = req.query;
+
+      // 权限检查：仅管理员可访问
+      if (!req.user) {
+        return res.status(401).json({ success: false, message: '请先登录' });
+      }
+      if (req.user.role !== 'admin') {
+        return res.status(403).json({ success: false, message: '权限不足，只有安全管理部可以访问统计数据' });
+      }
+
+      if (!section) {
+        return res.status(400).json({ success: false, message: '请提供标段代码 section' });
+      }
+
+      // 时间范围处理：默认近一月
+      const end = endDate ? new Date(endDate) : new Date();
+      const start = startDate ? new Date(startDate) : new Date(end.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+      // 规范化为 MySQL DATETIME 格式
+      const toMySQLDateTime = (d) => new Date(d).toISOString().slice(0, 19).replace('T', ' ');
+      const startStr = toMySQLDateTime(start);
+      const endStr = toMySQLDateTime(end);
+
+      // 状态数量汇总
+      const [statusRows] = await pool.execute(
+        `SELECT status, COUNT(*) AS count
+         FROM reports
+         WHERE section = ? AND created_at BETWEEN ? AND ?
+         GROUP BY status`,
+        [section, startStr, endStr]
+      );
+
+      // 隐患类型分布
+      const [hazardRows] = await pool.execute(
+        `SELECT hazard_type AS type, COUNT(*) AS count
+         FROM reports
+         WHERE section = ? AND created_at BETWEEN ? AND ?
+         GROUP BY hazard_type`,
+        [section, startStr, endStr]
+      );
+
+      const [totalRows] = await pool.execute(
+        `SELECT COUNT(*) AS total
+         FROM reports
+         WHERE section = ? AND created_at BETWEEN ? AND ?`,
+        [section, startStr, endStr]
+      );
+
+      const total = (totalRows && totalRows[0] && totalRows[0].total) ? totalRows[0].total : 0;
+
+      const statusCounts = {
+        submitted: 0,
+        pending: 0,
+        assigned: 0,
+        processing: 0,
+        completed: 0,
+        rejected: 0
+      };
+      statusRows.forEach(row => {
+        if (statusCounts.hasOwnProperty(row.status)) {
+          statusCounts[row.status] = row.count;
+        }
+      });
+
+      const hazardDistribution = hazardRows.map(row => ({ type: row.type || 'other', count: row.count }));
+
+      const completedOrRejected = statusCounts.completed + statusCounts.rejected;
+      const resolutionRate = total > 0 ? Math.round((completedOrRejected / total) * 100) : 0;
+
+      res.json({
+        success: true,
+        data: {
+          statusCounts,
+          hazardDistribution,
+          totalReports: total,
+          resolutionRate,
+          range: { start: startStr, end: endStr }
+        }
+      });
+    } catch (error) {
+      console.error('获取统计数据失败:', error);
+      res.status(500).json({ success: false, message: '获取统计数据失败', error: error.message });
+    }
+  }
 }
 
 module.exports = new ReportController();

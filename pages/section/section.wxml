@@ -27,8 +27,8 @@
             <text class="font-bold text-lg">个人中心</text>
         </view>
 
-        <!-- 安全环保部 -->
-        <view class="bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl p-6 text-white transition-all duration-300 hover:shadow-xl hover:scale-105 flex flex-col items-center justify-center" bindtap="loginAs" data-role="admin">
+        <!-- 安全环保部（仅管理员可见） -->
+        <view wx:if="{{isAdmin}}" class="bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl p-6 text-white transition-all duration-300 hover:shadow-xl hover:scale-105 flex flex-col items-center justify-center" bindtap="goToAdmin">
             <text class="text-4xl mb-3">🛡️</text>
             <text class="font-bold text-lg">安全环保部</text>
         </view>

@@ -8,8 +8,77 @@
         <view class="nav-title">第{{currentSection.section_name || currentSection}}标段 - 安全环保部</view>
     </view>
 
+    <!-- 顶部图标菜单：统计 / 任务中心 -->
+    <view class="icon-menu">
+        <view class="icon-card" bindtap="showStatsPanel">
+            <text class="icon-emoji">📈</text>
+            <text class="icon-label">统计</text>
+        </view>
+        <view class="icon-card" bindtap="showTasksPanel">
+            <text class="icon-emoji">🗂️</text>
+            <text class="icon-label">任务中心</text>
+        </view>
+    </view>
+
+    <!-- 统计面板 -->
+    <view class="stats-panel" wx:if="{{currentPanel === 'stats'}}">
+        <!-- 筛选时间 -->
+        <view class="filter-bar">
+            <view class="filter-option {{statsFilterType === 'month' ? 'active' : ''}}" data-type="month" bindtap="onChangeStatsFilter">近一月</view>
+            <view class="filter-option {{statsFilterType === 'year' ? 'active' : ''}}" data-type="year" bindtap="onChangeStatsFilter">近一年</view>
+            <view class="filter-option {{statsFilterType === 'custom' ? 'active' : ''}}" data-type="custom" bindtap="onChangeStatsFilter">自定义</view>
+        </view>
+
+        <!-- 自定义日期范围选择 -->
+        <view class="custom-range" wx:if="{{statsFilterType === 'custom'}}">
+            <picker mode="date" value="{{customStartDate}}" bindchange="onStartDateChange">
+                <view class="date-picker">开始日期：{{customStartDate || '请选择'}}</view>
+            </picker>
+            <picker mode="date" value="{{customEndDate}}" bindchange="onEndDateChange">
+                <view class="date-picker">结束日期：{{customEndDate || '请选择'}}</view>
+            </picker>
+            <button class="apply-btn" bindtap="applyCustomFilter">应用</button>
+        </view>
+
+        <!-- 状态数量汇总 -->
+        <view class="status-summary">
+            <view class="summary-card pending">
+                <view class="sum-label">待处理</view>
+                <view class="sum-count">{{statsPendingCount}}</view>
+            </view>
+            <view class="summary-card processing">
+                <view class="sum-label">处理中</view>
+                <view class="sum-count">{{statsProcessingCount}}</view>
+            </view>
+            <view class="summary-card completed">
+                <view class="sum-label">已办结</view>
+                <view class="sum-count">{{statsCompletedCount}}</view>
+            </view>
+        </view>
+
+        <!-- 概览指标 -->
+        <view class="overview-row">
+            <view class="overview-item">
+                <view class="overview-label">总举报数</view>
+                <view class="overview-value">{{totalReports}}</view>
+            </view>
+            <view class="overview-item">
+                <view class="overview-label">解决率</view>
+                <view class="overview-value">{{resolutionRate}}%</view>
+            </view>
+        </view>
+
+        <!-- 隐患类型分布（饼图） -->
+        <view class="hazard-chart-section">
+            <view class="section-title">隐患类型分布</view>
+            <view class="chart-container">
+                <canvas class="pie-chart" canvas-id="adminPieChart" style="width: {{canvasWidth || 300}}px; height: {{canvasHeight || 300}}px;"></canvas>
+            </view>
+        </view>
+    </view>
+
     <!-- 状态切换标签 -->
-    <view class="status-tabs">
+    <view class="status-tabs" wx:if="{{currentPanel === 'tasks'}}">
         <view class="status-tab {{currentTab === 'pending' ? 'active' : ''}}" bindtap="switchTab" data-tab="pending">
             <text class="tab-count">{{pendingCount}}</text>
             <text class="tab-label">待处理</text>
@@ -25,7 +94,7 @@
     </view>
 
     <!-- 举报工单列表 -->
-    <view class="reports-container">
+    <view class="reports-container" wx:if="{{currentPanel === 'tasks'}}">
         <!-- 待处理列表 -->
         <view class="reports-list" wx:if="{{currentTab === 'pending'}}">
             <view wx:for="{{pendingReports}}" wx:key="id" class="report-item pending-item" bindtap="showReportDetail" data-id="{{item.id}}">
