@@ -125,7 +125,7 @@ class ReportController {
           location, section, status, assigned_to, created_at, updated_at
         FROM reports
         ${whereClause}
-        ORDER BY created_at DESC
+        ORDER BY updated_at DESC
         LIMIT ? OFFSET ?
       `, [...params, parseInt(limit), offset]);
 
@@ -394,12 +394,19 @@ class ReportController {
   async completeReport(req, res) {
     try {
       const { id } = req.params;
-      const { rectified_images } = req.body;
+      const { rectified_images, plan } = req.body;
 
       if (!rectified_images || rectified_images.length === 0) {
         return res.status(400).json({
           success: false,
           message: '请提供整改图片'
+        });
+      }
+
+      if (!plan || plan.trim() === '') {
+        return res.status(400).json({
+          success: false,
+          message: '请提供处理方案'
         });
       }
 
@@ -429,10 +436,12 @@ class ReportController {
           UPDATE reports
           SET status = 'completed',
               rectified_images = ?,
+              plan = ?,
               updated_at = ?
           WHERE id = ?
         `, [
           JSON.stringify(rectified_images),
+          plan,
           new Date(),
           id
         ]);

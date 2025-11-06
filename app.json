@@ -6,7 +6,6 @@
     "pages/admin/admin",
     "pages/employee/employee",
     "pages/report/report",
-    "pages/detail/detail",
     "pages/stats/stats",
     "pages/my-reports/my-reports",
     "pages/profile/profile",

@@ -8,6 +8,7 @@ App({
     notifications: [],
     //baseUrl: 'http://localhost:3300/api', // 后端接口地址
     baseUrl: 'https://safe.luishou.top/api', 
+    //baseUrl: 'https://safe.sulei.xyz/api', 
     token: null, // JWT token
     db: {
       users: {

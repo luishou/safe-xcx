@@ -576,7 +576,14 @@ Page({
                     wx.setStorageSync('token', res.data.data.token);
                     wx.setStorageSync('userInfo', authData.userInfo);
                     app.globalData.token = res.data.data.token;
-                    app.globalData.currentUser = res.data.data.user;
+                    // 映射后端返回的用户信息，统一字段名
+                    const backendUser = res.data.data.user;
+                    app.globalData.currentUser = {
+                        ...backendUser,
+                        name: backendUser.nickName || backendUser.name,
+                        avatar: backendUser.avatarUrl || backendUser.avatar,
+                        department: backendUser.department || '未设置部门'
+                    };
 
                     wx.hideLoading();
                     wx.showToast({
@@ -645,7 +652,14 @@ Page({
                 if (res.data.success) {
                     // 保存到全局数据
                     app.globalData.userInfo = userInfo;
-                    app.globalData.currentUser = res.data.data.user;
+                    // 映射后端返回的用户信息，统一字段名
+                    const backendUser = res.data.data.user;
+                    app.globalData.currentUser = {
+                        ...backendUser,
+                        name: backendUser.nickName || backendUser.name,
+                        avatar: backendUser.avatarUrl || backendUser.avatar,
+                        department: backendUser.department || '未设置部门'
+                    };
                     app.globalData.token = res.data.data.token;
 
                     // 保存到本地存储
@@ -660,7 +674,8 @@ Page({
 
                     console.log('页面数据更新完成:', {
                         isAuthorized: true,
-                        userInfo: userInfo
+                        userInfo: userInfo,
+                        currentUser: app.globalData.currentUser
                     });
 
                     wx.showToast({

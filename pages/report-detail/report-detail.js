@@ -10,6 +10,7 @@ Page({
     statusText: '待处理',
     statusClass: 'status-pending',
     rectifiedImages: [],
+    processingPlan: '', // 处理方案
     report: null,
     loading: true,
     error: '',
@@ -316,8 +317,25 @@ Page({
     });
   },
 
+  // 处理方案输入
+  onPlanInput(e) {
+    this.setData({
+      processingPlan: e.detail.value
+    });
+  },
+
   // 完成办结
   completeReport() {
+    // 检查处理方案
+    if (!this.data.processingPlan || this.data.processingPlan.trim() === '') {
+      wx.showToast({
+        title: '请填写处理方案',
+        icon: 'none'
+      });
+      return;
+    }
+
+    // 检查处理照片
     if (this.data.rectifiedImages.length === 0) {
       wx.showToast({
         title: '请上传处理照片',
@@ -404,7 +422,8 @@ Page({
             'Content-Type': 'application/json'
           },
           data: {
-            rectified_images: filePaths
+            rectified_images: filePaths,
+            plan: this.data.processingPlan
           },
           success: (res) => {
             wx.hideLoading();

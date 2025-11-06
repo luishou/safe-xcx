@@ -18,10 +18,10 @@ Page({
         const wechatUserInfo = app.globalData.userInfo;
 
         const mergedUser = {
-            name: currentUser?.name || wechatUserInfo?.nickName || '微信用户',
+            name: currentUser?.name || currentUser?.nickName || wechatUserInfo?.nickName || '微信用户',
             role: currentUser?.role || 'employee',
             department: currentUser?.department || '未设置部门',
-            avatar: currentUser?.avatar || wechatUserInfo?.avatarUrl || '👷',
+            avatar: currentUser?.avatar || currentUser?.avatarUrl || wechatUserInfo?.avatarUrl || '👷',
             phone: currentUser?.phone || '138****1234'
         };
 
@@ -50,10 +50,10 @@ Page({
 
         const mergedUser = {
             // 使用登录后的用户信息，如果不存在则使用微信用户信息
-            name: currentUser?.name || wechatUserInfo?.nickName || '微信用户',
+            name: currentUser?.name || currentUser?.nickName || wechatUserInfo?.nickName || '微信用户',
             role: currentUser?.role || 'employee',
             department: currentUser?.department || '未设置部门',
-            avatar: currentUser?.avatar || wechatUserInfo?.avatarUrl || '👷',
+            avatar: currentUser?.avatar || currentUser?.avatarUrl || wechatUserInfo?.avatarUrl || '👷',
             phone: currentUser?.phone || '138****1234'
         };
 

@@ -109,7 +109,7 @@
 }
 
 /* 描述区域 */
-.description-section, .photos-section, .actions-section {
+.description-section, .photos-section, .actions-section, .plan-section {
     background: white;
     margin: 0 24rpx 24rpx;
     padding: 32rpx;
@@ -128,6 +128,19 @@
     font-size: 28rpx;
     color: #4b5563;
     line-height: 1.6;
+}
+
+/* 处理方案内容 */
+.plan-content {
+    font-size: 28rpx;
+    color: #374151;
+    line-height: 1.6;
+    background: #f8fafc;
+    padding: 24rpx;
+    border-radius: 12rpx;
+    border-left: 4rpx solid #3b82f6;
+    white-space: pre-wrap;
+    word-break: break-word;
 }
 
 /* 照片区域 */
@@ -214,7 +227,7 @@
 }
 
 /* 处理中状态的上传区域 */
-.upload-section, .remark-section {
+.upload-section, .remark-section, .plan-input-section {
     margin-bottom: 32rpx;
 }
 
@@ -292,6 +305,39 @@
     line-height: 1.5;
 }
 
+/* 处理方案输入框样式 */
+.plan-textarea {
+    width: 100%;
+    min-height: 200rpx;
+    padding: 20rpx;
+    border: 2rpx solid #e5e7eb;
+    border-radius: 16rpx;
+    font-size: 28rpx;
+    color: #374151;
+    line-height: 1.6;
+    background: #fafafa;
+    transition: border-color 0.3s ease;
+    box-sizing: border-box;
+}
+
+.plan-textarea:focus {
+    border-color: #3b82f6;
+    background: #ffffff;
+    box-shadow: 0 0 0 4rpx rgba(59, 130, 246, 0.1);
+}
+
+.char-count {
+    text-align: right;
+    font-size: 22rpx;
+    color: #9ca3af;
+    margin-top: 8rpx;
+}
+
+.required {
+    color: #ef4444;
+    margin-left: 4rpx;
+}
+
 .complete-btn {
     width: 100%;
     padding: 32rpx;
@@ -358,6 +404,29 @@
 
 .conclusion-photos {
     margin-bottom: 24rpx;
+}
+
+.conclusion-plan {
+    margin-bottom: 24rpx;
+}
+
+.conclusion-subtitle {
+    font-size: 26rpx;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 12rpx;
+}
+
+.conclusion-plan-content {
+    font-size: 28rpx;
+    color: #4b5563;
+    line-height: 1.6;
+    background: #f8fafc;
+    padding: 20rpx;
+    border-radius: 12rpx;
+    border-left: 3rpx solid #3b82f6;
+    white-space: pre-wrap;
+    word-break: break-word;
 }
 
 .conclusion-text {
