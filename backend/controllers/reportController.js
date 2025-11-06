@@ -285,7 +285,8 @@ class ReportController {
           ...formattedReport,
           history: formattedHistory,
           initial_images: safeParseJSON(report.initial_images),
-          rectified_images: safeParseJSON(report.rectified_images)
+          rectified_images: safeParseJSON(report.rectified_images),
+          plan: report.plan
         }
       });
     } catch (error) {

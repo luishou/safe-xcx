@@ -74,16 +74,10 @@
             </view>
         </view>
 
-          <!-- 处理方案 - 已办结状态显示 -->
+          <!-- 处理结论 - 已办结状态显示 -->
         <view class="conclusion-section" wx:if="{{report.status === 'completed' && (report.rectified_images || report.plan)}}">
-            <view class="section-title">处理方案</view>
+            <view class="section-title">处理结论</view>
             <view class="conclusion-card">
-                <!-- 处理方案内容 -->
-                <view class="conclusion-plan" wx:if="{{report.plan}}">
-                    <view class="conclusion-subtitle">处理方案</view>
-                    <view class="conclusion-plan-content">{{report.plan}}</view>
-                </view>
-
                 <!-- 整改照片 -->
                 <view class="conclusion-photos" wx:if="{{report.rectified_images && report.rectified_images.length > 0}}">
                     <view class="conclusion-subtitle">整改照片</view>
@@ -94,10 +88,16 @@
                     </view>
                 </view>
 
-                <!-- 处理结果 -->
+                <!-- 处理方案 -->
+                <view class="conclusion-plan" wx:if="{{report.plan}}">
+                    <view class="conclusion-subtitle">处理方案</view>
+                    <view class="conclusion-plan-content">{{report.plan}}</view>
+                </view>
+
+                <!-- 处理结论文字 -->
                 <view class="conclusion-text">
-                    <text class="conclusion-label">处理结果：</text>
-                    <text class="conclusion-content">隐患已整改完成</text>
+                    <text class="conclusion-label">处理结论：</text>
+                    <text class="conclusion-content">{{report.plan}}</text>
                 </view>
             </view>
         </view>
