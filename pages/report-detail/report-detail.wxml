@@ -88,16 +88,10 @@
                     </view>
                 </view>
 
-                <!-- 处理方案 -->
-                <view class="conclusion-plan" wx:if="{{report.plan}}">
+                <!-- 处理方案（保留字段标签，仅在有值时显示内容） -->
+                <view class="conclusion-plan" wx:if="{{report.status === 'completed'}}">
                     <view class="conclusion-subtitle">处理方案</view>
-                    <view class="conclusion-plan-content">{{report.plan}}</view>
-                </view>
-
-                <!-- 处理结论文字 -->
-                <view class="conclusion-text">
-                    <text class="conclusion-label">处理结论：</text>
-                    <text class="conclusion-content">{{report.plan}}</text>
+                    <view class="conclusion-plan-content" wx:if="{{report.plan}}">{{report.plan}}</view>
                 </view>
             </view>
         </view>

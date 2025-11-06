@@ -122,7 +122,7 @@ class ReportController {
       const [rows] = await pool.execute(`
         SELECT
           id, reporter_name, description, hazard_type, severity,
-          location, section, status, assigned_to, created_at, updated_at
+          location, section, status, assigned_to, plan, created_at, updated_at
         FROM reports
         ${whereClause}
         ORDER BY updated_at DESC

@@ -39,6 +39,7 @@
                     <text class="location">📍 {{item.location}}</text>
                     <text class="time">{{item.created_at}}</text>
                 </view>
+                
             </view>
         </view>
 
