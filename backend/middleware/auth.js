@@ -32,7 +32,8 @@ const authenticateToken = async (req, res, next) => {
       openid: user.openid,
       role: user.role,
       nickName: user.nickName,
-      avatarUrl: user.avatarUrl
+      avatarUrl: user.avatarUrl,
+      managed_sections: user.managed_sections
     };
     
     next();

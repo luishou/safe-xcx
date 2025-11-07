@@ -8,7 +8,8 @@ Page({
     form: { title: '', content: '' },
     editMode: false,
     category: { name: '', description: '' },
-    knowledge: { id: '', content: '' }
+    knowledge: { id: '', content: '' },
+    attachments: [] // 存储附件信息
   },
 
   onLoad(options) {
@@ -232,12 +233,16 @@ Page({
 
     const saveKnowledgeIfNeeded = () => new Promise((resolve) => {
       if (!content) return resolve(true);
+
+      // 准备附件数据
+      const attachments = this.data.attachments.length > 0 ? this.data.attachments : null;
+
       if (knowledge.id) {
         wx.request({
           url: `${app.globalData.baseUrl}/safety/articles/${knowledge.id}`,
           method: 'PUT',
           header: { 'Content-Type': 'application/json', ...this._authHeader() },
-          data: { content, title: '安全知识' },
+          data: { content, title: '安全知识', attachments },
           success: (res) => {
             if (res.data && res.data.success) { resolve(true); }
             else { wx.showToast({ title: '安全知识保存失败', icon: 'none' }); resolve(false); }
@@ -249,7 +254,7 @@ Page({
           url: `${app.globalData.baseUrl}/safety/articles`,
           method: 'POST',
           header: { 'Content-Type': 'application/json', ...this._authHeader() },
-          data: { categoryId, title: '安全知识', content },
+          data: { categoryId, title: '安全知识', content, attachments },
           success: (res) => {
             if (res.data && res.data.success) { resolve(true); }
             else { wx.showToast({ title: '安全知识保存失败', icon: 'none' }); resolve(false); }
@@ -263,5 +268,114 @@ Page({
       .then(() => saveKnowledgeIfNeeded())
       .then(() => { wx.showToast({ title: '已保存', icon: 'success' }); this.loadArticles(); })
       .catch(() => { wx.showToast({ title: '保存出错', icon: 'none' }); });
+  },
+
+  // 附件上传
+  uploadAttachment() {
+    const that = this;
+
+    // 检查文件类型
+    const allowedTypes = ['doc', 'docx', 'pdf'];
+
+    wx.chooseMessageFile({
+      count: 1,
+      type: 'file',
+      extension: allowedTypes,
+      success(res) {
+        const file = res.tempFiles[0];
+        const fileName = file.name;
+        const fileExtension = fileName.split('.').pop().toLowerCase();
+
+        if (!allowedTypes.includes(fileExtension)) {
+          wx.showToast({
+            title: '只支持Word和PDF文件',
+            icon: 'none'
+          });
+          return;
+        }
+
+        // 检查文件大小 (限制10MB)
+        if (file.size > 10 * 1024 * 1024) {
+          wx.showToast({
+            title: '文件大小不能超过10MB',
+            icon: 'none'
+          });
+          return;
+        }
+
+        that.uploadFileToServer(file);
+      }
+    });
+  },
+
+  // 上传文件到服务器
+  uploadFileToServer(file) {
+    wx.showLoading({
+      title: '上传中...'
+    });
+
+    const app = getApp();
+    const that = this;
+
+    wx.uploadFile({
+      url: app.globalData.baseUrl + '/upload',
+      filePath: file.path,
+      name: 'file',
+      header: {
+        'Authorization': 'Bearer ' + app.globalData.token
+      },
+      success(res) {
+        wx.hideLoading();
+
+        try {
+          const data = JSON.parse(res.data);
+          if (data.success) {
+            // 添加到附件列表
+            const newAttachment = {
+              name: file.name,
+              path: data.filePath,
+              size: file.size
+            };
+
+            const attachments = [...that.data.attachments, newAttachment];
+            that.setData({
+              attachments: attachments
+            });
+
+            wx.showToast({
+              title: '上传成功',
+              icon: 'success'
+            });
+          } else {
+            wx.showToast({
+              title: data.message || '上传失败',
+              icon: 'none'
+            });
+          }
+        } catch (err) {
+          wx.showToast({
+            title: '上传失败',
+            icon: 'none'
+          });
+        }
+      },
+      fail(err) {
+        wx.hideLoading();
+        wx.showToast({
+          title: '网络错误',
+          icon: 'none'
+        });
+      }
+    });
+  },
+
+  // 删除附件
+  removeAttachment(e) {
+    const index = e.currentTarget.dataset.index;
+    const attachments = [...this.data.attachments];
+    attachments.splice(index, 1);
+    this.setData({
+      attachments: attachments
+    });
   }
 });

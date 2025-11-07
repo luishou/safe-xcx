@@ -11,6 +11,25 @@
       <view class="form-title">分类与安全知识</view>
       <input class="input" placeholder="安全分类" value="{{category.name}}" bindinput="onCategoryNameInput" />
       <textarea class="textarea" placeholder="请输入安全知识内容" value="{{knowledge.content}}" bindinput="onKnowledgeInput" />
+
+      <!-- 附件上传 -->
+      <view class="attachment-section">
+        <view class="section-title">附件上传</view>
+        <view class="attachment-tips">支持格式：Word(.doc, .docx)、PDF(.pdf)</view>
+
+        <view class="attachment-list" wx:if="{{attachments && attachments.length > 0}}">
+          <view class="attachment-item" wx:for="{{attachments}}" wx:key="index">
+            <text class="attachment-name">{{item.name}}</text>
+            <button class="remove-btn" size="mini" bindtap="removeAttachment" data-index="{{index}}">删除</button>
+          </view>
+        </view>
+
+        <button class="upload-btn" bindtap="uploadAttachment">
+          <text class="upload-icon">📎</text>
+          <text>添加附件</text>
+        </button>
+      </view>
+
       <button class="primary-btn" bindtap="saveAll">保存</button>
     </view>
   </scroll-view>

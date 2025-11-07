@@ -105,6 +105,30 @@ class ReportController {
       if (req.user.role === 'employee') {
         whereClause += ' AND reporter_id = ?';
         params.push(req.user.userId);
+      } else if (req.user.role === 'admin') {
+        // 管理员只能查看其绑定的标段
+        if (req.user.managed_sections) {
+          try {
+            const managedSections = Array.isArray(req.user.managed_sections)
+              ? req.user.managed_sections
+              : JSON.parse(req.user.managed_sections || '[]');
+
+            if (managedSections.length > 0) {
+              const placeholders = managedSections.map(() => '?').join(',');
+              whereClause += ` AND section IN (${placeholders})`;
+              params.push(...managedSections);
+            } else {
+              // 如果管理员没有绑定任何标段，返回空结果
+              whereClause += ' AND 1=0';
+            }
+          } catch (error) {
+            console.error('解析管理员标段权限失败:', error);
+            whereClause += ' AND 1=0';
+          }
+        } else {
+          // 如果管理员没有设置绑定的标段，返回空结果
+          whereClause += ' AND 1=0';
+        }
       }
 
       // 若指定仅查看本人，强制过滤，无论角色
