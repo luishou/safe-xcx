@@ -423,38 +423,10 @@ Page({
       content: `确定要删除文件 "${attachment.name}" 吗？`,
       success: (res) => {
         if (res.confirm) {
-          // 如果文件已上传到服务器，先从服务器删除
-          if (attachment.path && attachment.path.includes('myqcloud.com')) {
-            wx.request({
-              url: app.globalData.baseUrl + '/upload/file',
-              method: 'DELETE',
-              header: {
-                'Content-Type': 'application/json',
-                ...this._authHeader()
-              },
-              data: { fileUrl: attachment.path },
-              success: (res) => {
-                if (res.data && res.data.success) {
-                  console.log('服务器文件删除成功');
-                } else {
-                  console.warn('服务器文件删除失败，但仍从本地移除');
-                }
-                // 无论服务器删除是否成功，都从本地列表移除
-                this._removeAttachmentFromList(index);
-              },
-              fail: (err) => {
-                console.error('删除服务器文件失败:', err);
-                wx.showToast({
-                  title: '服务器删除失败，但已从本地移除',
-                  icon: 'none'
-                });
-                this._removeAttachmentFromList(index);
-              }
-            });
-          } else {
-            // 仅本地文件，直接移除
-            this._removeAttachmentFromList(index);
-          }
+          // 从本地列表移除附件
+          this._removeAttachmentFromList(index);
+          // 立即保存更新后的附件列表到数据库
+          this._saveAttachmentsToDatabase();
         }
       }
     });
@@ -467,10 +439,54 @@ Page({
     this.setData({
       attachments: attachments
     });
+  },
 
-    wx.showToast({
-      title: '删除成功',
-      icon: 'success'
+  // 保存附件列表到数据库
+  _saveAttachmentsToDatabase() {
+    const { knowledge } = this.data;
+    const attachments = this.data.attachments.length > 0 ? this.data.attachments : null;
+
+    if (!knowledge.id) {
+      console.warn('知识ID不存在，无法保存附件');
+      return;
+    }
+
+    wx.request({
+      url: `${app.globalData.baseUrl}/safety/articles/${knowledge.id}`,
+      method: 'PUT',
+      header: {
+        'Content-Type': 'application/json',
+        ...this._authHeader()
+      },
+      data: {
+        attachments: attachments
+      },
+      success: (res) => {
+        if (res.data && res.data.success) {
+          console.log('附件列表已保存到数据库');
+          wx.showToast({
+            title: '删除成功',
+            icon: 'success'
+          });
+        } else {
+          console.error('保存附件列表失败:', res.data.message);
+          wx.showToast({
+            title: '保存失败，请重试',
+            icon: 'none'
+          });
+          // 保存失败时重新加载附件数据
+          this.loadArticles();
+        }
+      },
+      fail: () => {
+        console.error('保存附件列表网络失败');
+        wx.showToast({
+          title: '网络错误，请重试',
+          icon: 'none'
+        });
+        // 网络失败时重新加载附件数据
+        this.loadArticles();
+      }
     });
   }
 });
