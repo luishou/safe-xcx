@@ -82,7 +82,9 @@ class ReportController {
   async getReports(req, res) {
     try {
       const { page = 1, limit = 20, status, section, severity, ownOnly } = req.query;
-      const offset = (page - 1) * limit;
+      const limitNum = parseInt(limit);
+      const pageNum = parseInt(page);
+      const offset = (pageNum - 1) * limitNum;
 
       console.log('=== 后端获取举报列表 ===');
       console.log('请求用户信息:', { userId: req.user.userId, nickName: req.user.nickName });
@@ -128,9 +130,9 @@ class ReportController {
       `;
 
       console.log('最终SQL:', sql);
-      console.log('SQL参数:', [...params, parseInt(limit), offset]);
+      console.log('SQL参数:', [...params, limitNum, offset]);
 
-      const [rows] = await pool.execute(sql, [...params, parseInt(limit), offset]);
+      const [rows] = await pool.execute(sql, [...params, limitNum, offset]);
 
       const [countRows] = await pool.execute(`
         SELECT COUNT(*) as total
@@ -175,7 +177,9 @@ class ReportController {
   async getPersonalReports(req, res) {
     try {
       const { page = 1, limit = 20, status, section, severity } = req.query;
-      const offset = (page - 1) * limit;
+      const limitNum = parseInt(limit);
+      const pageNum = parseInt(page);
+      const offset = (pageNum - 1) * limitNum;
 
       console.log('=== 获取个人中心举报列表 ===');
       console.log('请求用户信息:', { userId: req.user.userId, nickName: req.user.nickName });
@@ -222,13 +226,13 @@ class ReportController {
 
       console.log('=== 个人中心举报列表SQL ===');
       console.log('完整SQL:', sql);
-      console.log('SQL参数:', [...params, parseInt(limit), offset]);
+      console.log('SQL参数:', [...params, limitNum, offset]);
       console.log('WHERE条件:', whereClause);
       console.log('请求状态参数:', status);
       console.log('当前用户ID:', req.user.userId);
       console.log('当前标段:', section);
 
-      const [rows] = await pool.execute(sql, [...params, parseInt(limit), offset]);
+      const [rows] = await pool.execute(sql, [...params, limitNum, offset]);
 
       const [countRows] = await pool.execute(`
         SELECT COUNT(*) as total
@@ -277,7 +281,9 @@ class ReportController {
   async getManagementReports(req, res) {
     try {
       const { page = 1, limit = 20, status, section, severity } = req.query;
-      const offset = (page - 1) * limit;
+      const limitNum = parseInt(limit);
+      const pageNum = parseInt(page);
+      const offset = (pageNum - 1) * limitNum;
 
       console.log('=== 获取安全管理部举报列表 ===');
       console.log('请求用户信息:', { userId: req.user.userId, nickName: req.user.nickName });
@@ -324,11 +330,11 @@ class ReportController {
 
       console.log('=== 安全管理部举报列表SQL ===');
       console.log('完整SQL:', sql);
-      console.log('SQL参数:', [...params, parseInt(limit), offset]);
+      console.log('SQL参数:', [...params, limitNum, offset]);
       console.log('WHERE条件:', whereClause);
       console.log('请求状态参数:', status);
 
-      const [rows] = await pool.execute(sql, [...params, parseInt(limit), offset]);
+      const [rows] = await pool.execute(sql, [...params, limitNum, offset]);
 
       const [countRows] = await pool.execute(`
         SELECT COUNT(*) as total
@@ -417,7 +423,7 @@ class ReportController {
       console.log('SQL参数:', [...params, parseInt(limit), offset]);
       console.log('WHERE条件:', whereClause);
 
-      const [rows] = await pool.execute(sql, [...params, parseInt(limit), offset]);
+      const [rows] = await pool.execute(sql, [...params, limitNum, offset]);
 
       const [countRows] = await pool.execute(`
         SELECT COUNT(*) as total
