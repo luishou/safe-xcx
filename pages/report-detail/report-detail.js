@@ -67,17 +67,10 @@ Page({
 
     // 根据用户角色确定权限
     let canOperate = false;
-    let displayRole = 'guest';
+    let displayRole = 'user';
 
-    if (currentUser && currentUser.role) {
-      // 只有admin角色可以操作，且页面非只读
-      canOperate = currentUser.role === 'admin' && !readonly;
-      displayRole = currentUser.role;
-    } else {
-      // 未授权用户无法操作
-      canOperate = false;
-      displayRole = 'guest';
-    }
+    // 不做基于角色的权限检查，前端控制菜单显示
+    canOperate = !readonly; // 只要不是只读模式就可以操作
 
     this.setData({
       canOperate: canOperate,
@@ -123,7 +116,7 @@ Page({
           const report = res.data.data;
           console.log('获取举报详情成功:', report);
 
-          // 设置状态信息
+          // 设置状态信息（统一为三状态）
           let statusText = '待处理';
           let statusClass = 'status-pending';
 
@@ -134,8 +127,8 @@ Page({
             statusText = '已办结';
             statusClass = 'status-completed';
           } else if (report.status === 'submitted') {
-            statusText = '已提交';
-            statusClass = 'status-submitted';
+            statusText = '待处理';
+            statusClass = 'status-pending';
           }
 
           // 重新获取用户权限信息
@@ -144,11 +137,8 @@ Page({
           console.log('重新加载详情 - 当前用户信息:', currentUser);
 
           // 根据用户角色确定权限
-          let canOperate = false;
-          if (currentUser && currentUser.role) {
-            // 只有admin角色可以操作，且页面非只读
-            canOperate = currentUser.role === 'admin' && !this.data.readonly;
-          }
+          // 不做基于角色的权限检查，前端控制菜单显示
+          let canOperate = !this.data.readonly; // 只要不是只读模式就可以操作
 
           this.setData({
             report: {
@@ -167,8 +157,8 @@ Page({
           console.log('重新加载详情 - canOperate:', canOperate, 'userRole:', currentUser ? currentUser.role : 'employee');
 
           console.log('举报详情 - 当前状态:', report.status);
-          console.log('举报详情 - 是否显示待处理操作:', report.status === 'pending' || report.status === 'submitted');
-          console.log('举报详情 - 是否显示处理中操作:', report.status === 'processing' || report.status === 'assigned');
+          console.log('举报详情 - 是否显示待处理操作:', report.status === 'submitted');
+          console.log('举报详情 - 是否显示处理中操作:', report.status === 'processing');
         } else {
           console.error('获取举报详情失败:', res.data);
           this.setData({
@@ -219,12 +209,9 @@ Page({
   // 映射状态为中文
   mapStatus(status) {
     const mapping = {
-      'submitted': '已提交',
-      'pending': '待处理',
-      'assigned': '已分配',
+      'submitted': '待处理',
       'processing': '处理中',
-      'completed': '已办结',
-      'rejected': '已驳回'
+      'completed': '已办结'
     };
     return mapping[status] || status;
   },
@@ -258,14 +245,14 @@ Page({
     });
   },
 
-  // 驳回办结
+  // 驳回办结（统一为已办结）
   rejectReport() {
     wx.showModal({
       title: '驳回办结',
       content: '确认要将此举报直接办结吗？驳回后无需上传照片。',
       success: (res) => {
         if (res.confirm) {
-          this.updateReportStatus('rejected');
+          this.updateReportStatus('completed', true); // 传递true表示这是驳回办结
 
           // 延迟返回上一页，让状态更新完成
           setTimeout(() => {
@@ -465,7 +452,7 @@ Page({
   },
 
   // 更新举报状态
-  updateReportStatus(newStatus) {
+  updateReportStatus(newStatus, isRejected = false) {
     const app = getApp();
 
     if (!app.globalData.token) {
@@ -480,6 +467,17 @@ Page({
       title: '处理中...'
     });
 
+    // 准备请求数据
+    const requestData = {
+      status: newStatus
+    };
+
+    // 如果是驳回办结，添加特殊标识
+    if (isRejected) {
+      requestData.isRejected = true;
+      requestData.plan = '已驳回，无须处理';
+    }
+
     wx.request({
       url: app.globalData.baseUrl + '/report/' + this.data.reportId + '/status',
       method: 'PUT',
@@ -487,9 +485,7 @@ Page({
         'Authorization': 'Bearer ' + app.globalData.token,
         'Content-Type': 'application/json'
       },
-      data: {
-        status: newStatus
-      },
+      data: requestData,
       success: (res) => {
         wx.hideLoading();
         if (res.data.success) {

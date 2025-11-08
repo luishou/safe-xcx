@@ -301,4 +301,401 @@
     color: #6b7280;
 }
 
-/* 安全须知模块样式已移除 */
+/* 文章卡片样式 */
+.articles-section {
+    margin-bottom: 32rpx;
+}
+
+.articles-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16rpx;
+}
+
+.article-card {
+    background: white;
+    border-radius: 16rpx;
+    padding: 24rpx;
+    box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.06);
+    transition: all 0.3s ease;
+    border: 2rpx solid #e5e7eb;
+    cursor: pointer;
+}
+
+.article-card:active {
+    transform: scale(0.98);
+    box-shadow: 0 1rpx 4rpx rgba(0, 0, 0, 0.1);
+}
+
+.article-card.expanded {
+    border-color: #3b82f6;
+    box-shadow: 0 4rpx 16rpx rgba(59, 130, 246, 0.15);
+}
+
+.card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.card-left {
+    display: flex;
+    align-items: center;
+    flex: 1;
+}
+
+.card-icon {
+    font-size: 40rpx;
+    margin-right: 16rpx;
+    color: #3b82f6;
+}
+
+.card-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.card-title {
+    font-size: 30rpx;
+    font-weight: 600;
+    color: #1f2937;
+    margin-bottom: 4rpx;
+    display: block;
+}
+
+.card-meta {
+    font-size: 24rpx;
+    color: #6b7280;
+    display: block;
+}
+
+.card-arrow {
+    font-size: 24rpx;
+    color: #9ca3af;
+    transition: transform 0.3s ease;
+    margin-left: 16rpx;
+}
+
+.card-arrow.rotated {
+    transform: rotate(180deg);
+}
+
+.card-attachments-hint {
+    margin-top: 12rpx;
+    background: #f0f9ff;
+    border-radius: 8rpx;
+    padding: 8rpx 12rpx;
+    border-left: 3rpx solid #0ea5e9;
+}
+
+.hint-text {
+    font-size: 22rpx;
+    color: #0369a1;
+    font-weight: 500;
+}
+
+/* 展开内容区域样式 */
+.article-content-section {
+    margin-top: 16rpx;
+    background: #f8fafc;
+    border-radius: 12rpx;
+    border: 1px solid #e2e8f0;
+    max-height: 0;
+    overflow: hidden;
+    transition: all 0.4s ease;
+    opacity: 0;
+}
+
+.article-content-section.show {
+    max-height: 2000rpx;
+    opacity: 1;
+    padding: 20rpx;
+}
+
+.content-block {
+    margin-bottom: 24rpx;
+}
+
+.content-block:last-child {
+    margin-bottom: 0;
+}
+
+.content-label {
+    font-size: 26rpx;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 12rpx;
+    display: flex;
+    align-items: center;
+}
+
+.content-text {
+    background: white;
+    border-radius: 8rpx;
+    padding: 16rpx;
+    border: 1px solid #e5e7eb;
+}
+
+.content-text text {
+    font-size: 26rpx;
+    color: #374151;
+    line-height: 1.6;
+    white-space: pre-line;
+    word-wrap: break-word;
+}
+
+/* 附件块样式 */
+.attachments-block {
+    margin-bottom: 0;
+}
+
+.attachments-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 12rpx;
+}
+
+.attachment-item {
+    background: white;
+    border-radius: 12rpx;
+    border: 1px solid #e5e7eb;
+    overflow: hidden;
+    transition: all 0.2s ease;
+}
+
+.attachment-item:active {
+    transform: scale(0.98);
+    box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
+}
+
+.attachment-preview {
+    display: flex;
+    align-items: center;
+    padding: 16rpx;
+}
+
+.file-icon {
+    width: 48rpx;
+    height: 48rpx;
+    border-radius: 8rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 16rpx;
+    font-size: 24rpx;
+    background: #f3f4f6;
+    border: 1px solid #e5e7eb;
+    flex-shrink: 0;
+}
+
+.file-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.file-name {
+    font-size: 24rpx;
+    color: #1f2937;
+    font-weight: 500;
+    margin-bottom: 4rpx;
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.file-size {
+    font-size: 20rpx;
+    color: #6b7280;
+    display: block;
+}
+
+.preview-tag {
+    background: #3b82f6;
+    color: white;
+    padding: 6rpx 12rpx;
+    border-radius: 12rpx;
+    font-size: 20rpx;
+    font-weight: 500;
+    margin-left: 12rpx;
+    flex-shrink: 0;
+}
+
+/* 空状态 */
+.empty-state {
+    text-align: center;
+    padding: 80rpx 0;
+    background: white;
+    border-radius: 16rpx;
+    box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.06);
+}
+
+.empty-icon {
+    font-size: 80rpx;
+    display: block;
+    margin-bottom: 16rpx;
+    opacity: 0.5;
+}
+
+.empty-text {
+    font-size: 28rpx;
+    color: #6b7280;
+    display: block;
+}
+
+/* 文章详情样式 */
+.article-detail-section {
+    background: white;
+    border-radius: 16rpx;
+    padding: 32rpx;
+    margin-bottom: 32rpx;
+    box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.08);
+    max-height: 0;
+    overflow: hidden;
+    transition: all 0.4s ease;
+    border: 2rpx solid #e5e7eb;
+}
+
+.article-detail-section.show {
+    max-height: 3000rpx;
+    overflow: visible;
+}
+
+.detail-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 24rpx;
+    padding-bottom: 16rpx;
+    border-bottom: 2rpx solid #e5e7eb;
+}
+
+.detail-title {
+    font-size: 32rpx;
+    font-weight: bold;
+    color: #1f2937;
+    flex: 1;
+    margin-right: 16rpx;
+    line-height: 1.4;
+}
+
+.article-info {
+    display: flex;
+    gap: 24rpx;
+    margin-bottom: 24rpx;
+    flex-wrap: wrap;
+}
+
+.info-item {
+    font-size: 24rpx;
+    color: #6b7280;
+    background: #f3f4f6;
+    padding: 8rpx 16rpx;
+    border-radius: 20rpx;
+    display: inline-block;
+}
+
+.article-content {
+    margin-bottom: 32rpx;
+}
+
+.article-content .content-text {
+    font-size: 28rpx;
+    color: #374151;
+    line-height: 1.7;
+    white-space: pre-line;
+    word-wrap: break-word;
+}
+
+/* 附件样式 */
+.attachments-section {
+    border-top: 1px solid #e5e7eb;
+    padding-top: 24rpx;
+}
+
+.attachments-title {
+    font-size: 28rpx;
+    font-weight: 600;
+    color: #1f2937;
+    margin-bottom: 16rpx;
+    display: flex;
+    align-items: center;
+}
+
+.attachments-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12rpx;
+}
+
+.attachment-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12rpx;
+    padding: 16rpx;
+    transition: all 0.2s ease;
+}
+
+.attachment-item:active {
+    background: #e2e8f0;
+    transform: scale(0.98);
+}
+
+.attachment-info {
+    display: flex;
+    align-items: center;
+    flex: 1;
+}
+
+.file-icon {
+    width: 56rpx;
+    height: 56rpx;
+    border-radius: 8rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 16rpx;
+    font-size: 28rpx;
+    background: white;
+    border: 1px solid #e5e7eb;
+}
+
+.file-details {
+    flex: 1;
+    min-width: 0;
+}
+
+.file-name {
+    font-size: 26rpx;
+    color: #1f2937;
+    font-weight: 500;
+    margin-bottom: 4rpx;
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.file-size {
+    font-size: 22rpx;
+    color: #6b7280;
+    display: block;
+}
+
+.preview-btn {
+    background: #3b82f6;
+    color: white;
+    padding: 8rpx 16rpx;
+    border-radius: 8rpx;
+    font-size: 24rpx;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.preview-btn:active {
+    background: #2563eb;
+    transform: scale(0.95);
+}

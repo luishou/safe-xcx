@@ -1,4 +1,5 @@
 <!-- 安全知识页面 -->
+<wxs module="utils" src="utils.wxs"></wxs>
 <view class="safety-knowledge-page">
     <!-- 顶部导航 -->
     <view class="header">
@@ -21,48 +22,75 @@
             </view>
         </view>
 
-        <!-- 安全知识分类 -->
-        <view class="categories-section">
-            <view class="section-title">安全知识分类</view>
-            <view class="categories-grid">
-                <block wx:for="{{categories}}" wx:key="id">
-                    <view class="category-item" bindtap="showCategory" data-id="{{item.id}}" data-name="{{item.name}}">
-                        <view class="category-icon">{{item.icon || '📚'}}</view>
-                        <text class="category-name">{{item.name}}</text>
+        <!-- 安全知识文章列表 -->
+        <view class="articles-section">
+            <view class="section-title">安全知识内容</view>
+            <view class="articles-list">
+                <block wx:for="{{articles}}" wx:key="id">
+                    <!-- 标题卡片 -->
+                    <view class="article-card {{expandedArticles[item.id] ? 'expanded' : ''}}"
+                          bindtap="toggleArticle"
+                          data-id="{{item.id}}">
+                        <view class="card-header">
+                            <view class="card-left">
+                                <view class="card-icon">📋</view>
+                                <view class="card-info">
+                                    <text class="card-title">{{item.title}}</text>
+                                    <text class="card-meta">{{item.uploadTime}} · {{item.uploadedBy || '系统管理员'}}</text>
+                                </view>
+                            </view>
+                            <view class="card-arrow {{expandedArticles[item.id] ? 'rotated' : ''}}">
+                                <text>▼</text>
+                            </view>
+                        </view>
+
+                        <!-- 附件提示 -->
+                        <view class="card-attachments-hint" wx:if="{{item.attachments && item.attachments.length > 0}}">
+                            <text class="hint-text">📎 包含 {{item.attachments.length}} 个附件</text>
+                        </view>
+                    </view>
+
+                    <!-- 展开的内容区域 -->
+                    <view class="article-content-section {{expandedArticles[item.id] ? 'show' : ''}}"
+                          wx:if="{{expandedArticles[item.id]}}">
+                        <!-- 文章内容 -->
+                        <view class="content-block">
+                            <view class="content-label">📝 内容</view>
+                            <view class="content-text">
+                                <text>{{item.content}}</text>
+                            </view>
+                        </view>
+
+                        <!-- 附件列表 -->
+                        <view class="attachments-block" wx:if="{{item.attachments && item.attachments.length > 0}}">
+                            <view class="content-label">📎 附件</view>
+                            <view class="attachments-grid">
+                                <view class="attachment-item"
+                                      wx:for="{{item.attachments}}"
+                                      wx:for-item="attachment"
+                                      wx:key="name"
+                                      bindtap="previewAttachment"
+                                      data-attachment="{{attachment}}">
+                                    <view class="attachment-preview">
+                                        <view class="file-icon">{{utils.getFileIcon(attachment.name)}}</view>
+                                        <view class="file-info">
+                                            <text class="file-name">{{attachment.name}}</text>
+                                            <text class="file-size">{{utils.formatFileSize(attachment.size)}}</text>
+                                        </view>
+                                        <view class="preview-tag">预览</view>
+                                    </view>
+                                </view>
+                            </view>
+                        </view>
                     </view>
                 </block>
             </view>
-        </view>
 
-        <!-- 知识内容显示区域 -->
-        <view class="knowledge-content-section {{showContent ? 'show' : ''}}" wx:if="{{selectedCategoryId}}">
-            <view class="content-header">
-                <text class="content-title">{{selectedCategoryName}}</text>
-                <view class="close-btn" bindtap="closeCategory">
-                    <text>✕</text>
-                </view>
-            </view>
-
-            <view class="content-list">
-                <view class="knowledge-item" wx:for="{{knowledgeList}}" wx:key="id">
-                    <view class="item-header">
-                        <text class="item-title">{{item.title}}</text>
-                        <text class="item-time">{{item.uploadTime}}</text>
-                    </view>
-                    <view class="item-content">
-                        <text class="content-text">{{item.content}}</text>
-                    </view>
-                    <view class="item-footer">
-                        <text class="item-author">上传人：{{item.uploadedBy}}</text>
-                    </view>
-                </view>
-
-                <view class="empty-content" wx:if="{{knowledgeList.length === 0}}">
-                    <text class="empty-text">该分类暂无安全知识内容。</text>
-                </view>
+            <!-- 空状态 -->
+            <view class="empty-state" wx:if="{{articles.length === 0}}">
+                <text class="empty-icon">📚</text>
+                <text class="empty-text">暂无安全知识内容</text>
             </view>
         </view>
-
-        <!-- 安全须知模块已移除，内容改由后端维护的安全知识提供 -->
     </scroll-view>
 </view>

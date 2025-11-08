@@ -33,8 +33,8 @@ class ReportController {
       const [result] = await pool.execute(`
         INSERT INTO reports (
           reporter_id, reporter_name, description, hazard_type,
-          severity, location, section, initial_images, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          severity, location, section, status, initial_images, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `, [
         req.user.userId,
         req.user.nickName || '微信用户',
@@ -43,6 +43,7 @@ class ReportController {
         severity,
         location,
         section || 'TJ01',
+        'submitted', // 初始状态为待处理
         JSON.stringify(initialImages || []),
         new Date(),
         new Date()
@@ -83,12 +84,25 @@ class ReportController {
       const { page = 1, limit = 20, status, section, severity, ownOnly } = req.query;
       const offset = (page - 1) * limit;
 
+      console.log('=== 后端获取举报列表 ===');
+      console.log('请求用户信息:', { userId: req.user.userId, nickName: req.user.nickName });
+      console.log('查询参数:', { page, limit, status, section, severity, ownOnly });
+
       let whereClause = 'WHERE 1=1';
       const params = [];
 
       if (status) {
-        whereClause += ' AND status = ?';
-        params.push(status);
+        const statuses = String(status)
+          .split(',')
+          .map(s => s.trim())
+          .filter(Boolean);
+        if (statuses.length > 1) {
+          whereClause += ` AND status IN (${statuses.map(() => '?').join(',')})`;
+          params.push(...statuses);
+        } else {
+          whereClause += ' AND status = ?';
+          params.push(statuses[0]);
+        }
       }
 
       if (section) {
@@ -101,63 +115,33 @@ class ReportController {
         params.push(severity);
       }
 
-      // 普通用户只能看自己的举报
-      if (req.user.role === 'employee') {
-        whereClause += ' AND reporter_id = ?';
-        params.push(req.user.userId);
-      } else if (req.user.role === 'admin') {
-        // 管理员只能查看其绑定的标段
-        if (req.user.managed_sections) {
-          try {
-            const managedSections = Array.isArray(req.user.managed_sections)
-              ? req.user.managed_sections
-              : JSON.parse(req.user.managed_sections || '[]');
+      // 不做任何权限限制，标段绑定仅用于前端菜单显示
 
-            if (managedSections.length > 0) {
-              const placeholders = managedSections.map(() => '?').join(',');
-              whereClause += ` AND section IN (${placeholders})`;
-              params.push(...managedSections);
-            } else {
-              // 如果管理员没有绑定任何标段，返回空结果
-              whereClause += ' AND 1=0';
-            }
-          } catch (error) {
-            console.error('解析管理员标段权限失败:', error);
-            whereClause += ' AND 1=0';
-          }
-        } else {
-          // 如果管理员没有设置绑定的标段，返回空结果
-          whereClause += ' AND 1=0';
-        }
-      }
-
-      // 若指定仅查看本人，强制过滤，无论角色
-      if (ownOnly === 'true') {
-        whereClause += ' AND reporter_id = ?';
-        params.push(req.user.userId);
-      }
-
-      // 如果指定了标段，按标段过滤
-      if (req.query.section) {
-        whereClause += ' AND section = ?';
-        params.push(req.query.section);
-      }
-
-      const [rows] = await pool.execute(`
+          const sql = `
         SELECT
           id, reporter_name, description, hazard_type, severity,
-          location, section, status, assigned_to, plan, created_at, updated_at
+          location, section, status, assigned_to, plan, created_at, updated_at, reporter_id
         FROM reports
         ${whereClause}
         ORDER BY updated_at DESC
         LIMIT ? OFFSET ?
-      `, [...params, parseInt(limit), offset]);
+      `;
+
+      console.log('最终SQL:', sql);
+      console.log('SQL参数:', [...params, parseInt(limit), offset]);
+
+      const [rows] = await pool.execute(sql, [...params, parseInt(limit), offset]);
 
       const [countRows] = await pool.execute(`
         SELECT COUNT(*) as total
         FROM reports
         ${whereClause}
       `, params);
+
+        console.log('管理员举报查询结果:', {
+        查询到的记录数: rows.length,
+        总数: countRows[0].total
+      });
 
       const formattedRows = rows.map((r) => ({
         ...r,
@@ -187,6 +171,296 @@ class ReportController {
     }
   }
 
+  // 获取个人中心举报列表（ownOnly=true逻辑）
+  async getPersonalReports(req, res) {
+    try {
+      const { page = 1, limit = 20, status, section, severity } = req.query;
+      const offset = (page - 1) * limit;
+
+      console.log('=== 获取个人中心举报列表 ===');
+      console.log('请求用户信息:', { userId: req.user.userId, nickName: req.user.nickName });
+      console.log('查询参数:', { page, limit, status, section, severity });
+
+      // 必须提供标段参数，个人中心只能查看当前标段的举报
+      if (!section) {
+        return res.status(400).json({
+          success: false,
+          message: '请提供标段参数'
+        });
+      }
+
+      let whereClause = 'WHERE reporter_id = ? AND section = ?';
+      const params = [req.user.userId, section];
+
+      if (status) {
+        // 支持逗号分隔的多状态查询
+        const statuses = String(status)
+          .split(',')
+          .map(s => s.trim())
+          .filter(s => s);
+
+        if (statuses.length > 0) {
+          whereClause += ` AND status IN (${statuses.map(() => '?').join(',')})`;
+          params.push(...statuses);
+        }
+      }
+
+      if (severity) {
+        whereClause += ' AND severity = ?';
+        params.push(severity);
+      }
+
+      const sql = `
+        SELECT
+          id, reporter_name, description, hazard_type, severity,
+          location, section, status, assigned_to, plan, created_at, updated_at, reporter_id
+        FROM reports
+        ${whereClause}
+        ORDER BY updated_at DESC
+        LIMIT ? OFFSET ?
+      `;
+
+      console.log('=== 个人中心举报列表SQL ===');
+      console.log('完整SQL:', sql);
+      console.log('SQL参数:', [...params, parseInt(limit), offset]);
+      console.log('WHERE条件:', whereClause);
+      console.log('请求状态参数:', status);
+      console.log('当前用户ID:', req.user.userId);
+      console.log('当前标段:', section);
+
+      const [rows] = await pool.execute(sql, [...params, parseInt(limit), offset]);
+
+      const [countRows] = await pool.execute(`
+        SELECT COUNT(*) as total
+        FROM reports
+        ${whereClause}
+      `, params);
+
+      console.log('个人中心举报查询结果:', {
+        查询到的记录数: rows.length,
+        总数: countRows[0].total,
+        查询条件: whereClause,
+        用户ID: req.user.userId,
+        标段: section
+      });
+
+      // 数据库中现在只有标准状态，不需要映射
+      const formattedRows = rows.map((r) => ({
+        ...r,
+        created_at: formatDateTimeBeijing(r.created_at),
+        updated_at: formatDateTimeBeijing(r.updated_at)
+      }));
+
+      res.json({
+        success: true,
+        data: {
+          reports: formattedRows,
+          pagination: {
+            total: countRows[0].total,
+            page: parseInt(page),
+            limit: parseInt(limit),
+            totalPages: Math.ceil(countRows[0].total / limit)
+          }
+        }
+      });
+    } catch (error) {
+      console.error('获取个人中心举报列表失败:', error);
+      res.status(500).json({
+        success: false,
+        message: '获取个人中心举报列表失败',
+        error: error.message
+      });
+    }
+  }
+
+  // 获取安全管理部举报列表（统一三状态：submitted/processing/completed）
+  async getManagementReports(req, res) {
+    try {
+      const { page = 1, limit = 20, status, section, severity } = req.query;
+      const offset = (page - 1) * limit;
+
+      console.log('=== 获取安全管理部举报列表 ===');
+      console.log('请求用户信息:', { userId: req.user.userId, nickName: req.user.nickName });
+      console.log('查询参数:', { page, limit, status, section, severity });
+
+      let whereClause = 'WHERE 1=1';
+      const params = [];
+
+      // 统一状态过滤：三值映射到历史值集合
+      if (status) {
+        // 支持逗号分隔的多状态查询
+        const statuses = String(status)
+          .split(',')
+          .map(s => s.trim())
+          .filter(s => s);
+
+        if (statuses.length > 0) {
+          whereClause += ` AND status IN (${statuses.map(() => '?').join(',')})`;
+          params.push(...statuses);
+        }
+      }
+
+      if (section) {
+        whereClause += ' AND section = ?';
+        params.push(section);
+      }
+
+      if (severity) {
+        whereClause += ' AND severity = ?';
+        params.push(severity);
+      }
+
+      // 不做任何权限限制，前端控制菜单显示
+
+      const sql = `
+        SELECT
+          id, reporter_name, description, hazard_type, severity,
+          location, section, status, assigned_to, plan, created_at, updated_at, reporter_id
+        FROM reports
+        ${whereClause}
+        ORDER BY updated_at DESC
+        LIMIT ? OFFSET ?
+      `;
+
+      console.log('=== 安全管理部举报列表SQL ===');
+      console.log('完整SQL:', sql);
+      console.log('SQL参数:', [...params, parseInt(limit), offset]);
+      console.log('WHERE条件:', whereClause);
+      console.log('请求状态参数:', status);
+
+      const [rows] = await pool.execute(sql, [...params, parseInt(limit), offset]);
+
+      const [countRows] = await pool.execute(`
+        SELECT COUNT(*) as total
+        FROM reports
+        ${whereClause}
+      `, params);
+
+      console.log('安全管理部举报查询结果:', {
+        查询到的记录数: rows.length,
+        总数: countRows[0].total
+      });
+
+      // 统一返回的状态字段，仅三种状态
+      // 数据库中现在只有标准状态，不需要映射
+      const formattedRows = rows.map((r) => ({
+        ...r,
+        created_at: formatDateTimeBeijing(r.created_at),
+        updated_at: formatDateTimeBeijing(r.updated_at)
+      }));
+
+      res.json({
+        success: true,
+        data: {
+          reports: formattedRows,
+          pagination: {
+            total: countRows[0].total,
+            page: parseInt(page),
+            limit: parseInt(limit),
+            totalPages: Math.ceil(countRows[0].total / limit)
+          }
+        }
+      });
+    } catch (error) {
+      console.error('获取安全管理部举报列表失败:', error);
+      res.status(500).json({
+        success: false,
+        message: '获取安全管理部举报列表失败',
+        error: error.message
+      });
+    }
+  }
+
+  // 获取个人举报列表（只返回当前用户在当前标段的举报）
+  async getMyReports(req, res) {
+    try {
+      const { page = 1, limit = 20, status, section, severity } = req.query;
+      const offset = (page - 1) * limit;
+
+      console.log('=== 获取个人举报列表 ===');
+      console.log('请求用户信息:', { userId: req.user.userId, nickName: req.user.nickName });
+      console.log('查询参数:', { page, limit, status, section, severity });
+
+      // 必须提供标段参数，个人中心只能查看当前标段的举报
+      if (!section) {
+        return res.status(400).json({
+          success: false,
+          message: '请提供标段参数'
+        });
+      }
+
+      let whereClause = 'WHERE reporter_id = ? AND section = ?';
+      const params = [req.user.userId, section];
+
+      if (status) {
+        whereClause += ' AND status = ?';
+        params.push(status);
+      }
+
+      if (severity) {
+        whereClause += ' AND severity = ?';
+        params.push(severity);
+      }
+
+      const sql = `
+        SELECT
+          id, reporter_name, description, hazard_type, severity,
+          location, section, status, assigned_to, plan, created_at, updated_at, reporter_id
+        FROM reports
+        ${whereClause}
+        ORDER BY updated_at DESC
+        LIMIT ? OFFSET ?
+      `;
+
+      console.log('=== 个人举报列表SQL ===');
+      console.log('SQL语句:', sql);
+      console.log('SQL参数:', [...params, parseInt(limit), offset]);
+      console.log('WHERE条件:', whereClause);
+
+      const [rows] = await pool.execute(sql, [...params, parseInt(limit), offset]);
+
+      const [countRows] = await pool.execute(`
+        SELECT COUNT(*) as total
+        FROM reports
+        ${whereClause}
+      `, params);
+
+      console.log('个人举报查询结果:', {
+        查询到的记录数: rows.length,
+        总数: countRows[0].total,
+        查询条件: whereClause,
+        用户ID: req.user.userId,
+        标段: section
+      });
+
+      const formattedRows = rows.map((r) => ({
+        ...r,
+        created_at: formatDateTimeBeijing(r.created_at),
+        updated_at: formatDateTimeBeijing(r.updated_at)
+      }));
+
+      res.json({
+        success: true,
+        data: {
+          reports: formattedRows,
+          pagination: {
+            total: countRows[0].total,
+            page: parseInt(page),
+            limit: parseInt(limit),
+            totalPages: Math.ceil(countRows[0].total / limit)
+          }
+        }
+      });
+    } catch (error) {
+      console.error('获取个人举报列表失败:', error);
+      res.status(500).json({
+        success: false,
+        message: '获取个人举报列表失败',
+        error: error.message
+      });
+    }
+  }
+
   // 获取举报详情
   async getReportDetail(req, res) {
     try {
@@ -205,13 +479,16 @@ class ReportController {
 
       const report = rows[0];
 
-      // 检查权限
-      if (req.user.role === 'employee' && report.reporter_id !== req.user.userId) {
-        return res.status(403).json({
-          success: false,
-          message: '无权查看此举报记录'
-        });
-      }
+      // 统一状态，仅返回 submitted / processing / completed
+      const normalizeStatus = (st) => {
+        if (st === 'submitted' || st === 'pending') return 'submitted';
+        if (st === 'processing' || st === 'assigned') return 'processing';
+        if (st === 'completed' || st === 'rejected') return 'completed';
+        return st;
+      };
+      report.status = normalizeStatus(report.status);
+
+      // 不做权限检查，前端控制菜单显示
 
       // 获取历史记录
       const [historyRows] = await pool.execute(`
@@ -328,9 +605,12 @@ class ReportController {
     try {
       const { id } = req.params;
       const { status, assignedTo, plan, feedback } = req.body;
+      const isRejected = req.body.isRejected === true;
 
-      console.log('更新举报状态 - 用户信息:', req.user);
-      console.log('更新举报状态 - 用户角色:', req.user.role);
+      console.log('=== 更新举报状态 ===');
+      console.log('用户信息:', { userId: req.user.userId, nickName: req.user.nickName });
+      console.log('请求参数:', { status, assignedTo, plan, feedback, isRejected });
+      console.log('最终处理方案:', isRejected ? '已驳回，无须处理' : (plan || null));
 
       // 检查权限 - 只有admin角色可以操作
       if (!req.user) {
@@ -340,13 +620,10 @@ class ReportController {
         });
       }
 
-      // 如果不是admin角色，不允许操作
-      if (req.user.role !== 'admin') {
-        return res.status(403).json({
-          success: false,
-          message: '权限不足，只有安全管理部可以操作'
-        });
-      }
+      // 不做权限检查，前端控制菜单显示
+
+      // 如果是驳回办结，强制设置处理方案为"已驳回，无须处理"
+      const finalPlan = isRejected ? '已驳回，无须处理' : (plan || null);
 
       const [result] = await pool.execute(`
         UPDATE reports
@@ -355,7 +632,7 @@ class ReportController {
       `, [
         status,
         assignedTo || null,
-        plan || null,
+        finalPlan,
         feedback || null,
         new Date(),
         id
@@ -372,22 +649,24 @@ class ReportController {
       let actionText = '';
       let descriptionText = '';
 
-      switch (status) {
-        case 'processing':
-          actionText = '确认处理';
-          descriptionText = '已确认接收任务，正在处理中';
-          break;
-        case 'completed':
-          actionText = '完成办结';
-          descriptionText = '隐患已整改完成，确认办结';
-          break;
-        case 'rejected':
-          actionText = '驳回办结';
-          descriptionText = '确认为非隐患，直接办结';
-          break;
-        default:
-          actionText = '更新状态';
-          descriptionText = `将状态更新为: ${status}`;
+      // 根据是否是驳回办结来生成不同的历史记录
+      if (isRejected) {
+        actionText = '驳回办结';
+        descriptionText = '已驳回，无须处理';
+      } else {
+        switch (status) {
+          case 'processing':
+            actionText = '确认处理';
+            descriptionText = '已确认接收任务，正在处理中';
+            break;
+          case 'completed':
+            actionText = '完成办结';
+            descriptionText = '隐患已整改完成，确认办结';
+            break;
+          default:
+            actionText = '更新状态';
+            descriptionText = `将状态更新为: ${status}`;
+        }
       }
 
       await pool.execute(`
@@ -443,13 +722,7 @@ class ReportController {
         });
       }
 
-      // 如果不是admin角色，不允许操作
-      if (req.user.role !== 'admin') {
-        return res.status(403).json({
-          success: false,
-          message: '权限不足，只有安全管理部可以操作'
-        });
-      }
+      // 不做权限检查，前端控制菜单显示
 
       // 开始事务
       const connection = await pool.getConnection();
@@ -535,13 +808,7 @@ class ReportController {
         });
       }
 
-      // 如果不是admin角色，不允许操作
-      if (req.user.role !== 'admin') {
-        return res.status(403).json({
-          success: false,
-          message: '权限不足，只有安全管理部可以操作'
-        });
-      }
+      // 不做权限检查，前端控制菜单显示
 
       const [result] = await pool.execute(`
         UPDATE reports
@@ -626,13 +893,7 @@ class ReportController {
     try {
       const { section, startDate, endDate } = req.query;
 
-      // 权限检查：仅管理员可访问
-      if (!req.user) {
-        return res.status(401).json({ success: false, message: '请先登录' });
-      }
-      if (req.user.role !== 'admin') {
-        return res.status(403).json({ success: false, message: '权限不足，只有安全管理部可以访问统计数据' });
-      }
+      // 不做权限检查，前端控制菜单显示
 
       if (!section) {
         return res.status(400).json({ success: false, message: '请提供标段代码 section' });
@@ -687,24 +948,21 @@ class ReportController {
 
       const total = (totalRows && totalRows[0] && totalRows[0].total) ? totalRows[0].total : 0;
 
-      const statusCounts = {
-        submitted: 0,
-        pending: 0,
-        assigned: 0,
-        processing: 0,
-        completed: 0,
-        rejected: 0
-      };
+      // 统一三状态的统计：将历史状态聚合
+      const statusCountsRaw = {};
       statusRows.forEach(row => {
-        if (statusCounts.hasOwnProperty(row.status)) {
-          statusCounts[row.status] = row.count;
-        }
+        statusCountsRaw[row.status] = row.count;
       });
+
+      const statusCounts = {
+        submitted: statusCountsRaw.submitted || 0,
+        processing: statusCountsRaw.processing || 0,
+        completed: statusCountsRaw.completed || 0
+      };
 
       const hazardDistribution = hazardRows.map(row => ({ type: row.type || 'other', count: row.count }));
 
-      const completedOrRejected = statusCounts.completed + statusCounts.rejected;
-      const resolutionRate = total > 0 ? Math.round((completedOrRejected / total) * 100) : 0;
+      const resolutionRate = total > 0 ? Math.round((statusCounts.completed / total) * 100) : 0;
 
       // 返回北京时间格式的范围
       const range = {

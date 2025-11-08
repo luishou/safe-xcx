@@ -65,11 +65,6 @@ class AuthController {
             openid,
             nickName: userInfo.nickName || '微信用户',
             avatarUrl: userInfo.avatarUrl || '',
-            gender: userInfo.gender || 0,
-            city: userInfo.city || '',
-            province: userInfo.province || '',
-            country: userInfo.country || '',
-            language: userInfo.language || 'zh_CN',
             role: 'employee', // 默认角色为员工
             status: 'active',
             createdAt: new Date(),
@@ -90,13 +85,8 @@ class AuthController {
         // 更新用户信息（如果提供了新的用户信息）
         if (userInfo) {
           await User.update(user.id, {
-            nickName: userInfo.nickName || user.nickName,
-            avatarUrl: userInfo.avatarUrl || user.avatarUrl,
-            gender: userInfo.gender !== undefined ? userInfo.gender : user.gender,
-            city: userInfo.city || user.city,
-            province: userInfo.province || user.province,
-            country: userInfo.country || user.country,
-            language: userInfo.language || user.language,
+            nick_name: userInfo.nickName || user.nick_name,
+            avatar_url: userInfo.avatarUrl || user.avatar_url,
             updatedAt: new Date()
           });
         }
@@ -126,7 +116,8 @@ class AuthController {
             nickName: user.nickName,
             avatarUrl: user.avatarUrl,
             role: user.role,
-            status: user.status
+            status: user.status,
+            managed_sections: user.managed_sections
           }
         }
       });
@@ -186,7 +177,8 @@ class AuthController {
             id: user.id,
             nickName: user.nickName,
             avatarUrl: user.avatarUrl,
-            role: user.role
+            role: user.role,
+            managed_sections: user.managed_sections
           }
         }
       });
@@ -225,19 +217,12 @@ class AuthController {
       }
 
       // 打印用户信息
-      console.log('=== 用户信息 (verifyToken) ===');
+      console.log('=== Token验证用户信息 ===');
       console.log('用户ID:', user.id);
-      console.log('OpenID:', user.openid);
       console.log('昵称:', user.nickName);
       console.log('角色:', user.role);
       console.log('状态:', user.status);
-      console.log('头像:', user.avatarUrl);
-      console.log('性别:', user.gender);
-      console.log('城市:', user.city);
-      console.log('省份:', user.province);
-      console.log('国家:', user.country);
-      console.log('创建时间:', user.createdAt);
-      console.log('更新时间:', user.updatedAt);
+      console.log('管理标段:', user.managed_sections);
       console.log('===========================');
 
       res.json({
@@ -248,7 +233,8 @@ class AuthController {
             id: user.id,
             nickName: user.nickName,
             avatarUrl: user.avatarUrl,
-            role: user.role
+            role: user.role,
+            managed_sections: user.managed_sections
           }
         }
       });

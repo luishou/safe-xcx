@@ -69,19 +69,25 @@ Page({
             console.log('登录用户信息还未加载，延迟检查...');
             setTimeout(() => {
                 console.log('延迟检查后的登录用户信息:', app.globalData.currentUser);
-                if (app.globalData.currentUser) {
-                    const updatedUser = {
-                        ...mergedUser,
-                        name: app.globalData.currentUser.name || mergedUser.name,
-                        role: app.globalData.currentUser.role || mergedUser.role,
-                        department: app.globalData.currentUser.department || mergedUser.department,
-                        avatar: app.globalData.currentUser.avatar || mergedUser.avatar,
-                        phone: app.globalData.currentUser.phone || mergedUser.phone
-                    };
-                    this.setData({
-                        currentUser: updatedUser
-                    });
-                }
+                console.log('延迟检查后的微信用户信息:', app.globalData.userInfo);
+
+                const updatedCurrentUser = app.globalData.currentUser;
+                const updatedWechatUser = app.globalData.userInfo;
+
+                // 重新构建用户信息
+                const updatedUser = {
+                    name: updatedCurrentUser?.name || updatedCurrentUser?.nickName || updatedWechatUser?.nickName || '微信用户',
+                    role: updatedCurrentUser?.role || 'employee',
+                    department: updatedCurrentUser?.department || '未设置部门',
+                    avatar: updatedCurrentUser?.avatar || updatedCurrentUser?.avatarUrl || updatedWechatUser?.avatarUrl || '👷',
+                    phone: updatedCurrentUser?.phone || '138****1234'
+                };
+
+                console.log('延迟重新构建的用户信息:', updatedUser);
+
+                this.setData({
+                    currentUser: updatedUser
+                });
             }, 1000);
         }
 
@@ -91,6 +97,14 @@ Page({
     loadMyReportsCount: function () {
         const app = getApp();
         const currentSection = app.globalData.currentSection;
+        const currentUser = app.globalData.currentUser;
+
+        console.log('=== 个人中心加载举报数量 ===');
+        console.log('当前用户信息:', currentUser);
+        console.log('当前用户ID:', currentUser?.id);
+        console.log('当前用户角色:', currentUser?.role);
+        console.log('当前标段:', currentSection);
+        console.log('Token存在:', !!app.globalData.token);
 
         if (!app.globalData.token || !currentSection) {
             this.setData({
@@ -102,24 +116,38 @@ Page({
 
         this.setData({ isLoadingMyReports: true });
         wx.showNavigationBarLoading();
+
+        const requestData = {
+            section: currentSection.section_code
+        };
+
+        console.log('请求参数:', requestData);
+
         wx.request({
-            url: app.globalData.baseUrl + '/report/list',
+            url: app.globalData.baseUrl + '/report/personal-reports',
             method: 'GET',
             header: {
                 'Authorization': 'Bearer ' + app.globalData.token
             },
-            data: {
-                section: currentSection.section_code,
-                ownOnly: true
-            },
+            data: requestData,
             success: (res) => {
+                console.log('=== 举报数量查询响应 ===');
+                console.log('响应状态:', res.statusCode);
+                console.log('响应数据:', res.data);
+
                 if (res.data.success) {
                     const total = res.data.data.pagination?.total || (res.data.data.reports?.length || 0);
+                    const reports = res.data.data.reports || [];
+
+                    console.log('举报总数:', total);
+                    console.log('举报列表:', reports);
+
                     this.setData({
                         myReportsCount: total
                     });
                 } else {
                     console.error('获取举报记录失败:', res.data.message);
+                    console.error('错误详情:', res.data);
                     this.setData({
                         myReportsCount: 0
                     });

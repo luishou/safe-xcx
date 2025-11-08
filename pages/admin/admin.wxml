@@ -155,9 +155,7 @@
             <view wx:for="{{completedReports}}" wx:key="id" class="report-item completed-item" bindtap="showReportDetail" data-id="{{item.id}}">
                 <view class="item-header">
                     <view class="item-type">{{item.hazardType}}</view>
-                    <view class="item-status {{item.resultType === 'rejected' ? 'rejected' : 'confirmed'}}">
-                        {{item.resultType === 'rejected' ? '已驳回' : '已确认'}}
-                    </view>
+                    <view class="item-status confirmed">已办结</view>
                 </view>
                 <view class="item-desc">{{item.description}}</view>
                 <view class="item-meta">

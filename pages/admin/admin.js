@@ -65,25 +65,11 @@ Page({
 
     console.log('管理员页面 - 当前用户:', currentUser);
 
-    // 检查是否是管理员
-    const isAdmin = currentUser && currentUser.role === 'admin';
-
-    if (!isAdmin) {
-      wx.showModal({
-        title: '权限不足',
-        content: '您没有权限访问安全管理部页面',
-        showCancel: false,
-        success: () => {
-          wx.navigateBack();
-        }
-      });
-      return;
-    }
+    // 不做权限检查，前端控制菜单显示
 
     this.setData({
       currentUser: currentUser || {
         name: '安全环保部',
-        role: 'admin',
         department: '安全部门',
         avatar: '/images/manager-avatar.png',
         phone: '137****9012'
@@ -116,125 +102,124 @@ Page({
       loading: true
     });
 
-    // 从后端加载举报数据
-    wx.request({
-      url: app.globalData.baseUrl + '/report/list',
-      method: 'GET',
-      header: {
-        'Authorization': 'Bearer ' + app.globalData.token
-      },
-      data: {
-        section: currentSection.section_code
-      },
-      success: (res) => {
-        this.setData({
-          loading: false
-        });
+    // 定义映射与处理函数
+    const mapHazardType = (type) => {
+      const mapping = {
+        'fire': '消防安全隐患',
+        'electric': '电气安全隐患',
+        'chemical': '化学品安全隐患',
+        'mechanical': '机械设备安全隐患',
+        'height': '高空作业安全隐患',
+        'traffic': '交通安全隐患',
+        'environment': '环境安全隐患',
+        'other': '其他安全隐患'
+      };
+      return mapping[type] || type;
+    };
 
-        if (res.data.success) {
-          console.log('获取举报记录成功:', res.data.data.reports);
-          const reports = res.data.data.reports;
+    const mapSeverity = (severity) => {
+      const mapping = {
+        'low': '一般',
+        'medium': '紧急',
+        'high': '非常紧急',
+        'critical': '极其紧急'
+      };
+      return mapping[severity] || severity;
+    };
 
-          // 按状态分类
-          const pendingReports = reports.filter(report => report.status === 'pending' || report.status === 'submitted');
-          const processingReports = reports.filter(report => report.status === 'processing' || report.status === 'assigned');
-          const completedReports = reports.filter(report => report.status === 'completed' || report.status === 'rejected');
+    const mapStatus = (status) => {
+      const mapping = {
+        'submitted': '待处理',
+        'processing': '处理中',
+        'completed': '已办结'
+      };
+      return mapping[status] || status;
+    };
 
-          console.log('任务中心状态分类结果:', {
-            总数: reports.length,
-            待处理: pendingReports.length,
-            处理中: processingReports.length,
-            已办结: completedReports.length,
-            待处理状态: pendingReports.map(r => ({ id: r.id, status: r.status })),
-            处理中状态: processingReports.map(r => ({ id: r.id, status: r.status }))
-          });
+    const { formatBeijing } = require('../../utils/time.js');
+    const processReports = (reports) => {
+      return (reports || []).map(report => ({
+        ...report,
+        hazardType: mapHazardType(report.hazard_type),
+        severity: mapSeverity(report.severity),
+        status: mapStatus(report.status),
+        reporter: report.reporter_name || '未知',
+        reportTime: formatBeijing(report.created_at),
+        location: report.location,
+        priority: report.severity,
+        assignee: report.assignee_name,
+        processTime: formatBeijing(report.processed_at),
+        completeTime: formatBeijing(report.completed_at),
+        resultType: 'confirmed'
+      }));
+    };
 
-          // 为每个举报添加中文映射
-          const mapHazardType = (type) => {
-            const mapping = {
-              'fire': '消防安全隐患',
-              'electric': '电气安全隐患',
-              'chemical': '化学品安全隐患',
-              'mechanical': '机械设备安全隐患',
-              'height': '高空作业安全隐患',
-              'traffic': '交通安全隐患',
-              'environment': '环境安全隐患',
-              'other': '其他安全隐患'
-            };
-            return mapping[type] || type;
-          };
+    // 三类状态的后端查询，分别请求（统一为三状态）
+    const tabStatuses = {
+      pending: ['submitted'],
+      processing: ['processing'],
+      completed: ['completed']
+    };
 
-          const mapSeverity = (severity) => {
-            const mapping = {
-              'low': '一般',
-              'medium': '紧急',
-              'high': '非常紧急',
-              'critical': '极其紧急'
-            };
-            return mapping[severity] || severity;
-          };
-
-          const mapStatus = (status) => {
-            const mapping = {
-              'submitted': '已提交',
-              'pending': '待处理',
-              'assigned': '已分配',
-              'processing': '处理中',
-              'completed': '已办结',
-              'rejected': '已驳回'
-            };
-            return mapping[status] || status;
-          };
-
-          const { formatBeijing } = require('../../utils/time.js');
-          const processReports = (reports) => {
-            return reports.map(report => ({
-              ...report,
-              hazardType: mapHazardType(report.hazard_type),
-              severity: mapSeverity(report.severity),
-              status: mapStatus(report.status),
-              reporter: report.reporter_name || '未知',
-              reportTime: formatBeijing(report.created_at),
-              location: report.location,
-              priority: report.severity,
-              assignee: report.assignee_name,
-              processTime: formatBeijing(report.processed_at),
-              completeTime: formatBeijing(report.completed_at),
-              resultType: report.status === 'rejected' ? 'rejected' : 'confirmed'
-            }));
-          };
-
-          this.setData({
-            pendingReports: processReports(pendingReports),
-            processingReports: processReports(processingReports),
-            completedReports: processReports(completedReports),
-            pendingCount: pendingReports.length,
-            processingCount: processingReports.length,
-            completedCount: completedReports.length
-          });
-
-          // 计算隐患类型分布用于饼图
-          this.processHazardDistribution(reports);
-          // 设置画布尺寸并绘制饼图
-          this.setCanvasSize();
-        } else {
-          console.error('获取举报记录失败:', res.data.message);
-          wx.showToast({
-            title: '获取举报记录失败',
-            icon: 'none'
-          });
-        }
-      },
-      fail: (err) => {
-        console.error('获取举报记录请求失败:', err);
-        this.setData({
-          loading: false
-        });
-        wx.showToast({
-          title: '网络错误',
-          icon: 'none'
-        });
+    let done = 0;
+    const finishOne = () => {
+      done += 1;
+      if (done === 3) {
+        this.setData({ loading: false });
+        // 统计与图表改为使用后端统计接口
+        this.fetchStats();
       }
+    };
+
+    const fetchByStatuses = (statuses, onSuccess) => {
+      wx.request({
+        url: app.globalData.baseUrl + '/report/list',
+        method: 'GET',
+        header: { 'Authorization': 'Bearer ' + app.globalData.token },
+        data: { section: currentSection.section_code, status: statuses.join(',') },
+        success: (res) => {
+          if (res.data && res.data.success) {
+            onSuccess(res.data.data.reports || []);
+          } else {
+            wx.showToast({ title: '获取举报记录失败', icon: 'none' });
+            onSuccess([]);
+          }
+          finishOne();
+        },
+        fail: (err) => {
+          console.error('获取举报记录请求失败:', err);
+          wx.showToast({ title: '网络错误', icon: 'none' });
+          onSuccess([]);
+          finishOne();
+        }
+      });
+    };
+
+    // 请求待处理
+    fetchByStatuses(tabStatuses.pending, (list) => {
+      const processed = processReports(list);
+      this.setData({
+        pendingReports: processed,
+        pendingCount: processed.length
+      });
+    });
+
+    // 请求处理中
+    fetchByStatuses(tabStatuses.processing, (list) => {
+      const processed = processReports(list);
+      this.setData({
+        processingReports: processed,
+        processingCount: processed.length
+      });
+    });
+
+    // 请求已办结
+    fetchByStatuses(tabStatuses.completed, (list) => {
+      const processed = processReports(list);
+      this.setData({
+        completedReports: processed,
+        completedCount: processed.length
+      });
     });
   },
 
@@ -455,16 +440,10 @@ Page({
 
           console.log('统计数据返回的状态分布:', statusCounts);
 
-          // 映射到三类统计卡片（与任务中心保持一致）
-          const pending = (statusCounts.pending || 0) + (statusCounts.submitted || 0);
-          const processing = (statusCounts.processing || 0) + (statusCounts.assigned || 0);
-          const completed = (statusCounts.completed || 0) + (statusCounts.rejected || 0);
-
-          console.log('统计卡片计算结果:', {
-            pending: `${pending} = (${statusCounts.pending || 0}) + (${statusCounts.submitted || 0})`,
-            processing: `${processing} = (${statusCounts.processing || 0}) + (${statusCounts.assigned || 0})`,
-            completed: `${completed} = (${statusCounts.completed || 0}) + (${statusCounts.rejected || 0})`
-          });
+          // 统一三状态统计卡片：直接使用后端聚合结果
+          const pending = statusCounts.submitted || 0;
+          const processing = statusCounts.processing || 0;
+          const completed = statusCounts.completed || 0;
 
           // 将后端的类型分布(count)转为百分比供环形图使用
           const total = hazardDistribution.reduce((sum, item) => sum + (item.count || 0), 0);

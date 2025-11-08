@@ -83,14 +83,19 @@ Page({
       loading: true
     });
 
+    const currentUser = app.globalData.currentUser;
+    console.log('=== 我的举报页面加载 ===');
+    console.log('当前用户信息:', currentUser);
+    console.log('用户ID:', currentUser?.id);
+    console.log('用户角色:', currentUser?.role);
+
     wx.request({
-      url: app.globalData.baseUrl + '/report/list',
+      url: app.globalData.baseUrl + '/report/personal-reports',
       method: 'GET',
       header: {
         'Authorization': 'Bearer ' + app.globalData.token
       },
       data: {
-        ownOnly: true, // 只查看自己的举报
         section: app.globalData.currentSection?.section_code
       },
       success: (res) => {
@@ -119,12 +124,9 @@ Page({
 
           const mapStatus = (status) => {
             const mapping = {
-              'submitted': '已提交',
-              'pending': '待处理',
-              'assigned': '已分配',
+              'submitted': '待处理',
               'processing': '处理中',
-              'completed': '已办结',
-              'rejected': '已驳回'
+              'completed': '已办结'
             };
             return mapping[status] || status;
           };
@@ -161,8 +163,8 @@ Page({
           const processedReports = processReports(reports);
 
           // 按状态分类
-          const processingReports = processedReports.filter(report => report.status === '处理中' || report.status === '已分配');
-          const completedReports = processedReports.filter(report => report.status === '已办结' || report.status === '已驳回');
+          const processingReports = processedReports.filter(report => report.status === '处理中');
+          const completedReports = processedReports.filter(report => report.status === '已办结');
           const evaluatedReports = completedReports.filter(report => report.status === '已办结'); // 假设已办结的就是已评价的
 
           console.log('状态统计:', {

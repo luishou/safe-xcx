@@ -1,0 +1,27 @@
+function formatFileSize(bytes) {
+  if (!bytes || bytes === 0) {
+    return '未知大小';
+  }
+
+  var k = 1024;
+  var sizes = ['B', 'KB', 'MB'];
+  var i = Math.floor(Math.log(bytes) / Math.log(k));
+  var size = (bytes / Math.pow(k, i)).toFixed(2);
+  return size + ' ' + sizes[i];
+}
+
+function getFileType(fileName) {
+  if (!fileName) {
+    return 'unknown';
+  }
+
+  var extension = fileName.split('.').pop().toLowerCase();
+  if (extension === 'pdf') return 'pdf';
+  if (extension === 'doc' || extension === 'docx') return 'word';
+  return 'unknown';
+}
+
+module.exports = {
+  formatFileSize: formatFileSize,
+  getFileType: getFileType
+};

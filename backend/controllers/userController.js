@@ -19,13 +19,9 @@ class UserController {
           id: user.id,
           nickName: user.nickName,
           avatarUrl: user.avatarUrl,
-          gender: user.gender,
-          city: user.city,
-          province: user.province,
-          country: user.country,
-          language: user.language,
           role: user.role,
           status: user.status,
+          managed_sections: user.managed_sections,
           createdAt: user.created_at
         }
       });
@@ -42,16 +38,11 @@ class UserController {
   // 更新用户信息
   async updateProfile(req, res) {
     try {
-      const { nickName, avatarUrl, gender, city, province, country, language } = req.body;
+      const { nickName, avatarUrl } = req.body;
       const updateData = {};
 
-      if (nickName !== undefined) updateData.nickName = nickName;
-      if (avatarUrl !== undefined) updateData.avatarUrl = avatarUrl;
-      if (gender !== undefined) updateData.gender = gender;
-      if (city !== undefined) updateData.city = city;
-      if (province !== undefined) updateData.province = province;
-      if (country !== undefined) updateData.country = country;
-      if (language !== undefined) updateData.language = language;
+      if (nickName !== undefined) updateData.nick_name = nickName;
+      if (avatarUrl !== undefined) updateData.avatar_url = avatarUrl;
 
       updateData.updatedAt = new Date();
 
@@ -64,12 +55,8 @@ class UserController {
           id: user.id,
           nickName: user.nickName,
           avatarUrl: user.avatarUrl,
-          gender: user.gender,
-          city: user.city,
-          province: user.province,
-          country: user.country,
-          language: user.language,
           role: user.role,
+          managed_sections: user.managed_sections,
           updatedAt: user.updated_at
         }
       });

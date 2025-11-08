@@ -117,7 +117,7 @@
         </view>
 
         <!-- 待处理状态的操作按钮 - 仅安全环保部可见 -->
-        <view class="actions-section" wx:if="{{canOperate && (currentStatus === 'pending' || currentStatus === 'submitted')}}">
+        <view class="actions-section" wx:if="{{canOperate && (currentStatus === 'submitted')}}">
             <view class="section-title">处理操作</view>
             <view class="action-buttons">
                 <button class="action-btn confirm-btn" bindtap="confirmReport">
@@ -136,7 +136,7 @@
         </view>
 
         <!-- 处理中状态的操作按钮 - 仅安全环保部可见 -->
-        <view class="actions-section" wx:if="{{canOperate && (currentStatus === 'processing' || currentStatus === 'assigned')}}">
+        <view class="actions-section" wx:if="{{canOperate && (currentStatus === 'processing')}}">
             <view class="section-title">完成处理</view>
 
             <view class="upload-section">

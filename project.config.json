@@ -2,10 +2,22 @@
   "description": "项目配置文件",
   "packOptions": {
     "ignore": [
-      { "type": "glob", "value": "backend/**" },
-      { "type": "glob", "value": ".env*" },
-      { "type": "glob", "value": "README*" },
-      { "type": "glob", "value": ".claude/**" }
+      {
+        "value": "backend/**",
+        "type": "glob"
+      },
+      {
+        "value": ".env*",
+        "type": "glob"
+      },
+      {
+        "value": "README*",
+        "type": "glob"
+      },
+      {
+        "value": ".claude/**",
+        "type": "glob"
+      }
     ],
     "include": []
   },

@@ -91,12 +91,9 @@ Page({
   // 映射状态为中文
   mapStatus(status) {
     const mapping = {
-      'submitted': '已提交',
-      'pending': '待处理',
-      'assigned': '已分配',
+      'submitted': '待处理',
       'processing': '处理中',
-      'completed': '已办结',
-      'rejected': '已驳回'
+      'completed': '已办结'
     };
     return mapping[status] || status;
   },
@@ -119,14 +116,13 @@ Page({
     wx.showNavigationBarLoading();
 
     wx.request({
-      url: app.globalData.baseUrl + '/report/list',
+      url: app.globalData.baseUrl + '/report/personal-reports',
       method: 'GET',
       header: {
         'Authorization': 'Bearer ' + app.globalData.token
       },
       data: {
-        section: sectionCode,
-        ownOnly: true
+        section: sectionCode
       },
       success: (res) => {
         this.setData({

@@ -41,12 +41,23 @@ Page({
         if (res.data && res.data.success) {
           const list = res.data.data || [];
           this.setData({ articles: list });
-          // 取最新的一条作为“安全知识”内容
+          // 取最新的一条作为"安全知识"内容
           const current = list && list.length ? list[0] : null;
           if (current) {
-            this.setData({ knowledge: { id: current.id, content: current.content || '' } });
+            this.setData({
+              knowledge: {
+                id: current.id,
+                content: current.content || '',
+                attachments: current.attachments || []
+              }
+            });
+            // 加载现有附件
+            this._loadExistingAttachments();
           } else {
-            this.setData({ knowledge: { id: '', content: '' } });
+            this.setData({
+              knowledge: { id: '', content: '', attachments: [] },
+              attachments: []
+            });
           }
         } else { wx.showToast({ title: '加载失败', icon: 'none' }); }
       },
@@ -318,7 +329,7 @@ Page({
     const that = this;
 
     wx.uploadFile({
-      url: app.globalData.baseUrl + '/upload',
+      url: app.globalData.baseUrl + '/upload/document',
       filePath: file.path,
       name: 'file',
       header: {
@@ -333,8 +344,9 @@ Page({
             // 添加到附件列表
             const newAttachment = {
               name: file.name,
-              path: data.filePath,
-              size: file.size
+              path: data.filePath || data.data.url,
+              size: file.size,
+              type: data.data.type || that._getFileType(file.name)
             };
 
             const attachments = [...that.data.attachments, newAttachment];
@@ -367,6 +379,38 @@ Page({
         });
       }
     });
+  },
+
+  // 获取文件类型图标
+  _getFileType(fileName) {
+    const extension = fileName.split('.').pop().toLowerCase();
+    if (extension === 'pdf') return 'pdf';
+    if (extension === 'doc' || extension === 'docx') return 'word';
+    return 'unknown';
+  },
+
+  // 格式化文件大小
+  _formatFileSize(bytes) {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  },
+
+  // 加载现有附件（编辑时）
+  _loadExistingAttachments() {
+    const { knowledge } = this.data;
+    if (knowledge && knowledge.attachments && Array.isArray(knowledge.attachments)) {
+      this.setData({
+        attachments: knowledge.attachments.map(att => ({
+          name: att.name || '未知文件',
+          path: att.path || att.url,
+          size: att.size || 0,
+          type: this._getFileType(att.name || 'unknown')
+        }))
+      });
+    }
   },
 
   // 删除附件

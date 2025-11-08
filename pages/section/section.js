@@ -45,11 +45,123 @@ Page({
         wx.navigateBack()
     },
 
-    // 根据全局用户信息更新角色标识
+    // 实时获取用户信息并更新权限
+    fetchUserInfoAndUpdateFlags: function() {
+        const app = getApp();
+        const currentSection = this.data.section || app.globalData.currentSection?.section_code;
+
+        if (!app.globalData.token) {
+            console.log('未登录，不显示管理菜单');
+            this.setData({
+                isAdmin: false,
+                hasManagementAccess: false
+            });
+            return;
+        }
+
+        console.log('=== 实时获取用户信息 ===');
+        console.log('当前标段:', currentSection);
+
+        // 请求最新的用户信息
+        wx.request({
+            url: app.globalData.baseUrl + '/auth/verify',
+            method: 'POST',
+            data: {
+                token: app.globalData.token
+            },
+            success: (res) => {
+                console.log('用户信息获取成功:', res.data);
+
+                if (res.data && res.data.success) {
+                    const userInfo = res.data.data.user;
+
+                    // 更新全局用户信息
+                    app.globalData.currentUser = {
+                        ...userInfo,
+                        name: userInfo.nickName || userInfo.name,
+                        nickName: userInfo.nickName || userInfo.name,
+                        department: userInfo.department || '未设置部门',
+                        avatar: userInfo.avatarUrl || userInfo.avatar || '👷',
+                        avatarUrl: userInfo.avatarUrl || userInfo.avatar || '👷',
+                        managed_sections: userInfo.managed_sections
+                    };
+
+                    console.log('更新后的全局用户信息:', app.globalData.currentUser);
+
+                    // 检查权限
+                    this.checkManagementAccess(currentSection, userInfo.managed_sections);
+                } else {
+                    console.error('获取用户信息失败:', res.data.message);
+                    this.setData({
+                        isAdmin: false,
+                        hasManagementAccess: false
+                    });
+                }
+            },
+            fail: (err) => {
+                console.error('获取用户信息请求失败:', err);
+                this.setData({
+                    isAdmin: false,
+                    hasManagementAccess: false
+                });
+            }
+        });
+    },
+
+    // 检查管理权限
+    checkManagementAccess: function(currentSection, managedSections) {
+        console.log('=== 检查管理权限 ===');
+        console.log('当前标段:', currentSection);
+        console.log('managed_sections字段:', managedSections);
+        console.log('字段类型:', typeof managedSections);
+
+        let hasManagementAccess = false;
+        let parsedSections = [];
+        const currentSectionName = (this.data.sectionInfo?.section_name || '').trim();
+        const currentSectionCode = (currentSection || '').trim();
+
+        if (managedSections && currentSection) {
+            try {
+                parsedSections = Array.isArray(managedSections)
+                    ? managedSections
+                    : JSON.parse(managedSections || '[]');
+                // 统一大小写与空白，确保匹配稳健
+                parsedSections = (parsedSections || [])
+                    .filter(v => typeof v === 'string')
+                    .map(v => v.trim());
+
+                // 仅使用“标段代码”进行匹配判断权限
+                hasManagementAccess = currentSectionCode ? parsedSections.includes(currentSectionCode) : false;
+
+                console.log('权限检查详情:', {
+                    当前标段代码: currentSectionCode,
+                    当前标段名称: currentSectionName,
+                    解析后的管理标段: parsedSections,
+                    代码包含关系: parsedSections.includes(currentSectionCode),
+                    最终权限: hasManagementAccess
+                });
+            } catch (error) {
+                console.error('解析managed_sections失败:', error);
+                console.error('原始数据:', managedSections);
+                hasManagementAccess = false;
+            }
+        } else {
+            console.log('权限检查失败 - 缺少必要数据:', {
+                当前标段存在: !!currentSection,
+                managed_sections存在: !!managedSections
+            });
+        }
+
+        console.log('设置菜单显示状态:', hasManagementAccess);
+        this.setData({
+            isAdmin: hasManagementAccess,
+            hasManagementAccess: hasManagementAccess
+        });
+    },
+
+    // 根据全局用户信息更新角色标识（保留作为备用）
     updateRoleFlags: function() {
-        const currentUser = app.globalData.currentUser;
-        const isAdmin = !!(currentUser && currentUser.role === 'admin');
-        this.setData({ isAdmin });
+        this.fetchUserInfoAndUpdateFlags();
     },
 
     directToReport: function() {
@@ -125,15 +237,7 @@ Page({
             return;
         }
 
-        const currentUser = app.globalData.currentUser;
-        if (currentUser.role !== 'admin') {
-            wx.showToast({
-                title: '权限不足，仅管理员可访问',
-                icon: 'none',
-                duration: 2000
-            });
-            return;
-        }
+        // 不做权限检查，前端控制菜单显示
 
         // 设置标段信息
         if (this.data.sectionInfo) {
@@ -150,86 +254,7 @@ Page({
         });
     },
 
-    loginAs: function(e) {
-        console.log('loginAs被调用', e)
-
-        // 检查用户是否已授权，如果未授权则不允许设置用户信息
-        if (!app.globalData.currentUser) {
-            wx.showToast({
-                title: '请先授权登录',
-                icon: 'none',
-                duration: 2000
-            });
-            return;
-        }
-
-        const role = e.currentTarget.dataset.role
-        console.log('当前角色:', role)
-        const userData = {
-            'employee': {
-                name: '员工',
-                role: 'employee',
-                department: '生产车间',
-                avatar: '👷',
-                phone: '138****1234'
-            },
-            'admin': {
-                name: '安全环保部',
-                role: 'admin',
-                department: '安全部门',
-                avatar: '👩‍💼',
-                phone: '137****9012'
-            }
-        }
-
-        app.globalData.currentUser = userData[role]
-
-        // 设置标段信息
-        if (this.data.sectionInfo) {
-            app.globalData.currentSection = this.data.sectionInfo;
-        } else {
-            app.globalData.currentSection = {
-                section_code: this.data.section,
-                section_name: `第${this.data.section}标段`
-            };
-        }
-
-        if (role === 'employee') {
-            // 个人中心按钮跳转到我的举报页面
-            wx.showToast({
-                title: '欢迎回来，员工！',
-                icon: 'success',
-                duration: 1500
-            })
-
-            setTimeout(() => {
-                wx.switchTab({
-                    url: '/pages/my-reports/my-reports'
-                })
-            }, 1500)
-        } else {
-            // 安全环保部按钮跳转到管理员界面
-            wx.showToast({
-                title: `欢迎回来，第${this.data.section}标段${userData[role].name}！`,
-                icon: 'success',
-                duration: 2000
-            })
-
-            // 根据用户角色跳转到不同页面
-            const currentUser = app.globalData.currentUser;
-            if (currentUser && currentUser.role === 'admin') {
-                // admin用户跳转到安全管理部页面
-                wx.navigateTo({
-                    url: '/pages/admin/admin'
-                });
-            } else {
-                // employee用户跳转到员工页面
-                wx.navigateTo({
-                    url: '/pages/employee/employee'
-                });
-            }
-        }
-    },
+    // loginAs 方法已移除 - 不再使用基于角色的登录逻辑
 
     onReady: function () {
         // 页面渲染完成

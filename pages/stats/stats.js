@@ -187,9 +187,9 @@ Page({
       title: '加载中...'
     });
 
-    // 从后端获取统计数据
+    // 从后端获取聚合统计数据
     wx.request({
-      url: app.globalData.baseUrl + '/report/list',
+      url: app.globalData.baseUrl + '/report/stats',
       method: 'GET',
       header: {
         'Authorization': 'Bearer ' + app.globalData.token
@@ -200,8 +200,8 @@ Page({
       success: (res) => {
         wx.hideLoading();
         if (res.data.success) {
-          const reports = res.data.data.reports;
-          this.processStatisticsData(reports);
+          const { statusCounts, hazardDistribution, totalReports, resolutionRate } = res.data.data || {};
+          this.applyStatsData({ statusCounts, hazardDistribution, totalReports, resolutionRate });
         } else {
           console.error('获取统计数据失败:', res.data.message);
           wx.showToast({
@@ -283,6 +283,53 @@ Page({
     this.initChartData();
 
     // 延迟绘制饼图，确保数据已更新
+    setTimeout(() => {
+      this.setCanvasSize();
+    }, 300);
+  },
+
+  /**
+   * 应用后端聚合统计数据
+   */
+  applyStatsData({ statusCounts = {}, hazardDistribution = [], totalReports = 0, resolutionRate = 0 }) {
+    // 将隐患类型分布计数转换为百分比
+    const total = (hazardDistribution || []).reduce((sum, item) => sum + (item.count || 0), 0);
+    const hazardColors = {
+      'fire': '#ef4444',
+      'electric': '#f97316',
+      'chemical': '#3b82f6',
+      'mechanical': '#f59e0b',
+      'other': '#8b5cf6'
+    };
+    const hazardNames = {
+      'fire': '消防隐患',
+      'electric': '用电隐患',
+      'chemical': '化学品隐患',
+      'mechanical': '机械设备隐患',
+      'other': '其他隐患'
+    };
+
+    let dist = (hazardDistribution || []).map(h => ({
+      name: hazardNames[h.type] || h.type,
+      color: hazardColors[h.type] || '#6b7280',
+      percentage: total > 0 ? Math.round(((h.count || 0) / total) * 100) : 0
+    }));
+
+    // 补齐百分比到100以便饼图显示完整
+    const totalPct = dist.reduce((s, i) => s + i.percentage, 0);
+    if (totalPct < 100 && dist.length > 0) {
+      // 将差值加到第一个分片，避免浮点误差
+      dist[0].percentage += (100 - totalPct);
+    }
+
+    this.setData({
+      totalReports: totalReports || 0,
+      resolveRate: resolutionRate || 0,
+      hazardDistribution: dist
+    });
+
+    // 更新图表并延迟绘制，确保数据已更新
+    this.initChartData();
     setTimeout(() => {
       this.setCanvasSize();
     }, 300);

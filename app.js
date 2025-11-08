@@ -207,9 +207,12 @@ App({
           const user = res.data.data.user;
           this.globalData.currentUser = {
             ...user,
-            name: user.nickName, // 将nickName映射为name
+            name: user.nickName || user.name, // 支持两种字段名
+            nickName: user.nickName || user.name, // 保持原字段
             department: user.department || '未设置部门',
-            avatar: user.avatarUrl || '👷'
+            avatar: user.avatarUrl || user.avatar || '👷',
+            avatarUrl: user.avatarUrl || user.avatar || '👷', // 保持原字段
+            managed_sections: user.managed_sections // 确保保留管理标段字段
           };
           console.log('映射后的用户信息:', JSON.stringify(this.globalData.currentUser, null, 2));
         } else {

@@ -143,9 +143,65 @@ Page({
 
         console.log('选择标段:', section, '标段信息:', sectionInfo, '当前用户:', app.globalData.currentUser);
 
-        // 跳转到标段选择页面
-        wx.navigateTo({
-            url: `/pages/section/section?section=${section}`
+        // 点击标段时，实时请求用户信息以确保managed_sections最新
+        wx.showLoading({ title: '正在检查权限...' });
+        wx.request({
+            url: app.globalData.baseUrl + '/auth/verify',
+            method: 'POST',
+            data: { token: app.globalData.token },
+            success: (res) => {
+                wx.hideLoading();
+                if (res.data && res.data.success) {
+                    const user = res.data.data.user || {};
+                    // 更新全局用户信息，确保managed_sections及时生效
+                    app.globalData.currentUser = {
+                        ...user,
+                        name: user.nickName || user.name,
+                        nickName: user.nickName || user.name,
+                        department: user.department || '未设置部门',
+                        avatar: user.avatarUrl || user.avatar,
+                        avatarUrl: user.avatarUrl || user.avatar,
+                        managed_sections: user.managed_sections
+                    };
+
+                    // 解析managed_sections并检查是否包含当前标段（名称或代码）
+                    let parsed = [];
+                    try {
+                        parsed = Array.isArray(user.managed_sections)
+                            ? user.managed_sections
+                            : JSON.parse(user.managed_sections || '[]');
+                    } catch (err) {
+                        console.error('解析managed_sections失败:', err);
+                    }
+                    // 统一处理为去空白的字符串数组
+                    parsed = (parsed || [])
+                        .filter(v => typeof v === 'string')
+                        .map(v => v.trim());
+
+                    const currentCode = sectionInfo?.section_code || section;
+                    // 按需求仅检查“标段代码”是否包含在managed_sections中
+                    const hasAccess = currentCode ? parsed.includes(currentCode) : false;
+                    console.log('权限检查（点击时，仅代码）:', { parsed, currentCode, hasAccess });
+                    if (!hasAccess) {
+                        wx.showToast({
+                            title: '非该标段管理员，管理功能隐藏',
+                            icon: 'none',
+                            duration: 2000
+                        });
+                    }
+                } else {
+                    console.warn('实时获取用户信息失败，继续进入标段页');
+                }
+
+                // 无论结果如何都进入标段页，页面内仍会再次实时校验
+                wx.navigateTo({ url: `/pages/section/section?section=${section}` });
+            },
+            fail: (err) => {
+                wx.hideLoading();
+                console.error('实时获取用户信息请求失败:', err);
+                // 请求失败也继续进入标段页，页面内再次校验
+                wx.navigateTo({ url: `/pages/section/section?section=${section}` });
+            }
         });
     },
 
@@ -582,7 +638,8 @@ Page({
                         ...backendUser,
                         name: backendUser.nickName || backendUser.name,
                         avatar: backendUser.avatarUrl || backendUser.avatar,
-                        department: backendUser.department || '未设置部门'
+                        department: backendUser.department || '未设置部门',
+                        managed_sections: backendUser.managed_sections // 确保保留管理标段字段
                     };
 
                     wx.hideLoading();
@@ -658,7 +715,8 @@ Page({
                         ...backendUser,
                         name: backendUser.nickName || backendUser.name,
                         avatar: backendUser.avatarUrl || backendUser.avatar,
-                        department: backendUser.department || '未设置部门'
+                        department: backendUser.department || '未设置部门',
+                        managed_sections: backendUser.managed_sections // 确保保留管理标段字段
                     };
                     app.globalData.token = res.data.data.token;
 

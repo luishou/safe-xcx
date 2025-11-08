@@ -5,7 +5,7 @@ class User {
   static async findByOpenid(openid) {
     try {
       const [rows] = await pool.execute(
-        'SELECT * FROM users WHERE openid = ?',
+        'SELECT id, openid, nick_name as nickName, avatar_url as avatarUrl, managed_sections, role, status, created_at, updated_at FROM users WHERE openid = ?',
         [openid]
       );
       return rows.length > 0 ? rows[0] : null;
@@ -19,7 +19,7 @@ class User {
   static async findById(id) {
     try {
       const [rows] = await pool.execute(
-        'SELECT id, openid, nick_name as nickName, avatar_url as avatarUrl, gender, city, province, country, language, role, status, created_at, updated_at FROM users WHERE id = ?',
+        'SELECT id, openid, nick_name as nickName, avatar_url as avatarUrl, managed_sections, role, status, created_at, updated_at FROM users WHERE id = ?',
         [id]
       );
       return rows.length > 0 ? rows[0] : null;
@@ -34,18 +34,12 @@ class User {
     try {
       const [result] = await pool.execute(`
         INSERT INTO users (
-          openid, nick_name, avatar_url, gender, city, province,
-          country, language, role, status, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          openid, nick_name, avatar_url, role, status, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?)
       `, [
         userData.openid,
         userData.nickName,
         userData.avatarUrl,
-        userData.gender,
-        userData.city,
-        userData.province,
-        userData.country,
-        userData.language,
         userData.role,
         userData.status,
         userData.createdAt,

@@ -103,6 +103,46 @@ exports.listArticles = async (req, res) => {
   }
 };
 
+// 获取所有文章作为分类展示（用于标段首页安全知识）
+exports.getAllArticlesAsCategories = async (req, res) => {
+  try {
+    const [rows] = await pool.execute(
+      `SELECT a.id, a.title, a.content, a.attachments,
+              u.nick_name AS uploadedBy,
+              DATE_FORMAT(a.created_at, '%Y-%m-%d') AS uploadTime,
+              a.created_at AS createdAt, a.updated_at AS updatedAt
+       FROM safety_articles a
+       LEFT JOIN users u ON u.id = a.uploaded_by
+       ORDER BY a.created_at DESC`
+    );
+
+    // 处理附件数据
+    const processedRows = rows.map(row => {
+      let attachments = [];
+      if (row.attachments) {
+        try {
+          attachments = JSON.parse(row.attachments);
+        } catch (error) {
+          console.error('解析附件数据失败:', error);
+          attachments = [];
+        }
+      }
+      return {
+        ...row,
+        attachments,
+        // 为每个文章生成一个唯一标识作为"分类ID"
+        categoryId: `article_${row.id}`,
+        categoryName: row.title
+      };
+    });
+
+    res.json({ success: true, data: processedRows });
+  } catch (err) {
+    console.error('getAllArticlesAsCategories error:', err);
+    res.status(500).json({ success: false, message: '获取文章列表失败' });
+  }
+};
+
 exports.createArticle = async (req, res) => {
   try {
     const { categoryId, title, content, attachments } = req.body;

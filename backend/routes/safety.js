@@ -17,6 +17,9 @@ router.delete('/categories/:id', requireRole(['admin']), ctrl.deleteCategory);
 // 文章 - 获取（所有用户可读）
 router.get('/articles', ctrl.listArticles);
 
+// 获取所有文章作为分类展示（用于标段首页安全知识）
+router.get('/articles-as-categories', ctrl.getAllArticlesAsCategories);
+
 // 文章 - 新增/更新/删除（管理员）
 router.post('/articles', requireRole(['admin']), ctrl.createArticle);
 router.put('/articles/:id', requireRole(['admin']), ctrl.updateArticle);

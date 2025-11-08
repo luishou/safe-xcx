@@ -12,8 +12,14 @@ router.use(authenticateToken);
 // 提交举报
 router.post('/submit', reportController.submitReport);
 
-// 获取举报列表
-router.get('/list', reportController.getReports);
+// 获取举报列表（安全管理部使用）
+router.get('/list', reportController.getManagementReports);
+
+// 获取个人中心举报列表（个人中心使用）
+router.get('/personal-reports', reportController.getPersonalReports);
+
+// 获取个人举报列表（员工使用）
+router.get('/my-reports', reportController.getMyReports);
 
 // 获取统计数据
 router.get('/stats', reportController.getStats);
