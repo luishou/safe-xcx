@@ -6,8 +6,8 @@ App({
     currentSection: null,
     sections: [], // 标段列表
     notifications: [],
-    baseUrl: 'http://localhost:3300/api', // 后端接口地址
-    //baseUrl: 'https://safe.luishou.top/api', 
+    baseUrl: 'http://localhost:3301/api', // 后端接口地址
+    //baseUrl: 'https://safe.luishou.top/api',
     //baseUrl: 'https://safe.sulei.xyz/api', 
     token: null, // JWT token
     db: {

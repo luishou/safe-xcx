@@ -55,6 +55,21 @@ class AuthController {
       openid = data.openid;
       session_key = data.session_key;
 
+      // 额外校验：若未获取到 openid 或 session_key，直接返回错误，避免数据库绑定 undefined
+      if (!openid || !session_key) {
+        console.error('微信登录返回缺少openid或session_key:', { openid, session_key, raw: data });
+        return res.status(400).json({
+          success: false,
+          message: '微信登录失败',
+          error: '未获取到openid或session_key',
+          details: {
+            appid: process.env.WECHAT_APPID,
+            hasOpenid: !!openid,
+            hasSessionKey: !!session_key
+          }
+        });
+      }
+
       // 查找或创建用户
       let user = await User.findByOpenid(openid);
 

@@ -10,7 +10,8 @@
       "Bash(cmd /c \"taskkill /PID 9604 /F\")",
       "Bash(cmd:*)",
       "Bash(timeout:*)",
-      "Bash(powershell:*)"
+      "Bash(powershell:*)",
+      "Bash(npm run dev:*)"
     ],
     "deny": [],
     "ask": []
