@@ -416,10 +416,61 @@ Page({
   // 删除附件
   removeAttachment(e) {
     const index = e.currentTarget.dataset.index;
+    const attachment = this.data.attachments[index];
+
+    wx.showModal({
+      title: '确认删除',
+      content: `确定要删除文件 "${attachment.name}" 吗？`,
+      success: (res) => {
+        if (res.confirm) {
+          // 如果文件已上传到服务器，先从服务器删除
+          if (attachment.path && attachment.path.includes('myqcloud.com')) {
+            wx.request({
+              url: app.globalData.baseUrl + '/upload/file',
+              method: 'DELETE',
+              header: {
+                'Content-Type': 'application/json',
+                ...this._authHeader()
+              },
+              data: { fileUrl: attachment.path },
+              success: (res) => {
+                if (res.data && res.data.success) {
+                  console.log('服务器文件删除成功');
+                } else {
+                  console.warn('服务器文件删除失败，但仍从本地移除');
+                }
+                // 无论服务器删除是否成功，都从本地列表移除
+                this._removeAttachmentFromList(index);
+              },
+              fail: (err) => {
+                console.error('删除服务器文件失败:', err);
+                wx.showToast({
+                  title: '服务器删除失败，但已从本地移除',
+                  icon: 'none'
+                });
+                this._removeAttachmentFromList(index);
+              }
+            });
+          } else {
+            // 仅本地文件，直接移除
+            this._removeAttachmentFromList(index);
+          }
+        }
+      }
+    });
+  },
+
+  // 从本地列表中移除附件
+  _removeAttachmentFromList(index) {
     const attachments = [...this.data.attachments];
     attachments.splice(index, 1);
     this.setData({
       attachments: attachments
+    });
+
+    wx.showToast({
+      title: '删除成功',
+      icon: 'success'
     });
   }
 });

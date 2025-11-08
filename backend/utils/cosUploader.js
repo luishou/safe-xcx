@@ -29,6 +29,29 @@ async function uploadFileToCOS(localPath, keyInBucket) {
   return { url, key: Key };
 }
 
+async function deleteFileFromCOS(keyInBucket) {
+  const client = getCosClient();
+  if (!client) {
+    throw new Error('COS客户端未配置');
+  }
+  if (!cosConfig.bucket || !cosConfig.region) {
+    throw new Error('COS存储桶或地域未配置');
+  }
+  const Key = keyInBucket.replace(/^\/+/, '');
+
+  return new Promise((resolve, reject) => {
+    client.deleteObject({
+      Bucket: cosConfig.bucket,
+      Region: cosConfig.region,
+      Key,
+    }, (err, data) => {
+      if (err) return reject(err);
+      resolve(data);
+    });
+  });
+}
+
 module.exports = {
-  uploadFileToCOS
+  uploadFileToCOS,
+  deleteFileFromCOS
 };

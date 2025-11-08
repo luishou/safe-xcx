@@ -61,6 +61,14 @@
                             </view>
                         </view>
 
+                        <!-- 分类信息 -->
+                        <view class="category-block" wx:if="{{item.categoryId}}">
+                            <view class="content-label">🏷️ 分类</view>
+                            <view class="category-tag">
+                                <text class="category-name">{{item.categoryName || '安全知识'}}</text>
+                            </view>
+                        </view>
+
                         <!-- 附件列表 -->
                         <view class="attachments-block" wx:if="{{item.attachments && item.attachments.length > 0}}">
                             <view class="content-label">📎 附件</view>

@@ -22,6 +22,8 @@
 
         <view class="attachment-list" wx:if="{{attachments && attachments.length > 0}}">
           <view class="attachment-item" wx:for="{{attachments}}" wx:key="index">
+            <!-- 右上角删除图标 -->
+            <view class="attachment-remove" bindtap="removeAttachment" data-index="{{index}}">✕</view>
             <view class="attachment-info">
               <view class="file-icon {{utils.getFileType(item.name)}}">
                 <block wx:if="{{utils.getFileType(item.name) === 'pdf'}}">📄</block>
@@ -33,9 +35,8 @@
                 <text class="file-size">{{utils.formatFileSize(item.size)}}</text>
               </view>
             </view>
-            <view class="attachment-actions">
-              <button class="remove-btn" size="mini" bindtap="removeAttachment" data-index="{{index}}">删除</button>
-            </view>
+            <!-- 保留操作区（如后续扩展更多操作，可在此处添加） -->
+            <view class="attachment-actions"></view>
           </view>
         </view>
 

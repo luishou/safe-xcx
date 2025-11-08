@@ -69,6 +69,7 @@
   border: 1px solid #e5e7eb;
   box-shadow: 0 2rpx 4rpx rgba(0,0,0,0.02);
   transition: all 0.2s ease;
+  position: relative; /* 让右上角删除图标可绝对定位 */
 }
 
 .attachment-item:hover {
@@ -146,6 +147,28 @@
 .remove-btn:hover {
   background: #fee2e2;
   transform: scale(1.05);
+}
+
+/* 右上角删除图标 */
+.attachment-remove {
+  position: absolute;
+  top: 12rpx;
+  right: 12rpx;
+  width: 40rpx;
+  height: 40rpx;
+  border-radius: 50%;
+  background: #fee2e2;
+  color: #b91c1c;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26rpx;
+  border: 1px solid #fecaca;
+  z-index: 1;
+}
+
+.attachment-remove:active {
+  background: #fef2f2;
 }
 
 .upload-btn {

@@ -3,7 +3,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const { authenticateToken } = require('../middleware/auth');
-const { uploadFileToCOS } = require('../utils/cosUploader');
+const { uploadFileToCOS, deleteFileFromCOS } = require('../utils/cosUploader');
 
 const router = express.Router();
 
@@ -259,6 +259,48 @@ router.post('/document', authenticateToken, upload.single('file'), async (req, r
     res.status(500).json({
       success: false,
       message: '文档上传失败',
+      error: error.message
+    });
+  }
+});
+
+// 删除COS文件接口
+router.delete('/file', authenticateToken, async (req, res) => {
+  try {
+    const { fileUrl } = req.body;
+
+    if (!fileUrl) {
+      return res.status(400).json({
+        success: false,
+        message: '缺少文件URL'
+      });
+    }
+
+    // 从URL中提取COS key
+    const urlObj = new URL(fileUrl);
+    const key = urlObj.pathname.substring(1); // 移除开头的 /
+
+    // 从COS删除文件
+    try {
+      await deleteFileFromCOS(key);
+
+      return res.json({
+        success: true,
+        message: '文件删除成功'
+      });
+    } catch (cosError) {
+      console.error('从COS删除文件失败:', cosError);
+      return res.status(500).json({
+        success: false,
+        message: '删除文件失败',
+        error: cosError.message
+      });
+    }
+  } catch (error) {
+    console.error('删除文件接口错误:', error);
+    res.status(500).json({
+      success: false,
+      message: '删除文件失败',
       error: error.message
     });
   }

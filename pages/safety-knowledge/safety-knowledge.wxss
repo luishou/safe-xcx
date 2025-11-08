@@ -444,6 +444,25 @@
     word-wrap: break-word;
 }
 
+/* 分类块样式 */
+.category-block {
+    margin-bottom: 24rpx;
+}
+
+.category-tag {
+    background: #f0f9ff;
+    border: 1px solid #0ea5e9;
+    border-radius: 12rpx;
+    padding: 8rpx 16rpx;
+    display: inline-block;
+}
+
+.category-name {
+    font-size: 24rpx;
+    color: #0369a1;
+    font-weight: 500;
+}
+
 /* 附件块样式 */
 .attachments-block {
     margin-bottom: 0;
