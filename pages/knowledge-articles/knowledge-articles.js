@@ -319,6 +319,59 @@ Page({
     });
   },
 
+  // 图片上传（相册/拍照）
+  uploadImageAttachment() {
+    const app = getApp();
+    const that = this;
+
+    wx.chooseImage({
+      count: 1,
+      sizeType: ['compressed'],
+      sourceType: ['album', 'camera'],
+      success(res) {
+        const tempFilePath = (res.tempFilePaths && res.tempFilePaths[0]) || (res.tempFiles && res.tempFiles[0] && res.tempFiles[0].path);
+        if (!tempFilePath) {
+          wx.showToast({ title: '选择图片失败', icon: 'none' });
+          return;
+        }
+
+        wx.showLoading({ title: '上传中...' });
+        wx.uploadFile({
+          url: app.globalData.baseUrl + '/upload/image',
+          filePath: tempFilePath,
+          name: 'image',
+          header: { 'Authorization': 'Bearer ' + app.globalData.token },
+          success(uploadRes) {
+            wx.hideLoading();
+            try {
+              const data = JSON.parse(uploadRes.data);
+              if (data.success && data.data) {
+                const server = data.data;
+                const newAttachment = {
+                  name: server.originalName || '图片',
+                  path: server.url,
+                  size: server.size || 0,
+                  type: 'image'
+                };
+                const attachments = [...that.data.attachments, newAttachment];
+                that.setData({ attachments });
+                wx.showToast({ title: '图片上传成功', icon: 'success' });
+              } else {
+                wx.showToast({ title: data.message || '上传失败', icon: 'none' });
+              }
+            } catch (e) {
+              wx.showToast({ title: '上传失败', icon: 'none' });
+            }
+          },
+          fail() {
+            wx.hideLoading();
+            wx.showToast({ title: '网络错误', icon: 'none' });
+          }
+        });
+      }
+    });
+  },
+
   // 上传文件到服务器
   uploadFileToServer(file) {
     wx.showLoading({

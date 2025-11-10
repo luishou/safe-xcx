@@ -5,18 +5,18 @@ Page({
    * 页面的初始数据
    */
   data: {
-    // 隐患类型选项
-    hazardTypes: [
-      '高空作业安全隐患',
-      '电气安全隐患',
-      '机械设备安全隐患',
-      '消防安全隐患',
-      '化学品安全隐患',
-      '交通安全隐患',
-      '环境安全隐患',
-      '其他安全隐患'
+    // 隐患类型卡片（与截图一致）
+    hazardOptions: [
+      { key: 'fire', name: '消防隐患', icon: '🔥' },
+      { key: 'electric', name: '用电隐患', icon: '⚡' },
+      { key: 'mechanical', name: '设备隐患', icon: '⚙️' },
+      { key: 'height', name: '高处作业', icon: '⚠️' },
+      { key: 'edge', name: '临边防护', icon: '🧱' },
+      { key: 'environment', name: '环境保护', icon: '🍃' },
+      { key: 'ppe', name: '个人防护装备', icon: '👷' },
+      { key: 'other', name: '其他隐患', icon: '…' }
     ],
-    hazardTypeIndex: null,
+    hazardSelectedKey: null,
     
     // 表单数据
     location: '',
@@ -52,10 +52,9 @@ Page({
   /**
    * 隐患类型选择
    */
-  onHazardTypeChange(e) {
-    this.setData({
-      hazardTypeIndex: e.detail.value
-    });
+  selectHazardType(e) {
+    const key = e.currentTarget.dataset.key;
+    this.setData({ hazardSelectedKey: key });
     this.checkCanSubmit();
   },
 
@@ -282,8 +281,8 @@ Page({
    * 检查是否可以提交
    */
   checkCanSubmit() {
-    const { hazardTypeIndex, location, description, urgency } = this.data;
-    const canSubmit = hazardTypeIndex !== null && 
+    const { hazardSelectedKey, location, description, urgency } = this.data;
+    const canSubmit = !!hazardSelectedKey && 
                      location.trim() !== '' && 
                      description.trim() !== '' && 
                      urgency !== '';
@@ -324,7 +323,7 @@ Page({
     // 构建举报数据
     const reportData = {
       description: this.data.description,
-      hazardType: this.mapHazardType(this.data.hazardTypes[this.data.hazardTypeIndex]),
+      hazardType: this.mapHazardType(this.data.hazardSelectedKey),
       severity: this.mapUrgency(this.data.urgency),
       location: this.data.location,
       section: this.data.currentSection?.section_code || 'TJ01',
@@ -383,17 +382,10 @@ Page({
 
   // 映射隐患类型
   mapHazardType(type) {
-    const mapping = {
-      '高空作业安全隐患': 'height',
-      '电气安全隐患': 'electric',
-      '机械设备安全隐患': 'mechanical',
-      '消防安全隐患': 'fire',
-      '化学品安全隐患': 'chemical',
-      '交通安全隐患': 'traffic',
-      '环境安全隐患': 'environment',
-      '其他安全隐患': 'other'
-    };
-    return mapping[type] || 'other';
+    // 直接使用所选卡片的 key，保持与后端存储一致
+    const allowed = ['fire','electric','mechanical','height','edge','environment','ppe','other'];
+    if (allowed.includes(type)) return type;
+    return 'other';
   },
 
   // 映射紧急程度

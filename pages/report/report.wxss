@@ -313,3 +313,36 @@
 .icon-check::before {
   content: '✓';
 }
+
+.hazard-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24rpx;
+}
+
+.hazard-card {
+  background: #f8f9fa;
+  border: 2rpx solid #e1e8ed;
+  border-radius: 16rpx;
+  padding: 36rpx 20rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16rpx;
+  transition: all 0.2s ease;
+}
+
+.hazard-card.selected {
+  border-color: #ef4444;
+  background: #fee2e2;
+}
+
+.hazard-icon {
+  font-size: 48rpx;
+}
+
+.hazard-name {
+  font-size: 28rpx;
+  color: #374151;
+}

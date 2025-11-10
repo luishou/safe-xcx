@@ -8,15 +8,17 @@
     </view>
 
     <view class="form-container">
-        <!-- 隐患类型 -->
+        <!-- 隐患类型（卡片网格） -->
         <view class="form-item">
             <view class="label">隐患类型 <text class="required">*</text></view>
-            <picker bindchange="onHazardTypeChange" value="{{hazardTypeIndex}}" range="{{hazardTypes}}">
-                <view class="picker">
-                    {{hazardTypes[hazardTypeIndex] || '请选择隐患类型'}}
-                    <text class="iconfont icon-chevron-down"></text>
-                </view>
-            </picker>
+            <view class="hazard-grid">
+                <block wx:for="{{hazardOptions}}" wx:key="key" wx:for-item="opt">
+                    <view class="hazard-card {{hazardSelectedKey === opt.key ? 'selected' : ''}}" bindtap="selectHazardType" data-key="{{opt.key}}">
+                        <view class="hazard-icon">{{opt.icon}}</view>
+                        <view class="hazard-name">{{opt.name}}</view>
+                    </view>
+                </block>
+            </view>
         </view>
 
         <!-- 隐患位置 -->
