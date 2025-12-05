@@ -281,96 +281,59 @@ Page({
       .catch(() => { wx.showToast({ title: '保存出错', icon: 'none' }); });
   },
 
-  // 附件上传
+  // 附件上传（支持多选与电脑端本地选择）
   uploadAttachment() {
     const that = this;
 
-    // 检查文件类型
+    // 允许的文档类型
     const allowedTypes = ['doc', 'docx', 'pdf'];
 
-    wx.chooseMessageFile({
-      count: 1,
-      type: 'file',
-      extension: allowedTypes,
-      success(res) {
-        const file = res.tempFiles[0];
-        const fileName = file.name;
+    const handleFiles = (files = []) => {
+      if (!files.length) { wx.showToast({ title: '未选择文件', icon: 'none' }); return; }
+
+      files.forEach(file => {
+        const fileName = file.name || '';
         const fileExtension = fileName.split('.').pop().toLowerCase();
 
         if (!allowedTypes.includes(fileExtension)) {
-          wx.showToast({
-            title: '只支持Word和PDF文件',
-            icon: 'none'
-          });
-          return;
+          wx.showToast({ title: `不支持的类型：${fileExtension}`, icon: 'none' });
+          return; // 跳过不支持类型
         }
 
-        // 检查文件大小 (限制10MB)
-        if (file.size > 10 * 1024 * 1024) {
-          wx.showToast({
-            title: '文件大小不能超过10MB',
-            icon: 'none'
-          });
-          return;
+        // 大小限制 10MB
+        if (file.size && file.size > 10 * 1024 * 1024) {
+          wx.showToast({ title: `${fileName} 超过10MB`, icon: 'none' });
+          return; // 跳过超限文件
         }
 
         that.uploadFileToServer(file);
-      }
-    });
+      });
+    };
+
+    // 优先使用手机/电脑端本地文件选择（新API）
+    if (wx.chooseFile) {
+      wx.chooseFile({
+        count: 9,
+        type: 'file',
+        extension: allowedTypes,
+        success(res) {
+          const files = res.tempFiles || [];
+          handleFiles(files);
+        },
+        fail() { wx.showToast({ title: '选择文件失败', icon: 'none' }); }
+      });
+    } else {
+      // 兼容旧版：从微信会话选择文件
+      wx.chooseMessageFile({
+        count: 9,
+        type: 'file',
+        extension: allowedTypes,
+        success(res) { handleFiles(res.tempFiles || []); },
+        fail() { wx.showToast({ title: '选择文件失败', icon: 'none' }); }
+      });
+    }
   },
 
-  // 图片上传（相册/拍照）
-  uploadImageAttachment() {
-    const app = getApp();
-    const that = this;
-
-    wx.chooseImage({
-      count: 1,
-      sizeType: ['compressed'],
-      sourceType: ['album', 'camera'],
-      success(res) {
-        const tempFilePath = (res.tempFilePaths && res.tempFilePaths[0]) || (res.tempFiles && res.tempFiles[0] && res.tempFiles[0].path);
-        if (!tempFilePath) {
-          wx.showToast({ title: '选择图片失败', icon: 'none' });
-          return;
-        }
-
-        wx.showLoading({ title: '上传中...' });
-        wx.uploadFile({
-          url: app.globalData.baseUrl + '/upload/image',
-          filePath: tempFilePath,
-          name: 'image',
-          header: { 'Authorization': 'Bearer ' + app.globalData.token },
-          success(uploadRes) {
-            wx.hideLoading();
-            try {
-              const data = JSON.parse(uploadRes.data);
-              if (data.success && data.data) {
-                const server = data.data;
-                const newAttachment = {
-                  name: server.originalName || '图片',
-                  path: server.url,
-                  size: server.size || 0,
-                  type: 'image'
-                };
-                const attachments = [...that.data.attachments, newAttachment];
-                that.setData({ attachments });
-                wx.showToast({ title: '图片上传成功', icon: 'success' });
-              } else {
-                wx.showToast({ title: data.message || '上传失败', icon: 'none' });
-              }
-            } catch (e) {
-              wx.showToast({ title: '上传失败', icon: 'none' });
-            }
-          },
-          fail() {
-            wx.hideLoading();
-            wx.showToast({ title: '网络错误', icon: 'none' });
-          }
-        });
-      }
-    });
-  },
 
   // 上传文件到服务器
   uploadFileToServer(file) {

@@ -37,8 +37,11 @@
                 <view class="filter-option {{statsFilterType === 'year' ? 'active' : ''}}" data-type="year" bindtap="onChangeStatsFilter">近一年</view>
                 <view class="filter-option {{statsFilterType === 'custom' ? 'active' : ''}}" data-type="custom" bindtap="onChangeStatsFilter">自定义</view>
             </view>
-            <view class="refresh-btn" bindtap="refreshAllData">
-                <text>刷新数据</text>
+            <view style="display:flex; gap:12rpx; align-items:center;">
+                <view class="export-btn" bindtap="exportExcel">导出全部</view>
+                <view class="refresh-btn" bindtap="refreshAllData">
+                    <text>刷新数据</text>
+                </view>
             </view>
         </view>
 

@@ -24,6 +24,9 @@ router.get('/my-reports', reportController.getMyReports);
 // 获取统计数据
 router.get('/stats', reportController.getStats);
 
+// 导出当前标段隐患为Excel
+router.get('/export', reportController.exportReportsExcel);
+
 // 获取举报详情
 router.get('/:id', reportController.getReportDetail);
 

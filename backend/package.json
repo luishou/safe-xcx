@@ -18,7 +18,8 @@
     "jsonwebtoken": "^9.0.2",
     "multer": "^2.0.2",
     "mysql2": "^3.6.5",
-    "cos-nodejs-sdk-v5": "^2.11.7"
+    "cos-nodejs-sdk-v5": "^2.11.7",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "nodemon": "^3.0.2"

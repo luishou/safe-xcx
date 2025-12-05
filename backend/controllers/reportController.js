@@ -1,7 +1,8 @@
 const pool = require('../config/database');
 const { formatDateTimeBeijing } = require('../utils/time');
+const XLSX = require('xlsx');
 
-class ReportController {
+  class ReportController {
   // 提交举报
   async submitReport(req, res) {
     try {
@@ -73,6 +74,88 @@ class ReportController {
       res.status(500).json({
         success: false,
         message: '提交举报失败',
+        error: error.message
+      });
+    }
+  }
+
+  // 导出当前标段隐患为Excel
+  async exportReportsExcel(req, res) {
+    try {
+      const { section } = req.query;
+
+      if (!section) {
+        return res.status(400).json({
+          success: false,
+          message: '请提供标段参数'
+        });
+      }
+
+      const [rows] = await pool.execute(
+        `
+        SELECT
+          id, reporter_name, description, hazard_type, severity,
+          location, section, status, assigned_to, plan, created_at, updated_at
+        FROM reports
+        WHERE section = ?
+        ORDER BY created_at DESC
+        `,
+        [section]
+      );
+
+      const hazardTypeMap = {
+        fire: '消防安全隐患',
+        electric: '电气安全隐患',
+        chemical: '化学品安全隐患',
+        mechanical: '机械设备安全隐患',
+        height: '高空作业安全隐患',
+        edge: '临边防护安全隐患',
+        environment: '环境安全隐患',
+        ppe: '个人防护装备隐患',
+        traffic: '交通安全隐患',
+        other: '其他安全隐患'
+      };
+
+      const severityMap = {
+        low: '一般',
+        medium: '紧急',
+        high: '非常紧急',
+        critical: '极其紧急'
+      };
+
+      const data = (rows || []).map((r, idx) => ({
+        序号: idx + 1,
+        举报ID: r.id,
+        举报人: r.reporter_name,
+        隐患类型: hazardTypeMap[r.hazard_type] || r.hazard_type || '',
+        严重程度: severityMap[r.severity] || r.severity || '',
+        位置: r.location,
+        状态: r.status,
+        处理人: r.assigned_to || '',
+        处理方案: r.plan || '',
+        上报时间: formatDateTimeBeijing(r.created_at),
+        更新时间: formatDateTimeBeijing(r.updated_at)
+      }));
+
+      const header = [
+        '序号','举报ID','举报人','隐患类型','严重程度','位置','状态','处理人','处理方案','上报时间','更新时间'
+      ];
+
+      const ws = XLSX.utils.json_to_sheet(data, { header });
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, '隐患列表');
+
+      const buffer = XLSX.write(wb, { bookType: 'xlsx', type: 'buffer' });
+      const filename = `隐患导出_${section}_${Date.now()}.xlsx`;
+
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.setHeader('Content-Disposition', `attachment; filename=${encodeURIComponent(filename)}`);
+      res.send(buffer);
+    } catch (error) {
+      console.error('导出Excel失败:', error);
+      res.status(500).json({
+        success: false,
+        message: '导出Excel失败',
         error: error.message
       });
     }

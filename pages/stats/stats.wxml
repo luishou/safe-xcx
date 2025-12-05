@@ -44,7 +44,10 @@
     <view class="hazard-distribution-section">
         <view class="section-header">
             <text class="section-title">隐患类型分布</text>
-            <text class="time-range">时间范围: {{selectedTimeRange}}</text>
+            <view class="header-actions">
+                <text class="time-range">时间范围: {{selectedTimeRange}}</text>
+                <view class="export-btn" bindtap="exportExcel">导出Excel</view>
+            </view>
         </view>
         
         <!-- 环形图区域 -->

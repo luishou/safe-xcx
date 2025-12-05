@@ -17,7 +17,7 @@
       <view class="attachment-section">
         <view class="section-header">
           <view class="section-title">附件上传</view>
-          <view class="attachment-tips">支持文档：Word(.doc, .docx)、PDF(.pdf)；支持图片：相册/拍照（单张，压缩）</view>
+          <view class="attachment-tips">支持文档：Word(.doc, .docx)、PDF(.pdf)；支持多文件；手机/电脑端均可从本地选择</view>
         </view>
 
         <view class="attachment-list" wx:if="{{attachments && attachments.length > 0}}">
@@ -44,18 +44,8 @@
           <view class="upload-content">
             <view class="upload-icon">📁</view>
             <view class="upload-text">
-              <text class="upload-main">选择文档</text>
+              <text class="upload-main">选择文档（可多选）</text>
               <text class="upload-sub">或拖拽文件到此处</text>
-            </view>
-          </view>
-        </button>
-
-        <button class="upload-btn" bindtap="uploadImageAttachment">
-          <view class="upload-content">
-            <view class="upload-icon">🖼️</view>
-            <view class="upload-text">
-              <text class="upload-main">上传图片（相册/拍照）</text>
-              <text class="upload-sub">支持JPEG/PNG等，最大10MB</text>
             </view>
           </view>
         </button>

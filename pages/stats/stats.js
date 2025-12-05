@@ -457,17 +457,46 @@ Page({
    * 导出Excel数据
    */
   exportExcel() {
-    wx.showLoading({
-      title: '导出Excel中...'
+    const app = getApp();
+    const currentSection = app.globalData.currentSection;
+    const token = app.globalData.token;
+
+    if (!token || !currentSection) {
+      wx.showToast({ title: '请先选择标段并登录', icon: 'none' });
+      return;
+    }
+
+    const url = `${app.globalData.baseUrl}/report/export?section=${encodeURIComponent(currentSection.section_code)}`;
+
+    wx.showLoading({ title: '导出中...' });
+
+    wx.downloadFile({
+      url,
+      header: { 'Authorization': `Bearer ${token}` },
+      success: (res) => {
+        if (res.statusCode === 200) {
+          wx.openDocument({
+            filePath: res.tempFilePath,
+            fileType: 'xlsx',
+            success: () => {
+              wx.showToast({ title: '已打开Excel', icon: 'success' });
+            },
+            fail: () => {
+              wx.showToast({ title: '已下载至本地', icon: 'none' });
+            }
+          });
+        } else {
+          wx.showToast({ title: '导出失败', icon: 'none' });
+        }
+      },
+      fail: (err) => {
+        console.error('导出失败:', err);
+        wx.showToast({ title: '网络错误', icon: 'none' });
+      },
+      complete: () => {
+        wx.hideLoading();
+      }
     });
-    
-    setTimeout(() => {
-      wx.hideLoading();
-      wx.showToast({
-        title: 'Excel已导出',
-        icon: 'success'
-      });
-    }, 1500);
   },
 
   /**

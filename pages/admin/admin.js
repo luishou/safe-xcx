@@ -356,6 +356,50 @@ Page({
     this.fetchStats();
   },
 
+  // 导出Excel（当前标段全部隐患）
+  exportExcel() {
+    const app = getApp();
+    const currentSection = app.globalData.currentSection;
+    const token = app.globalData.token;
+
+    if (!token || !currentSection) {
+      wx.showToast({ title: '请先选择标段并登录', icon: 'none' });
+      return;
+    }
+
+    const url = `${app.globalData.baseUrl}/report/export?section=${encodeURIComponent(currentSection.section_code)}`;
+
+    wx.showLoading({ title: '导出中...' });
+
+    wx.downloadFile({
+      url,
+      header: { 'Authorization': `Bearer ${token}` },
+      success: (res) => {
+        if (res.statusCode === 200) {
+          wx.openDocument({
+            filePath: res.tempFilePath,
+            fileType: 'xlsx',
+            success: () => {
+              wx.showToast({ title: '已打开Excel', icon: 'success' });
+            },
+            fail: () => {
+              wx.showToast({ title: '已下载至本地', icon: 'none' });
+            }
+          });
+        } else {
+          wx.showToast({ title: '导出失败', icon: 'none' });
+        }
+      },
+      fail: (err) => {
+        console.error('导出失败:', err);
+        wx.showToast({ title: '网络错误', icon: 'none' });
+      },
+      complete: () => {
+        wx.hideLoading();
+      }
+    });
+  },
+
   // 切换面板为任务中心
   showTasksPanel() {
     this.setData({ currentPanel: 'tasks' });
@@ -379,6 +423,8 @@ Page({
         const end = new Date(this.data.customEndDate + 'T23:59:59');
         return { startDate: start.toISOString(), endDate: end.toISOString() };
       }
+      // 未选择完整日期范围时不加时间条件
+      return { startDate: null, endDate: null };
     }
     const end = now;
     return { startDate: start.toISOString(), endDate: end.toISOString() };
@@ -416,13 +462,17 @@ Page({
       return;
     }
 
-    const range = this.computeDateRange(this.data.statsFilterType);
-    const requestData = {
-      section: currentSection.section_code
-    };
+    const type = this.data.statsFilterType;
+    const range = this.computeDateRange(type);
+    const requestData = { section: currentSection.section_code };
 
-    // 只有当时间范围不为null时才添加时间参数
-    if (range.startDate && range.endDate) {
+    // 自定义优先使用用户选择的日期范围
+    if (type === 'custom' && this.data.customStartDate && this.data.customEndDate) {
+      const start = new Date(this.data.customStartDate + 'T00:00:00').toISOString();
+      const end = new Date(this.data.customEndDate + 'T23:59:59').toISOString();
+      requestData.startDate = start;
+      requestData.endDate = end;
+    } else if (range.startDate && range.endDate) {
       requestData.startDate = range.startDate;
       requestData.endDate = range.endDate;
     }
