@@ -232,6 +232,8 @@ Page({
       'electric': '#f97316',
       'chemical': '#3b82f6',
       'mechanical': '#f59e0b',
+      'height': '#fb7185',
+      'edge': '#10b981',
       'other': '#8b5cf6'
     };
     const hazardNames = {
@@ -239,6 +241,8 @@ Page({
       'electric': '用电隐患',
       'chemical': '化学品隐患',
       'mechanical': '机械设备隐患',
+      'height': '高空作业安全隐患',
+      'edge': '临边防护安全隐患',
       'other': '其他隐患'
     };
 
@@ -376,16 +380,112 @@ Page({
       header: { 'Authorization': `Bearer ${token}` },
       success: (res) => {
         if (res.statusCode === 200) {
-          wx.openDocument({
-            filePath: res.tempFilePath,
-            fileType: 'xlsx',
-            success: () => {
-              wx.showToast({ title: '已打开Excel', icon: 'success' });
-            },
-            fail: () => {
-              wx.showToast({ title: '已下载至本地', icon: 'none' });
-            }
-          });
+          // 优先使用系统“另存为”能力（PC端可选择目录）
+          if (wx.canIUse && wx.canIUse('saveFileToDisk')) {
+            wx.saveFileToDisk({
+              filePath: res.tempFilePath,
+              success: () => {
+                wx.showModal({
+                  title: '文件已保存',
+                  content: '是否打开文件？',
+                  confirmText: '打开文件',
+                  cancelText: '完成',
+                  success: (m) => {
+                    if (m.confirm) {
+                      wx.openDocument({ filePath: res.tempFilePath, fileType: 'xlsx' });
+                    }
+                  }
+                });
+              },
+              fail: () => {
+                // 回退：保存到小程序沙箱目录并提示
+                const fs = wx.getFileSystemManager();
+                const filename = `隐患导出_${currentSection.section_code}_${Date.now()}.xlsx`;
+                const dest = `${wx.env.USER_DATA_PATH}/${filename}`;
+                fs.copyFile({
+                  src: res.tempFilePath,
+                  dest,
+                  success: () => {
+                    wx.showModal({
+                      title: '文件已保存',
+                      content: `文件已保存：${filename}`,
+                      confirmText: '打开文件',
+                      cancelText: '完成',
+                      success: (m) => {
+                        if (m.confirm) {
+                          wx.openDocument({ filePath: dest, fileType: 'xlsx' });
+                        }
+                      }
+                    });
+                  },
+                  fail: () => {
+                    wx.saveFile({
+                      tempFilePath: res.tempFilePath,
+                      success: (saveRes) => {
+                        wx.showModal({
+                          title: '文件已保存',
+                          content: `文件已保存：${saveRes.savedFilePath}`,
+                          confirmText: '打开文件',
+                          cancelText: '完成',
+                          success: (m) => {
+                            if (m.confirm) {
+                              wx.openDocument({ filePath: saveRes.savedFilePath, fileType: 'xlsx' });
+                            }
+                          }
+                        });
+                      },
+                      fail: () => {
+                        wx.showToast({ title: '保存失败', icon: 'none' });
+                      }
+                    });
+                  }
+                });
+              }
+            });
+          } else {
+            // 不支持另存为API的设备，回退至沙箱保存
+            const fs = wx.getFileSystemManager();
+            const filename = `隐患导出_${currentSection.section_code}_${Date.now()}.xlsx`;
+            const dest = `${wx.env.USER_DATA_PATH}/${filename}`;
+            fs.copyFile({
+              src: res.tempFilePath,
+              dest,
+              success: () => {
+                wx.showModal({
+                  title: '文件已保存',
+                  content: `文件已保存：${filename}`,
+                  confirmText: '打开文件',
+                  cancelText: '完成',
+                  success: (m) => {
+                    if (m.confirm) {
+                      wx.openDocument({ filePath: dest, fileType: 'xlsx' });
+                    }
+                  }
+                });
+              },
+              fail: () => {
+                wx.saveFile({
+                  tempFilePath: res.tempFilePath,
+                  success: (saveRes) => {
+                    wx.showModal({
+                      title: '文件已保存',
+                      content: `文件已保存：${saveRes.savedFilePath}`,
+                      confirmText: '打开文件',
+                      cancelText: '完成',
+                      success: (m) => {
+                        if (m.confirm) {
+                          wx.openDocument({ filePath: saveRes.savedFilePath, fileType: 'xlsx' });
+                        }
+                      }
+                    });
+                  },
+                  fail: () => {
+                    wx.showToast({ title: '保存失败', icon: 'none' });
+                  }
+                });
+              }
+            });
+          }
         } else {
           wx.showToast({ title: '导出失败', icon: 'none' });
         }
@@ -394,10 +494,10 @@ Page({
         console.error('导出失败:', err);
         wx.showToast({ title: '网络错误', icon: 'none' });
       },
-      complete: () => {
-        wx.hideLoading();
-      }
-    });
+        complete: () => {
+          wx.hideLoading();
+        }
+      });
   },
 
   // 切换面板为任务中心
@@ -502,6 +602,8 @@ Page({
             'electric': '#f97316',
             'chemical': '#3b82f6',
             'mechanical': '#f59e0b',
+            'height': '#fb7185',
+            'edge': '#10b981',
             'other': '#8b5cf6'
           };
           const hazardNames = {
@@ -509,6 +611,8 @@ Page({
             'electric': '用电隐患',
             'chemical': '化学品隐患',
             'mechanical': '机械设备隐患',
+            'height': '高空作业安全隐患',
+            'edge': '临边防护安全隐患',
             'other': '其他隐患'
           };
           let dist = (hazardDistribution || []).map(h => ({

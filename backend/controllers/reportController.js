@@ -85,23 +85,19 @@ const XLSX = require('xlsx');
       const { section } = req.query;
 
       if (!section) {
-        return res.status(400).json({
-          success: false,
-          message: '请提供标段参数'
-        });
+        return res.status(400).json({ message: '缺少必要的参数：section' });
       }
 
-      const [rows] = await pool.execute(
-        `
+      const query = `
         SELECT
           id, reporter_name, description, hazard_type, severity,
           location, section, status, assigned_to, plan, created_at, updated_at
         FROM reports
         WHERE section = ?
         ORDER BY created_at DESC
-        `,
-        [section]
-      );
+      `;
+
+      const [rows] = await pool.execute(query, [section]);
 
       const hazardTypeMap = {
         fire: '消防安全隐患',
@@ -123,6 +119,15 @@ const XLSX = require('xlsx');
         critical: '极其紧急'
       };
 
+      const statusMap = {
+        submitted: '待处理',
+        processing: '处理中',
+        completed: '已完结',
+        pending: '待处理',
+        assigned: '处理中',
+        rejected: '已驳回'
+      };
+
       const data = (rows || []).map((r, idx) => ({
         序号: idx + 1,
         举报ID: r.id,
@@ -130,8 +135,8 @@ const XLSX = require('xlsx');
         隐患类型: hazardTypeMap[r.hazard_type] || r.hazard_type || '',
         严重程度: severityMap[r.severity] || r.severity || '',
         位置: r.location,
-        状态: r.status,
-        处理人: r.assigned_to || '',
+        状态: r.status ? statusMap[r.status.toLowerCase()] || r.status : '',
+        处理人: '安全环保部',
         处理方案: r.plan || '',
         上报时间: formatDateTimeBeijing(r.created_at),
         更新时间: formatDateTimeBeijing(r.updated_at)
