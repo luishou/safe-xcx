@@ -83,6 +83,10 @@ Page({
       'electric': '电气安全隐患',
       'chemical': '化学品安全隐患',
       'mechanical': '机械设备安全隐患',
+      'height': '高空作业安全隐患',
+      'edge': '临边防护安全隐患',
+      'environment': '环境安全隐患',
+      'ppe': '个人防护装备隐患',
       'other': '其他安全隐患'
     };
     return mapping[type] || type;
@@ -196,7 +200,7 @@ Page({
     });
   },
 
-  goBack: function() {
+  goBack: function () {
     wx.navigateBack();
   },
 

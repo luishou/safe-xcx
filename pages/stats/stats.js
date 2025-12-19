@@ -78,7 +78,7 @@ Page({
       value: item.percentage,
       color: item.color
     }));
-    
+
     this.setData({
       chartData: chartData
     });
@@ -244,6 +244,8 @@ Page({
       'mechanical': '#f59e0b',
       'height': '#fb7185',
       'edge': '#10b981',
+      'environment': '#059669',
+      'ppe': '#6366f1',
       'other': '#8b5cf6'
     };
 
@@ -254,6 +256,8 @@ Page({
       'mechanical': '机械设备隐患',
       'height': '高空作业安全隐患',
       'edge': '临边防护安全隐患',
+      'environment': '环境安全隐患',
+      'ppe': '个人防护装备隐患',
       'other': '其他隐患'
     };
 
@@ -305,6 +309,8 @@ Page({
       'mechanical': '#f59e0b',
       'height': '#fb7185',
       'edge': '#10b981',
+      'environment': '#059669',
+      'ppe': '#6366f1',
       'other': '#8b5cf6'
     };
     const hazardNames = {
@@ -314,6 +320,8 @@ Page({
       'mechanical': '机械设备隐患',
       'height': '高空作业安全隐患',
       'edge': '临边防护安全隐患',
+      'environment': '环境安全隐患',
+      'ppe': '个人防护装备隐患',
       'other': '其他隐患'
     };
 
@@ -349,18 +357,18 @@ Page({
   onTimeFilterTap(e) {
     const filterId = e.currentTarget.dataset.id;
     const filterLabel = e.currentTarget.dataset.label;
-    
+
     // 更新筛选状态
     const timeFilters = this.data.timeFilters.map(filter => ({
       ...filter,
       active: filter.id === filterId
     }));
-    
+
     this.setData({
       timeFilters: timeFilters,
       selectedTimeRange: filterLabel
     });
-    
+
     // 根据选择的时间范围更新数据
     this.updateStatsByTimeRange(filterId);
   },
@@ -411,7 +419,7 @@ Page({
     wx.showLoading({
       title: '刷新中...'
     });
-    
+
     setTimeout(() => {
       wx.hideLoading();
       this.loadStatistics();
@@ -429,7 +437,7 @@ Page({
     wx.showActionSheet({
       itemList: ['导出PDF报告', '导出Excel数据', '分享统计图表'],
       success: (res) => {
-        switch(res.tapIndex) {
+        switch (res.tapIndex) {
           case 0:
             this.exportPDF();
             break;
@@ -451,7 +459,7 @@ Page({
     wx.showLoading({
       title: '生成PDF中...'
     });
-    
+
     setTimeout(() => {
       wx.hideLoading();
       wx.showToast({
@@ -535,49 +543,49 @@ Page({
             const fs = wx.getFileSystemManager();
             const filename = `隐患导出_${currentSection.section_code}_${Date.now()}.xlsx`;
             const dest = `${wx.env.USER_DATA_PATH}/${filename}`;
-                fs.copyFile({
-                  src: res.tempFilePath,
-                  dest,
-                  success: () => {
+            fs.copyFile({
+              src: res.tempFilePath,
+              dest,
+              success: () => {
+                wx.showModal({
+                  title: '文件已保存',
+                  content: `文件已保存：${filename}`,
+                  confirmText: '打开文件',
+                  cancelText: '完成',
+                  success: (m) => { if (m.confirm) { wx.openDocument({ filePath: dest, fileType: 'xlsx' }); } }
+                });
+              },
+              fail: () => {
+                wx.saveFile({
+                  tempFilePath: res.tempFilePath,
+                  success: (saveRes) => {
                     wx.showModal({
                       title: '文件已保存',
-                      content: `文件已保存：${filename}`,
+                      content: `文件已保存：${saveRes.savedFilePath}`,
                       confirmText: '打开文件',
                       cancelText: '完成',
-                      success: (m) => { if (m.confirm) { wx.openDocument({ filePath: dest, fileType: 'xlsx' }); } }
+                      success: (m) => { if (m.confirm) { wx.openDocument({ filePath: saveRes.savedFilePath, fileType: 'xlsx' }); } }
                     });
                   },
                   fail: () => {
-                    wx.saveFile({
-                      tempFilePath: res.tempFilePath,
-                      success: (saveRes) => {
-                        wx.showModal({
-                          title: '文件已保存',
-                          content: `文件已保存：${saveRes.savedFilePath}`,
-                          confirmText: '打开文件',
-                          cancelText: '完成',
-                          success: (m) => { if (m.confirm) { wx.openDocument({ filePath: saveRes.savedFilePath, fileType: 'xlsx' }); } }
-                        });
-                      },
-                      fail: () => {
-                        wx.showToast({ title: '保存失败', icon: 'none' });
-                      }
-                    });
+                    wx.showToast({ title: '保存失败', icon: 'none' });
                   }
                 });
               }
-            } else {
-              wx.showToast({ title: '导出失败', icon: 'none' });
-            }
-          },
-          fail: (err) => {
-            console.error('导出失败:', err);
-            wx.showToast({ title: '网络错误', icon: 'none' });
-          },
-          complete: () => {
-            wx.hideLoading();
+            });
           }
-        });
+        } else {
+          wx.showToast({ title: '导出失败', icon: 'none' });
+        }
+      },
+      fail: (err) => {
+        console.error('导出失败:', err);
+        wx.showToast({ title: '网络错误', icon: 'none' });
+      },
+      complete: () => {
+        wx.hideLoading();
+      }
+    });
   },
 
   /**

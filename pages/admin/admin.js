@@ -110,8 +110,9 @@ Page({
         'chemical': '化学品安全隐患',
         'mechanical': '机械设备安全隐患',
         'height': '高空作业安全隐患',
-        'traffic': '交通安全隐患',
+        'edge': '临边防护安全隐患',
         'environment': '环境安全隐患',
+        'ppe': '个人防护装备隐患',
         'other': '其他安全隐患'
       };
       return mapping[type] || type;
@@ -234,6 +235,8 @@ Page({
       'mechanical': '#f59e0b',
       'height': '#fb7185',
       'edge': '#10b981',
+      'environment': '#059669',
+      'ppe': '#6366f1',
       'other': '#8b5cf6'
     };
     const hazardNames = {
@@ -243,6 +246,8 @@ Page({
       'mechanical': '机械设备隐患',
       'height': '高空作业安全隐患',
       'edge': '临边防护安全隐患',
+      'environment': '环境安全隐患',
+      'ppe': '个人防护装备隐患',
       'other': '其他隐患'
     };
 
@@ -347,7 +352,7 @@ Page({
     wx.navigateTo({ url: '/pages/knowledge-admin/knowledge-admin' });
   },
 
-  goBack: function() {
+  goBack: function () {
     wx.reLaunch({
       url: '/pages/index/index'
     });
@@ -494,10 +499,10 @@ Page({
         console.error('导出失败:', err);
         wx.showToast({ title: '网络错误', icon: 'none' });
       },
-        complete: () => {
-          wx.hideLoading();
-        }
-      });
+      complete: () => {
+        wx.hideLoading();
+      }
+    });
   },
 
   // 切换面板为任务中心
@@ -604,6 +609,8 @@ Page({
             'mechanical': '#f59e0b',
             'height': '#fb7185',
             'edge': '#10b981',
+            'environment': '#059669',
+            'ppe': '#6366f1',
             'other': '#8b5cf6'
           };
           const hazardNames = {
@@ -613,6 +620,8 @@ Page({
             'mechanical': '机械设备隐患',
             'height': '高空作业安全隐患',
             'edge': '临边防护安全隐患',
+            'environment': '环境安全隐患',
+            'ppe': '个人防护装备隐患',
             'other': '其他隐患'
           };
           let dist = (hazardDistribution || []).map(h => ({
