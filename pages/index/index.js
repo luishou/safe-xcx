@@ -3,6 +3,7 @@ Page({
     data: {
         currentSection: null,
         isAuthorized: false,
+        isVerified: false,
         userInfo: {},
         sections: [], // 标段列表
         showNicknameModal: false,
@@ -17,13 +18,47 @@ Page({
 
     onShow: function () {
         // 页面显示时再次检查授权状态
+        const app = getApp();
+        
+        // 如果有token，实时获取最新的用户信息以确保认证状态最新
+        if (app.globalData.token) {
+            wx.request({
+                url: app.globalData.baseUrl + '/auth/verify',
+                method: 'POST',
+                data: { token: app.globalData.token },
+                success: (res) => {
+                    if (res.data && res.data.success) {
+                        const user = res.data.data.user;
+                        // 更新全局用户信息，确保is_verified字段存在
+                        app.globalData.currentUser = {
+                            ...user,
+                            name: user.nickName || user.name,
+                            nickName: user.nickName || user.name,
+                            department: user.department || '未设置部门',
+                            avatar: user.avatarUrl || user.avatar || '👷',
+                            avatarUrl: user.avatarUrl || user.avatar || '👷',
+                            managed_sections: user.managed_sections,
+                            is_verified: user.is_verified // 确保保留认证状态字段
+                        };
+                        
+                        // 更新全局认证状态
+                        app.globalData.isVerified = user.is_verified === 1 || user.is_verified === true;
+                        console.log('onShow - 更新用户认证状态 - is_verified:', user.is_verified, 'isVerified:', app.globalData.isVerified);
+                    }
+                },
+                fail: (err) => {
+                    console.error('onShow - 获取用户信息失败:', err);
+                }
+            });
+        }
+        
         this.checkAuthorization();
         // 加载标段配置
         this.loadSections();
     },
 
     // 加载标段配置
-    loadSections: function() {
+    loadSections: function () {
         const app = getApp();
         const sections = app.globalData.sections;
 
@@ -37,7 +72,7 @@ Page({
                 name: section.section_name,
                 info: section
             }));
-            
+
             this.setData({
                 sections: formattedSections
             });
@@ -55,7 +90,7 @@ Page({
                         name: section.section_name,
                         info: section
                     }));
-                    
+
                     this.setData({
                         sections: formattedRetrySections
                     });
@@ -75,17 +110,24 @@ Page({
     },
 
     // 检查授权状态
-    checkAuthorization: function() {
+    checkAuthorization: function () {
         const app = getApp();
         const userInfo = app.globalData.userInfo;
         const token = app.globalData.token;
+        const currentUser = app.globalData.currentUser;
 
         if (userInfo && token && (userInfo.nickName || userInfo.userInfo)) {
             // 已授权且有token，显示用户信息
             console.log('检查授权状态 - 用户信息:', userInfo);
             console.log('检查授权状态 - token存在:', !!token);
+
+            // 检查认证状态（is_verified 可能是数字1或布尔true）
+            const isVerified = currentUser && (currentUser.is_verified === 1 || currentUser.is_verified === true);
+            console.log('检查认证状态 - is_verified:', currentUser?.is_verified, 'isVerified:', isVerified);
+
             this.setData({
                 isAuthorized: true,
+                isVerified: isVerified,
                 userInfo: userInfo
             });
         } else {
@@ -95,6 +137,7 @@ Page({
             console.log('检查授权状态 - token存在:', !!token);
             this.setData({
                 isAuthorized: false,
+                isVerified: false,
                 userInfo: {}
             });
         }
@@ -103,7 +146,7 @@ Page({
     // 注意：已移除旧的 onGetUserInfo 方法，现在统一使用新的 getUserProfile 接口
 
     // 记录授权日志
-    logAuthorization: function(type, userInfo) {
+    logAuthorization: function (type, userInfo) {
         const logData = {
             type: type,
             timestamp: new Date().toISOString(),
@@ -119,7 +162,7 @@ Page({
     },
 
     // 检查授权后选择标段
-    selectSection: function(e) {
+    selectSection: function (e) {
         const section = e.currentTarget.dataset.section;
         const sectionInfo = e.currentTarget.dataset.sectionInfo;
         const app = getApp();
@@ -206,7 +249,7 @@ Page({
     },
 
     // 手动重新授权
-    reAuthorize: function() {
+    reAuthorize: function () {
         console.log('=== 调用wx.openSetting ===');
         wx.openSetting({
             success: (res) => {
@@ -252,7 +295,7 @@ Page({
     },
 
     // 获取用户信息（主要授权方法）
-    getUserProfile: function() {
+    getUserProfile: function () {
         console.log('开始获取用户信息');
         const app = getApp();
 
@@ -261,7 +304,7 @@ Page({
     },
 
     // 显示头像昵称填写弹窗
-    showNicknameAvatarModal: function() {
+    showNicknameAvatarModal: function () {
         console.log('显示头像昵称填写弹窗');
         this.setData({
             showNicknameModal: true,
@@ -271,7 +314,7 @@ Page({
     },
 
     // 选择头像
-    chooseAvatar: function(e) {
+    chooseAvatar: function (e) {
         console.log('选择头像:', e.detail.avatarUrl);
         this.setData({
             tempAvatarUrl: e.detail.avatarUrl
@@ -279,7 +322,7 @@ Page({
     },
 
     // 输入昵称
-    onNicknameInput: function(e) {
+    onNicknameInput: function (e) {
         console.log('输入昵称:', e.detail.value);
         this.setData({
             tempNickname: e.detail.value
@@ -287,9 +330,9 @@ Page({
     },
 
     // 确认提交用户信息
-    confirmUserInfo: function() {
+    confirmUserInfo: function () {
         const { tempNickname, tempAvatarUrl } = this.data;
-        
+
         if (!tempNickname || tempNickname.trim() === '') {
             wx.showToast({
                 title: '请输入昵称',
@@ -321,14 +364,14 @@ Page({
     },
 
     // 取消填写
-    cancelUserInfo: function() {
+    cancelUserInfo: function () {
         this.setData({
             showNicknameModal: false
         });
     },
 
     // 继续登录流程
-    proceedWithLogin: function(userInfo) {
+    proceedWithLogin: function (userInfo) {
         // 获取微信登录code
         wx.login({
             success: (loginRes) => {
@@ -360,7 +403,7 @@ Page({
     },
 
     // 旧的getUserProfile方法（保留作为备用）
-    getUserProfileOld: function() {
+    getUserProfileOld: function () {
         console.log('开始获取用户信息');
         const app = getApp();
 
@@ -484,7 +527,7 @@ Page({
     },
 
     // 显示昵称输入弹窗
-    showNicknameInputModal: function(userInfo) {
+    showNicknameInputModal: function (userInfo) {
         console.log('=== 显示昵称输入弹窗 ===');
         console.log('当前用户信息:', JSON.stringify(userInfo, null, 2));
 
@@ -508,7 +551,7 @@ Page({
     },
 
     // 跳转到昵称输入页面
-    navigateNicknameInput: function(userInfo) {
+    navigateNicknameInput: function (userInfo) {
         console.log('跳转到昵称输入页面');
         // 使用简单的输入框方式
         wx.showInputBox({
@@ -541,7 +584,7 @@ Page({
     },
 
     // 使用完整授权数据进行登录
-    proceedWithAuthData: function(authData) {
+    proceedWithAuthData: function (authData) {
         console.log('=== 使用完整授权数据登录流程 ===');
         console.log('授权数据:', JSON.stringify(authData, null, 2));
 
@@ -588,7 +631,7 @@ Page({
     },
 
     // 使用完整授权数据的后端登录接口
-    wechatLoginWithFullData: function(code, authData) {
+    wechatLoginWithFullData: function (code, authData) {
         const app = getApp();
 
         console.log('=== 准备发送完整授权数据到后端 ===');
@@ -683,7 +726,7 @@ Page({
     },
 
     // 调用后端登录接口
-    wechatLogin: function(code, userInfo) {
+    wechatLogin: function (code, userInfo) {
         const app = getApp();
 
         console.log('准备发送到后端的数据:', {
@@ -774,6 +817,13 @@ Page({
                     duration: 2000
                 });
             }
+        });
+    },
+
+    // 跳转到认证页面
+    goToVerification: function () {
+        wx.navigateTo({
+            url: '/pages/verification/verification'
         });
     },
 

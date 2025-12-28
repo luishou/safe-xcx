@@ -4,7 +4,7 @@
         <view class="back-btn" bindtap="goBack">
             <text>← 返回</text>
         </view>
-        <view class="title">我的举报</view>
+        <view class="title">{{pageTitle}}</view>
     </view>
 
     <!-- 用户信息 -->
@@ -62,7 +62,7 @@
                 </view>
 
                 <view class="report-meta">
-                    <text class="reporter">举报人: {{item.reporter}}</text>
+                    <text class="reporter" wx:if="{{!isPublicView}}">举报人: {{item.reporter}}</text>
                     <text class="time">{{item.reportTime}}</text>
                 </view>
             </view>

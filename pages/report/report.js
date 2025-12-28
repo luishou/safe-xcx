@@ -17,7 +17,7 @@ Page({
       { key: 'other', name: '其他隐患', icon: '…' }
     ],
     hazardSelectedKey: null,
-    
+
     // 表单数据
     location: '',
     description: '',
@@ -25,7 +25,10 @@ Page({
     photos: [],
     contact: '',
     anonymous: false,
-    
+
+    // 认证状态
+    isVerified: false,
+
     // 计算属性
     canSubmit: false
   },
@@ -36,9 +39,13 @@ Page({
   onLoad(options) {
     // 获取全局数据
     const app = getApp();
+    const currentUser = app.globalData.currentUser || {};
+    const isVerified = (currentUser.is_verified === 1 || currentUser.is_verified === true) || app.globalData.isVerified || false;
+
     this.setData({
-      currentUser: app.globalData.currentUser,
-      currentSection: app.globalData.currentSection
+      currentUser: currentUser,
+      currentSection: app.globalData.currentSection,
+      isVerified: isVerified
     });
   },
 
@@ -47,6 +54,15 @@ Page({
    */
   goBack() {
     wx.navigateBack();
+  },
+
+  /**
+   * 前往认证页面
+   */
+  goToVerification() {
+    wx.navigateTo({
+      url: '/pages/verification/verification'
+    });
   },
 
   /**
@@ -93,10 +109,10 @@ Page({
    * 选择图片
    */
   chooseImage() {
-    // 仅允许上传一张图片
-    if (this.data.photos.length >= 1) {
+    // 最多允许上传3张图片
+    if (this.data.photos.length >= 3) {
       wx.showToast({
-        title: '仅允许上传一张照片',
+        title: '最多上传3张照片',
         icon: 'none'
       });
       return;
@@ -104,36 +120,43 @@ Page({
 
     const that = this;
     wx.chooseImage({
-      count: 1 - this.data.photos.length,
+      count: 3 - this.data.photos.length,
       sizeType: ['compressed'],
       sourceType: ['album', 'camera'],
       success(res) {
         console.log('选择图片成功:', res.tempFilePaths);
-        // 只取第一张图片并在必要时进行压缩再上传
-        const firstPath = res.tempFilePaths[0];
-        const firstFile = res.tempFiles && res.tempFiles[0];
 
-        // 如果原始大小超过5MB，先压缩再上传
+        // 对每张图片进行压缩处理
         const FIVE_MB = 5 * 1024 * 1024;
-        if (firstFile && firstFile.size > FIVE_MB) {
-          console.log('图片超过5MB，开始压缩');
-          wx.compressImage({
-            src: firstPath,
-            quality: 60,
-            success: (cmp) => {
-              console.log('压缩成功，路径:', cmp.tempFilePath);
-              that.uploadImages([cmp.tempFilePath]);
-            },
-            fail: (err) => {
-              console.error('压缩失败:', err);
-              // 压缩失败则尝试直接上传
-              that.uploadImages([firstPath]);
+        const compressPromises = res.tempFilePaths.map((path, index) => {
+          return new Promise((resolve) => {
+            const file = res.tempFiles && res.tempFiles[index];
+
+            if (file && file.size > FIVE_MB) {
+              console.log('图片超过5MB，开始压缩:', path);
+              wx.compressImage({
+                src: path,
+                quality: 60,
+                success: (cmp) => {
+                  console.log('压缩成功，路径:', cmp.tempFilePath);
+                  resolve(cmp.tempFilePath);
+                },
+                fail: (err) => {
+                  console.error('压缩失败:', err);
+                  // 压缩失败则使用原路径
+                  resolve(path);
+                }
+              });
+            } else {
+              resolve(path);
             }
           });
-        } else {
-          // 直接上传
-          that.uploadImages([firstPath]);
-        }
+        });
+
+        // 等待所有压缩完成后上传
+        Promise.all(compressPromises).then(compressedPaths => {
+          that.uploadImages(compressedPaths);
+        });
       }
     });
   },
@@ -154,8 +177,8 @@ Page({
       title: '上传图片中...'
     });
 
-    // 仅上传第一张图片
-    const limitedPaths = (tempFilePaths || []).slice(0, 1);
+    // 最多上传3张图片
+    const limitedPaths = (tempFilePaths || []).slice(0, 3);
 
     const uploadPromises = limitedPaths.map(tempFilePath => {
       return new Promise((resolve, reject) => {
@@ -215,8 +238,8 @@ Page({
       .then(imageUrls => {
         wx.hideLoading();
         const photos = this.data.photos.concat(imageUrls);
-        // 只保留第一张照片
-        const limited = photos.slice(0, 1);
+        // 最多保留3张照片
+        const limited = photos.slice(0, 3);
         this.setData({
           photos: limited
         });
@@ -282,10 +305,10 @@ Page({
    */
   checkCanSubmit() {
     const { hazardSelectedKey, location, description, urgency } = this.data;
-    const canSubmit = !!hazardSelectedKey && 
-                     location.trim() !== '' && 
-                     description.trim() !== '' && 
-                     urgency !== '';
+    const canSubmit = !!hazardSelectedKey &&
+      location.trim() !== '' &&
+      description.trim() !== '' &&
+      urgency !== '';
     this.setData({
       canSubmit: canSubmit
     });
@@ -316,6 +339,26 @@ Page({
       wx.showToast({
         title: '请先登录',
         icon: 'none'
+      });
+      return;
+    }
+
+    // 检查用户认证状态（is_verified 可能是数字1或布尔true）
+    const userVerified = app.globalData.currentUser?.is_verified === 1 || app.globalData.currentUser?.is_verified === true;
+    if (!userVerified) {
+      wx.hideLoading();
+      wx.showModal({
+        title: '需要认证',
+        content: '提交举报需要先完成实名认证，是否前往认证页面？',
+        confirmText: '去认证',
+        cancelText: '取消',
+        success: (res) => {
+          if (res.confirm) {
+            wx.navigateTo({
+              url: '/pages/verification/verification'
+            });
+          }
+        }
       });
       return;
     }
@@ -383,7 +426,7 @@ Page({
   // 映射隐患类型
   mapHazardType(type) {
     // 直接使用所选卡片的 key，保持与后端存储一致
-    const allowed = ['fire','electric','mechanical','height','edge','environment','ppe','other'];
+    const allowed = ['fire', 'electric', 'mechanical', 'height', 'edge', 'environment', 'ppe', 'other'];
     if (allowed.includes(type)) return type;
     return 'other';
   },

@@ -13,7 +13,9 @@
     "pages/report-detail/report-detail",
     "pages/safety-knowledge/safety-knowledge",
     "pages/knowledge-admin/knowledge-admin",
-    "pages/knowledge-articles/knowledge-articles"
+    "pages/knowledge-articles/knowledge-articles",
+    "pages/verification/verification",
+    "pages/verification-admin/verification-admin"
   ],
   "window": {
     "backgroundTextStyle": "light",

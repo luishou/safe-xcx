@@ -120,6 +120,11 @@ class AuthController {
         { expiresIn: process.env.JWT_EXPIRES_IN }
       );
 
+      console.log('=== 登录成功返回用户信息 ===');
+      console.log('is_verified:', user.is_verified);
+      console.log('verification_status:', user.verification_status);
+      console.log('完整用户数据:', JSON.stringify(user, null, 2));
+
       res.json({
         success: true,
         message: '登录成功',
@@ -132,7 +137,9 @@ class AuthController {
             avatarUrl: user.avatarUrl,
             role: user.role,
             status: user.status,
-            managed_sections: user.managed_sections
+            managed_sections: user.managed_sections,
+            is_verified: user.is_verified,
+            verification_status: user.verification_status
           }
         }
       });
@@ -249,7 +256,9 @@ class AuthController {
             nickName: user.nickName,
             avatarUrl: user.avatarUrl,
             role: user.role,
-            managed_sections: user.managed_sections
+            managed_sections: user.managed_sections,
+            is_verified: user.is_verified,
+            verification_status: user.verification_status
           }
         }
       });

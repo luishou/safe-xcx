@@ -16,7 +16,8 @@ Page({
     error: '',
     canOperate: false, // 是否可以操作
     userRole: '', // 用户角色
-    readonly: false // 是否只读（来自个人中心）
+    readonly: false, // 是否只读（来自个人中心）
+    isPublicView: false // 是否为公示视图（无安全管理部权限）
   },
 
   /**
@@ -36,6 +37,9 @@ Page({
     // 解析只读参数（来自个人中心）
     const readonly = options.readonly === '1' || options.readonly === 'true';
 
+    // 解析是否为公示视图参数
+    const isPublicViewParam = options.isPublicView === '1' || options.isPublicView === 'true';
+
     this.setData({
       reportId: parseInt(id),
       readonly: readonly
@@ -46,6 +50,18 @@ Page({
     let currentUser = app.globalData.currentUser;
 
     console.log('当前用户信息:', currentUser);
+
+    // 检查用户是否有安全管理部权限
+    const hasManagementAccess = this.checkManagementAccess(currentUser);
+
+    // 如果没有明确传递isPublicView参数，则根据用户权限判断
+    const isPublicView = isPublicViewParam !== undefined ? isPublicViewParam : !hasManagementAccess;
+
+    this.setData({
+      isPublicView: isPublicView
+    });
+
+    console.log('是否为公示视图:', isPublicView);
 
     // 如果没有授权用户信息，只显示默认用户ID信息，不设置currentUser
     if (!currentUser) {
@@ -70,7 +86,8 @@ Page({
     let displayRole = 'user';
 
     // 不做基于角色的权限检查，前端控制菜单显示
-    canOperate = !readonly; // 只要不是只读模式就可以操作
+    // 公示视图或只读模式下不可操作
+    canOperate = !readonly && !isPublicView; // 只要不是只读模式且不是公示视图就可以操作
 
     this.setData({
       canOperate: canOperate,
@@ -78,10 +95,29 @@ Page({
       displayUserId: currentUser ? currentUser.id || 'authorized_user' : 'default_user'
     });
 
-    console.log('页面初始化 - canOperate:', canOperate, 'userRole:', currentUser ? currentUser.role : 'none');
+    console.log('页面初始化 - canOperate:', canOperate, 'userRole:', currentUser ? currentUser.role : 'none', 'isPublicView:', isPublicView);
 
     // 加载举报详情
     this.loadReportDetail();
+  },
+
+  /**
+   * 检查用户是否有安全管理部权限
+   */
+  checkManagementAccess(user) {
+    if (!user) return false;
+
+    // 检查managed_sections字段
+    if (user.managed_sections && user.managed_sections.length > 0) {
+      return true;
+    }
+
+    // 检查角色
+    if (user.role === 'admin' || user.role === 'manager') {
+      return true;
+    }
+
+    return false;
   },
 
   // 加载举报详情
@@ -138,7 +174,8 @@ Page({
 
           // 根据用户角色确定权限
           // 不做基于角色的权限检查，前端控制菜单显示
-          let canOperate = !this.data.readonly; // 只要不是只读模式就可以操作
+          // 公示视图或只读模式下不可操作
+          let canOperate = !this.data.readonly && !this.data.isPublicView; // 只要不是只读模式且不是公示视图就可以操作
 
           this.setData({
             report: {
@@ -154,7 +191,7 @@ Page({
             userRole: currentUser ? currentUser.role : 'employee'
           });
 
-          console.log('重新加载详情 - canOperate:', canOperate, 'userRole:', currentUser ? currentUser.role : 'employee');
+          console.log('重新加载详情 - canOperate:', canOperate, 'userRole:', currentUser ? currentUser.role : 'employee', 'isPublicView:', this.data.isPublicView);
 
           console.log('举报详情 - 当前状态:', report.status);
           console.log('举报详情 - 是否显示待处理操作:', report.status === 'submitted');
@@ -275,7 +312,7 @@ Page({
     }
 
     wx.chooseImage({
-      count: 1,
+      count: 3 - this.data.rectifiedImages.length,
       sizeType: ['compressed'],
       sourceType: ['camera', 'album'],
       success: (res) => {
@@ -283,8 +320,10 @@ Page({
 
         // 将临时文件路径添加到本地图片列表
         const newImages = [...this.data.rectifiedImages, ...tempFilePaths];
+        // 最多保留3张照片
+        const limitedImages = newImages.slice(0, 3);
         this.setData({
-          rectifiedImages: newImages
+          rectifiedImages: limitedImages
         });
 
         wx.showToast({

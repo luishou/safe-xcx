@@ -64,12 +64,12 @@
                             <text class="iconfont icon-close"></text>
                         </view>
                     </view>
-                    <view class="add-photo" bindtap="chooseImage" wx:if="{{photos.length < 1}}">
+                    <view class="add-photo" bindtap="chooseImage" wx:if="{{photos.length < 3}}">
                         <text class="iconfont icon-plus"></text>
                         <text>添加照片</text>
                     </view>
                 </view>
-                <view class="photo-tip">最多可上传1张照片，建议拍摄清晰的现场照片</view>
+                <view class="photo-tip">最多可上传3张照片，建议拍摄清晰的现场照片</view>
             </view>
         </view>
 
@@ -82,8 +82,17 @@
 
     <!-- 提交按钮 -->
     <view class="submit-container">
-        <button class="submit-btn" bindtap="submitReport" disabled="{{!canSubmit}}">
+        <button 
+            class="submit-btn {{!canSubmit ? 'disabled' : ''}}" 
+            bindtap="submitReport" 
+            disabled="{{!canSubmit}}"
+        >
             提交举报
         </button>
+        <view wx:if="{{!isVerified}}" class="verification-tip">
+            <text class="tip-icon">⚠️</text>
+            <text class="tip-text">提交举报需要先完成实名认证</text>
+            <text class="tip-link" bindtap="goToVerification">去认证</text>
+        </view>
     </view>
 </view>

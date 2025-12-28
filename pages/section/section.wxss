@@ -55,6 +55,14 @@
     background: linear-gradient(135deg, #8b5cf6, #7c3aed);
 }
 
+.from-orange-500 {
+    background: linear-gradient(135deg, #f97316, #ea580c);
+}
+
+.to-orange-600 {
+    background: linear-gradient(135deg, #f97316, #ea580c);
+}
+
 /* 其他样式继承自首页 */
 .text-center {
     text-align: center;

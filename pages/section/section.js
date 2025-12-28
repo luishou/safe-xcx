@@ -249,8 +249,37 @@ Page({
             };
         }
 
+        // 传递isAdmin参数到admin页面，用于区分显示"安全环保部"还是"举报公示"
         wx.navigateTo({
-            url: '/pages/admin/admin'
+            url: `/pages/admin/admin?isAdmin=true`
+        });
+    },
+
+    // 所有用户可见的菜单点击，进入举报公示页面
+    goToReportPublic: function() {
+        // 检查是否已授权登录
+        if (!app.globalData.currentUser) {
+            wx.showToast({
+                title: '请先授权登录',
+                icon: 'none',
+                duration: 2000
+            });
+            return;
+        }
+
+        // 设置标段信息
+        if (this.data.sectionInfo) {
+            app.globalData.currentSection = this.data.sectionInfo;
+        } else {
+            app.globalData.currentSection = {
+                section_code: this.data.section,
+                section_name: `第${this.data.section}标段`
+            };
+        }
+
+        // 传递isAdmin=false参数到admin页面，显示举报公示页面（只显示举报列表）
+        wx.navigateTo({
+            url: `/pages/admin/admin?isAdmin=false`
         });
     },
 

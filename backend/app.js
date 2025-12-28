@@ -12,6 +12,7 @@ const reportRoutes = require('./routes/report');
 const sectionRoutes = require('./routes/section');
 const uploadRoutes = require('./routes/upload');
 const safetyRoutes = require('./routes/safety');
+const verificationRoutes = require('./routes/verification');
 
 const app = express();
 const PORT = process.env.PORT || 3300;
@@ -31,6 +32,7 @@ app.use('/api/report', reportRoutes);
 app.use('/api/section', sectionRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/safety', safetyRoutes);
+app.use('/api/verifications', verificationRoutes);
 
 // 健康检查
 app.get('/health', (req, res) => {

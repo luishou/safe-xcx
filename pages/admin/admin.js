@@ -6,6 +6,7 @@ Page({
   data: {
     currentSection: null,
     currentTab: 'pending', // 当前选中的标签
+    isAdmin: false, // 是否为管理员视图（true=安全环保部，false=举报公示）
 
     // 状态统计数据
     pendingCount: 0,
@@ -20,6 +21,9 @@ Page({
 
     // 已办结工单数据
     completedReports: [],
+
+    // 举报公示：所有状态的统一列表
+    allReports: [],
 
     loading: true,
     currentUser: null,
@@ -47,6 +51,12 @@ Page({
    * 生命周期函数--监听页面加载
    */
   onLoad(options) {
+    // 解析isAdmin参数，用于区分显示"安全环保部"还是"举报公示"
+    const isAdmin = options.isAdmin === 'true' || options.isAdmin === true;
+    this.setData({
+      isAdmin: isAdmin
+    });
+    
     this.loadData();
     this.loadUserInfo();
   },
@@ -139,9 +149,23 @@ Page({
 
     const { formatBeijing } = require('../../utils/time.js');
     const processReports = (reports) => {
+      // 隐患类型颜色映射
+      const hazardTypeColors = {
+        '消防安全隐患': '#ef4444',
+        '电气安全隐患': '#f97316',
+        '化学品安全隐患': '#3b82f6',
+        '机械设备安全隐患': '#f59e0b',
+        '高空作业安全隐患': '#fb7185',
+        '临边防护安全隐患': '#10b981',
+        '环境安全隐患': '#059669',
+        '个人防护装备隐患': '#6366f1',
+        '其他安全隐患': '#8b5cf6'
+      };
+
       return (reports || []).map(report => ({
         ...report,
         hazardType: mapHazardType(report.hazard_type),
+        hazardTypeColor: hazardTypeColors[mapHazardType(report.hazard_type)] || '#6b7280',
         severity: mapSeverity(report.severity),
         status: mapStatus(report.status),
         reporter: report.reporter_name || '未知',
@@ -169,6 +193,8 @@ Page({
         this.setData({ loading: false });
         // 统计与图表改为使用后端统计接口
         this.fetchStats();
+        // 生成举报公示的统一列表
+        this.generateAllReports();
       }
     };
 
@@ -350,6 +376,11 @@ Page({
   // 进入安全知识管理
   goKnowledgeAdmin() {
     wx.navigateTo({ url: '/pages/knowledge-admin/knowledge-admin' });
+  },
+
+  // 进入认证管理
+  goVerificationAdmin() {
+    wx.navigateTo({ url: '/pages/verification-admin/verification-admin' });
   },
 
   goBack: function () {
@@ -669,8 +700,11 @@ Page({
     const id = e.currentTarget.dataset.id;
     const status = this.data.currentTab;
 
+    // 举报公示页面（isAdmin=false）传递isPublicView=true参数，详情页只读
+    const isPublicView = !this.data.isAdmin;
+
     wx.navigateTo({
-      url: `/pages/report-detail/report-detail?id=${id}&status=${status}`
+      url: `/pages/report-detail/report-detail?id=${id}&status=${status}&isPublicView=${isPublicView}`
     });
   },
 
@@ -695,5 +729,38 @@ Page({
         icon: 'success'
       });
     }, 1000);
+  },
+
+  // 生成举报公示的统一列表（包含所有状态）
+  generateAllReports() {
+    const { pendingReports, processingReports, completedReports } = this.data;
+
+    // 为每个报告添加状态样式和文本
+    const allReports = [
+      ...pendingReports.map(item => ({
+        ...item,
+        statusClass: 'pending-item',
+        statusText: '待处理'
+      })),
+      ...processingReports.map(item => ({
+        ...item,
+        statusClass: 'processing-item',
+        statusText: '处理中'
+      })),
+      ...completedReports.map(item => ({
+        ...item,
+        statusClass: 'completed-item',
+        statusText: '已办结'
+      }))
+    ];
+
+    // 按时间倒序排列（最新的在前面）
+    allReports.sort((a, b) => {
+      return new Date(b.created_at) - new Date(a.created_at);
+    });
+
+    this.setData({
+      allReports: allReports
+    });
   }
 })

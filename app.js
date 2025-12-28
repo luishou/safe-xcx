@@ -10,6 +10,7 @@ App({
     //baseUrl: 'https://safe.luishou.top/api',
     baseUrl: 'https://safe.sulei.xyz/api', 
     token: null, // JWT token
+    isVerified: false, // 全局认证状态
     db: {
       users: {
         'employee': {
@@ -212,8 +213,14 @@ App({
             department: user.department || '未设置部门',
             avatar: user.avatarUrl || user.avatar || '👷',
             avatarUrl: user.avatarUrl || user.avatar || '👷', // 保持原字段
-            managed_sections: user.managed_sections // 确保保留管理标段字段
+            managed_sections: user.managed_sections, // 确保保留管理标段字段
+            is_verified: user.is_verified // 确保保留认证状态字段
           };
+
+          // 更新全局认证状态（is_verified 可能是数字1或布尔true）
+          this.globalData.isVerified = user.is_verified === 1 || user.is_verified === true;
+          console.log('用户认证状态 - is_verified:', user.is_verified, 'isVerified:', this.globalData.isVerified);
+
           console.log('映射后的用户信息:', JSON.stringify(this.globalData.currentUser, null, 2));
         } else {
           console.log('Token验证失败，清除本地存储');

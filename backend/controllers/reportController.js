@@ -557,6 +557,98 @@ const XLSX = require('xlsx');
     }
   }
 
+  // 获取公示举报列表（隐藏举报人信息）
+  async getPublicReports(req, res) {
+    try {
+      const { page = 1, limit = 20, section } = req.query;
+      const limitNum = parseInt(limit);
+      const pageNum = parseInt(page);
+      const offset = (pageNum - 1) * limitNum;
+  
+      console.log('=== 获取公示举报列表 ===');
+      console.log('查询参数:', { page, limit, section });
+  
+      // 必须提供标段参数
+      if (!section) {
+        return res.status(400).json({
+          success: false,
+          message: '请提供标段参数'
+        });
+      }
+  
+      const whereClause = 'WHERE section = ?';
+      const params = [section];
+  
+      const sql = `
+        SELECT
+          id, description, hazard_type, severity,
+          location, section, status, assigned_to, plan, created_at, updated_at,
+          initial_images, rectified_images
+        FROM reports
+        ${whereClause}
+        ORDER BY created_at DESC
+        LIMIT ${Number.isFinite(limitNum) ? limitNum : 20} OFFSET ${Number.isFinite(offset) ? offset : 0}
+      `;
+  
+      console.log('=== 公示举报列表SQL ===');
+      console.log('完整SQL:', sql);
+      console.log('SQL参数:', params);
+  
+      const [rows] = await pool.execute(sql, params);
+  
+      const [countRows] = await pool.execute(`
+        SELECT COUNT(*) as total
+        FROM reports
+        ${whereClause}
+      `, params);
+  
+      console.log('公示举报查询结果:', {
+        查询到的记录数: rows.length,
+        总数: countRows[0].total,
+        标段: section
+      });
+  
+      // 安全解析JSON数据
+      const safeParseJSON = (jsonString) => {
+        try {
+          if (!jsonString) return [];
+          return JSON.parse(jsonString);
+        } catch (error) {
+          console.error('JSON解析失败:', error, '原始数据:', jsonString);
+          return [];
+        }
+      };
+  
+      const formattedRows = rows.map((r) => ({
+        ...r,
+        created_at: formatDateTimeBeijing(r.created_at),
+        updated_at: formatDateTimeBeijing(r.updated_at),
+        initial_images: safeParseJSON(r.initial_images),
+        rectified_images: safeParseJSON(r.rectified_images)
+      }));
+  
+      res.json({
+        success: true,
+        data: {
+          reports: formattedRows,
+          pagination: {
+            total: countRows[0].total,
+            page: parseInt(page),
+            limit: parseInt(limit),
+            totalPages: Math.ceil(countRows[0].total / limit)
+          }
+        }
+      });
+    } catch (error) {
+      console.error('获取公示举报列表失败:', error);
+      res.status(500).json({
+        success: false,
+        message: '获取公示举报列表失败',
+        error: error.message
+      });
+    }
+  }
+
   // 获取举报详情
   async getReportDetail(req, res) {
     try {

@@ -34,7 +34,13 @@
                 </view>
                 <view class="item-desc">{{item.description}}</view>
                 <view class="item-meta">
-                    <text class="reporter">举报人: {{item.reporter}}</text>
+                    <view class="reporter-info">
+                        <text class="reporter">举报人: {{item.reporter}}</text>
+                        <view wx:if="{{item.reporter_verified}}" class="verified-badge">
+                            <text class="verified-icon">✓</text>
+                            <text class="verified-text">已认证</text>
+                        </view>
+                    </view>
                     <text class="time">{{item.reportTime}}</text>
                 </view>
             </view>
@@ -51,7 +57,13 @@
                 </view>
                 <view class="item-desc">{{item.description}}</view>
                 <view class="item-meta">
-                    <text class="reporter">举报人: {{item.reporter}}</text>
+                    <view class="reporter-info">
+                        <text class="reporter">举报人: {{item.reporter}}</text>
+                        <view wx:if="{{item.reporter_verified}}" class="verified-badge">
+                            <text class="verified-icon">✓</text>
+                            <text class="verified-text">已认证</text>
+                        </view>
+                    </view>
                     <text class="time">处理时间: {{item.processTime}}</text>
                 </view>
             </view>
@@ -68,7 +80,13 @@
                 </view>
                 <view class="item-desc">{{item.description}}</view>
                 <view class="item-meta">
-                    <text class="reporter">举报人: {{item.reporter}}</text>
+                    <view class="reporter-info">
+                        <text class="reporter">举报人: {{item.reporter}}</text>
+                        <view wx:if="{{item.reporter_verified}}" class="verified-badge">
+                            <text class="verified-icon">✓</text>
+                            <text class="verified-text">已认证</text>
+                        </view>
+                    </view>
                     <text class="time">完成时间: {{item.completeTime}}</text>
                 </view>
             </view>

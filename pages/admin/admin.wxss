@@ -290,6 +290,7 @@
     border-radius: 12rpx;
     font-size: 24rpx;
     font-weight: 500;
+    box-shadow: 0 2rpx 6rpx rgba(0, 0, 0, 0.15);
 }
 
 .item-status {
@@ -396,3 +397,4 @@
         padding: 16rpx;
     }
 }
+

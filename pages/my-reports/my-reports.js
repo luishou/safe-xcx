@@ -15,7 +15,11 @@ Page({
     currentFilter: 'processing', // processing, completed, evaluated
     processingCount: 0,
     completedCount: 0,
-    evaluatedCount: 0
+    evaluatedCount: 0,
+
+    // 页面配置
+    pageTitle: '我的举报',
+    isPublicView: false // 是否为公示视图（无安全管理部权限）
   },
 
   /**
@@ -54,15 +58,41 @@ Page({
         currentSection: currentSection,
         displayUserId: 'default_user',
         userRole: 'guest',
-        canOperate: false
+        canOperate: false,
+        pageTitle: '举报公示',
+        isPublicView: true
       });
       return;
     }
 
+    // 检查用户是否有安全管理部权限
+    const hasManagementAccess = this.checkManagementAccess(currentUser);
+
     this.setData({
       currentUser: currentUser,
-      currentSection: currentSection
+      currentSection: currentSection,
+      pageTitle: hasManagementAccess ? '我的举报' : '举报公示',
+      isPublicView: !hasManagementAccess
     });
+  },
+
+  /**
+   * 检查用户是否有安全管理部权限
+   */
+  checkManagementAccess(user) {
+    if (!user) return false;
+
+    // 检查managed_sections字段
+    if (user.managed_sections && user.managed_sections.length > 0) {
+      return true;
+    }
+
+    // 检查角色
+    if (user.role === 'admin' || user.role === 'manager') {
+      return true;
+    }
+
+    return false;
   },
 
   /**
@@ -88,9 +118,15 @@ Page({
     console.log('当前用户信息:', currentUser);
     console.log('用户ID:', currentUser?.id);
     console.log('用户角色:', currentUser?.role);
+    console.log('是否为公示视图:', this.data.isPublicView);
+
+    // 根据视图类型选择不同的接口
+    const apiUrl = this.data.isPublicView 
+      ? app.globalData.baseUrl + '/report/public-reports'
+      : app.globalData.baseUrl + '/report/personal-reports';
 
     wx.request({
-      url: app.globalData.baseUrl + '/report/personal-reports',
+      url: apiUrl,
       method: 'GET',
       header: {
         'Authorization': 'Bearer ' + app.globalData.token
@@ -104,7 +140,7 @@ Page({
         });
 
         if (res.data.success) {
-          console.log('获取个人举报记录成功:', res.data.data.reports);
+          console.log('获取举报记录成功:', res.data.data.reports);
           const reports = res.data.data.reports;
 
           // 映射函数
@@ -164,7 +200,7 @@ Page({
           const processedReports = processReports(reports);
 
           // 按状态分类
-          const processingReports = processedReports.filter(report => report.status === '处理中');
+          const processingReports = processedReports.filter(report => report.status === '处理中' || report.status === '待处理');
           const completedReports = processedReports.filter(report => report.status === '已办结');
           const evaluatedReports = completedReports.filter(report => report.status === '已办结'); // 假设已办结的就是已评价的
 
@@ -255,7 +291,7 @@ Page({
   viewReportDetail(e) {
     const id = e.currentTarget.dataset.id;
     wx.navigateTo({
-      url: `/pages/report-detail/report-detail?id=${id}&readonly=1`
+      url: `/pages/report-detail/report-detail?id=${id}&readonly=1&isPublicView=${this.data.isPublicView ? 1 : 0}`
     });
   },
 

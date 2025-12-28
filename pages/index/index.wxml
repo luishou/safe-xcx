@@ -40,6 +40,17 @@
             <text class="user-name">{{userInfo.nickName || '微信用户'}}</text>
             <text class="user-status">已授权登录</text>
         </view>
+        <!-- 认证状态 -->
+        <view class="verification-status" bindtap="goToVerification">
+            <view wx:if="{{isVerified}}" class="verified-status">
+                <text class="status-icon">✓</text>
+                <text class="status-text">已认证</text>
+            </view>
+            <view wx:else class="unverified-status">
+                <text class="status-icon">!</text>
+                <text class="status-text">未认证</text>
+            </view>
+        </view>
     </view>
 
     <!-- 标段选择 -->
@@ -95,3 +106,4 @@
         </view>
     </view>
 </view>
+

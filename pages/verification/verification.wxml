@@ -1,0 +1,123 @@
+<!--pages/verification/verification.wxml-->
+<view class="verification-container">
+  <!-- 页面标题 -->
+  <view class="page-header">
+    <text class="page-title">用户认证</text>
+    <text class="page-subtitle">完成实名认证后即可提交举报</text>
+  </view>
+
+  <!-- 未申请状态 -->
+  <view wx:if="{{verificationStatus === 'none'}}" class="form-section">
+    <view class="form-item">
+      <text class="form-label">姓名</text>
+      <input
+        class="form-input"
+        placeholder="请输入真实姓名"
+        value="{{name}}"
+        bindinput="onNameInput"
+      />
+    </view>
+
+    <view class="form-item">
+      <text class="form-label">身份证号</text>
+      <input
+        class="form-input"
+        placeholder="请输入18位身份证号"
+        value="{{idCard}}"
+        maxlength="18"
+        bindinput="onIdCardInput"
+      />
+    </view>
+
+    <view class="form-item">
+      <text class="form-label">手机号</text>
+      <input
+        class="form-input"
+        type="number"
+        placeholder="请输入手机号"
+        value="{{phone}}"
+        maxlength="11"
+        bindinput="onPhoneInput"
+      />
+    </view>
+
+    <view class="form-item">
+      <text class="form-label">所属标段</text>
+      <picker
+        mode="selector"
+        range="{{sections}}"
+        range-key="section_name"
+        bindchange="onSectionChange"
+      >
+        <view class="picker">
+          {{sectionName || '请选择标段'}}
+        </view>
+      </picker>
+    </view>
+
+    <button
+      class="submit-btn {{isSubmitting ? 'disabled' : ''}}"
+      bindtap="submitVerification"
+      disabled="{{isSubmitting}}"
+    >
+      {{isSubmitting ? '提交中...' : '提交认证申请'}}
+    </button>
+
+    <view class="tips">
+      <text class="tips-title">温馨提示：</text>
+      <text class="tips-text">• 请填写真实有效的个人信息</text>
+      <text class="tips-text">• 认证通过后即可提交隐患举报</text>
+      <text class="tips-text">• 审核结果将通过系统通知</text>
+    </view>
+  </view>
+
+  <!-- 待审核状态 -->
+  <view wx:if="{{verificationStatus === 'pending'}}" class="status-section">
+    <view class="status-icon pending">⏳</view>
+    <text class="status-title">审核中</text>
+    <text class="status-desc">您的认证申请正在审核中，请耐心等待</text>
+    <text class="status-time">申请时间：{{verificationInfo.createdAt}}</text>
+  </view>
+
+  <!-- 已通过状态 -->
+  <view wx:if="{{verificationStatus === 'approved'}}" class="status-section">
+    <view class="status-icon approved">✓</view>
+    <text class="status-title">已认证</text>
+    <text class="status-desc">您已完成实名认证，可以正常提交举报</text>
+    <view class="verified-info">
+      <view class="info-row">
+        <text class="info-label">姓名：</text>
+        <text class="info-value">{{verificationInfo.name}}</text>
+      </view>
+      <view class="info-row">
+        <text class="info-label">身份证号：</text>
+        <text class="info-value">{{verificationInfo.idCard}}</text>
+      </view>
+      <view class="info-row">
+        <text class="info-label">手机号：</text>
+        <text class="info-value">{{verificationInfo.phone}}</text>
+      </view>
+      <view class="info-row">
+        <text class="info-label">认证时间：</text>
+        <text class="info-value">{{verificationInfo.reviewedAt}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 已拒绝状态 -->
+  <view wx:if="{{verificationStatus === 'rejected'}}" class="status-section">
+    <view class="status-icon rejected">✕</view>
+    <text class="status-title">认证未通过</text>
+    <text class="status-desc">很抱歉，您的认证申请未通过审核</text>
+    <view wx:if="{{verificationInfo.reviewComment}}" class="reject-reason">
+      <text class="reason-title">拒绝原因：</text>
+      <text class="reason-text">{{verificationInfo.reviewComment}}</text>
+    </view>
+    <button class="reapply-btn" bindtap="reapply">重新申请</button>
+  </view>
+
+  <!-- 加载状态 -->
+  <view wx:if="{{isLoading}}" class="loading-container">
+    <text class="loading-text">加载中...</text>
+  </view>
+</view>

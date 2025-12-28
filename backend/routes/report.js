@@ -21,6 +21,9 @@ router.get('/personal-reports', reportController.getPersonalReports);
 // 获取个人举报列表（员工使用）
 router.get('/my-reports', reportController.getMyReports);
 
+// 获取公示举报列表（隐藏举报人信息）
+router.get('/public-reports', reportController.getPublicReports);
+
 // 获取统计数据
 router.get('/stats', reportController.getStats);
 

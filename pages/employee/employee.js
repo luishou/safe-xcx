@@ -145,6 +145,7 @@ Page({
         severity: mapSeverity(report.severity),
         status: mapStatus(report.status),
         reporter: report.reporter_name || '未知',
+        reporter_verified: report.reporter_verified || false,
         reportTime: formatBeijing(report.created_at),
         location: report.location,
         priority: report.severity,
