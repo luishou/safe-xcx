@@ -139,7 +139,9 @@ class AuthController {
             status: user.status,
             managed_sections: user.managed_sections,
             is_verified: user.is_verified,
-            verification_status: user.verification_status
+            verification_status: user.verification_status,
+            is_supervisor: user.is_supervisor,
+            is_admin: user.is_admin
           }
         }
       });
@@ -200,7 +202,11 @@ class AuthController {
             nickName: user.nickName,
             avatarUrl: user.avatarUrl,
             role: user.role,
-            managed_sections: user.managed_sections
+            managed_sections: user.managed_sections,
+            is_verified: user.is_verified,
+            verification_status: user.verification_status,
+            is_supervisor: user.is_supervisor,
+            is_admin: user.is_admin
           }
         }
       });
@@ -258,7 +264,9 @@ class AuthController {
             role: user.role,
             managed_sections: user.managed_sections,
             is_verified: user.is_verified,
-            verification_status: user.verification_status
+            verification_status: user.verification_status,
+            is_supervisor: user.is_supervisor,
+            is_admin: user.is_admin
           }
         }
       });

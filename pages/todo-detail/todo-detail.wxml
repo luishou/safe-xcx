@@ -1,10 +1,10 @@
-<!-- 举报详情页面 -->
-<view class="report-detail-page">
+<!-- 待办详情页面 -->
+<view class="todo-detail-page">
     <view class="header">
         <view class="back-btn" bindtap="goBack">
             <text>← 返回</text>
         </view>
-        <view class="title">举报详情</view>
+        <view class="title">待办详情</view>
     </view>
 
     <!-- 加载状态 -->
@@ -24,7 +24,6 @@
         <view class="info-section">
             <view class="info-header">
                 <view class="report-id">隐患详情 #{{report.id}}</view>
-                <view class="status-badge {{statusClass}}">{{statusText}}</view>
             </view>
 
             <view class="info-content">
@@ -46,8 +45,7 @@
                 </view>
                 <view class="info-row">
                     <text class="info-label">举报人：</text>
-                    <text class="info-value" wx:if="{{!isPublicView}}">{{report.reporter_name}}</text>
-                    <text class="info-value" wx:if="{{isPublicView}}">***</text>
+                    <text class="info-value">{{report.reporter_name}}</text>
                 </view>
                 <view class="info-row">
                     <text class="info-label">举报时间：</text>
@@ -61,7 +59,7 @@
         </view>
 
         <!-- 现场照片 -->
-        <view class="photos-section" wx:if="{{report}}">
+        <view class="photos-section">
             <view class="section-title">现场照片</view>
             <view wx:if="{{report.initial_images && report.initial_images.length > 0}}">
                 <view class="photos-grid">
@@ -127,39 +125,10 @@
             </view>
         </view>
 
-        <!-- 奖金发放截图（有数据时显示） -->
-        <view class="photos-section" wx:if="{{report.reward_images && report.reward_images.length > 0}}">
-            <view class="section-title">奖金发放截图</view>
-            <view class="photos-grid">
-                <view wx:for="{{report.reward_images}}" wx:key="*this" class="photo-item" bindtap="viewImage" data-src="{{item}}">
-                    <image src="{{item}}" mode="aspectFill" class="photo"></image>
-                </view>
-            </view>
-            <view class="info-row" wx:if="{{report.reward_paid_at}}">
-                <text class="info-label">发放时间：</text>
-                <text class="info-value">{{report.reward_paid_at}}</text>
-            </view>
-        </view>
-
-        <!-- 处理历史时间轴 -->
-        <view class="history-section" wx:if="{{report.history && report.history.length > 0 && !isPublicView}}">
-            <view class="section-title">处理历史</view>
-            <view class="timeline">
-                <view class="timeline-item" wx:for="{{report.history}}" wx:key="id">
-                    <view class="timeline-dot"></view>
-                    <view class="timeline-content">
-                        <view class="timeline-header">
-                            <view class="timeline-action">{{item.action}}</view>
-                            <view class="timeline-time">{{item.created_at}}</view>
-                        </view>
-                        <view class="timeline-desc" wx:if="{{item.description}}">{{item.description}}</view>
-                    </view>
-                </view>
-            </view>
-        </view>
+        <!-- ==================== 操作区域 ==================== -->
 
         <!-- 待处理状态 - 安全部确认（填写意见+奖金） -->
-        <view class="actions-section" wx:if="{{canOperate && currentStatus === 'submitted' && (isAdmin || hasManagementAccess)}}">
+        <view class="actions-section" wx:if="{{currentStatus === 'submitted'}}">
             <view class="section-title">安全部处理</view>
             
             <!-- 初始操作按钮 -->
@@ -181,7 +150,7 @@
 
                 <view class="input-section">
                     <view class="input-title">奖金金额（元） <text class="required">*</text></view>
-                    <input class="reward-input" type="number" placeholder="请输入奖金金额（正整数）" value="{{rewardAmount}}" bindinput="onRewardInput"/>
+                    <input class="reward-input" type="digit" placeholder="请输入奖金金额" value="{{rewardAmount}}" bindinput="onRewardInput"/>
                 </view>
 
                 <view class="action-buttons">
@@ -196,7 +165,7 @@
         </view>
 
         <!-- 待监理确认状态 - 监理操作 -->
-        <view class="actions-section" wx:if="{{canOperate && currentStatus === 'confirmed' && isSupervisor}}">
+        <view class="actions-section" wx:if="{{currentStatus === 'confirmed' && isSupervisor}}">
             <view class="section-title">监理确认</view>
             
             <view class="input-section">
@@ -215,7 +184,7 @@
         </view>
 
         <!-- 待整改状态 - 安全部上传处理照片 -->
-        <view class="actions-section" wx:if="{{canOperate && currentStatus === 'supervisor_confirmed' && (isAdmin || hasManagementAccess)}}">
+        <view class="actions-section" wx:if="{{currentStatus === 'supervisor_confirmed'}}">
             <view class="section-title">上传整改照片</view>
             
             <view class="upload-section">
@@ -238,7 +207,7 @@
         </view>
 
         <!-- 待下发奖金状态 - 安全部上传奖金截图 -->
-        <view class="actions-section" wx:if="{{canOperate && currentStatus === 'photo_uploaded' && (isAdmin || hasManagementAccess)}}">
+        <view class="actions-section" wx:if="{{currentStatus === 'photo_uploaded'}}">
             <view class="section-title">上传奖金发放截图</view>
             
             <view class="upload-section">
@@ -252,19 +221,13 @@
                         <text class="add-text">添加截图</text>
                     </view>
                 </view>
-                <view class="upload-tip">请上传奖金发放的转账截图</view>
+                <view class="upload-tip">最多可上传3张截图</view>
             </view>
 
             <button class="action-btn confirm-btn" bindtap="uploadRewardProof">
-                <text class="btn-text">完成办结</text>
+                <text class="btn-text">提交截图并办结</text>
             </button>
         </view>
 
-        <!-- Admin删除按钮 -->
-        <view class="actions-section" wx:if="{{isAdmin && canOperate}}">
-            <button class="action-btn delete-btn" bindtap="deleteReport">
-                <text class="btn-text">删除此举报</text>
-            </button>
-        </view>
     </view>
 </view>

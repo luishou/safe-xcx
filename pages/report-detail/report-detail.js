@@ -1,181 +1,105 @@
 // pages/report-detail/report-detail.js
 Page({
-
-  /**
-   * 页面的初始数据
-   */
   data: {
     reportId: 0,
-    currentStatus: 'pending',
+    currentStatus: 'submitted',
     statusText: '待处理',
     statusClass: 'status-pending',
     rectifiedImages: [],
-    processingPlan: '', // 处理方案
+    rewardImages: [],
+    processingOpinion: '',
+    rewardAmount: '',
+    supervisorComment: '',
     report: null,
     loading: true,
     error: '',
-    canOperate: false, // 是否可以操作
-    userRole: '', // 用户角色
-    readonly: false, // 是否只读（来自个人中心）
-    isPublicView: false // 是否为公示视图（无安全管理部权限）
+    canOperate: false,
+    userRole: '',
+    canOperate: false,
+    userRole: '',
+    readonly: false,
+    isPublicView: false,
+    isSupervisor: false,
+    isAdmin: false,
+    showConfirmForm: false // 控制确认表单显示
   },
 
-  /**
-   * 生命周期函数--监听页面加载
-   */
   onLoad(options) {
     const { id } = options;
-
     if (!id) {
-      this.setData({
-        error: '缺少举报ID参数',
-        loading: false
-      });
+      this.setData({ error: '缺少举报ID参数', loading: false });
       return;
     }
 
-    // 解析只读参数（来自个人中心）
     const readonly = options.readonly === '1' || options.readonly === 'true';
+    const fromTodo = options.fromTodo === '1'; // 是否从待办列表进入
 
-    // 解析是否为公示视图参数
-    const isPublicViewParam = options.isPublicView === '1' || options.isPublicView === 'true';
+    this.setData({ reportId: parseInt(id), readonly });
 
-    this.setData({
-      reportId: parseInt(id),
-      readonly: readonly
-    });
-
-    // 获取用户角色
     const app = getApp();
-    let currentUser = app.globalData.currentUser;
+    const currentUser = app.globalData.currentUser;
 
-    console.log('当前用户信息:', currentUser);
-
-    // 检查用户是否有安全管理部权限
-    const hasManagementAccess = this.checkManagementAccess(currentUser);
-
-    // 如果没有明确传递isPublicView参数，则根据用户权限判断
-    const isPublicView = isPublicViewParam !== undefined ? isPublicViewParam : !hasManagementAccess;
-
-    this.setData({
-      isPublicView: isPublicView
-    });
-
-    console.log('是否为公示视图:', isPublicView);
-
-    // 如果没有授权用户信息，只显示默认用户ID信息，不设置currentUser
-    if (!currentUser) {
-      console.log('用户未授权，不设置用户角色');
-
-      // 仅用于显示的默认用户信息，不实际设置到全局状态
-      const displayUser = {
-        id: 'default_user', // 默认用户ID
-        name: '未授权用户',
-        role: 'guest',
-        department: '未授权'
-      };
-
-      // 用于显示用户ID信息
+    // 如果是从待办进入，直接启用操作权限
+    if (fromTodo) {
       this.setData({
-        displayUserInfo: displayUser
+        isPublicView: false,
+        canOperate: true,
+        hasManagementAccess: true,
+        userRole: currentUser?.role || 'employee',
+        isSupervisor: currentUser?.is_supervisor === 1,
+        isAdmin: currentUser?.is_admin === 1,
+        displayUserId: currentUser ? currentUser.id || 'authorized_user' : 'default_user'
       });
+      this.loadReportDetail();
+      return;
     }
 
-    // 根据用户角色确定权限
-    let canOperate = false;
-    let displayRole = 'user';
+    // 其他情况走原有的权限判断逻辑
+    const isPublicViewParam = options.isPublicView === '1' || options.isPublicView === 'true';
+    const hasManagementAccess = this.checkManagementAccess(currentUser);
+    const isPublicView = isPublicViewParam !== undefined ? isPublicViewParam : !hasManagementAccess;
 
-    // 不做基于角色的权限检查，前端控制菜单显示
-    // 公示视图或只读模式下不可操作
-    canOperate = !readonly && !isPublicView; // 只要不是只读模式且不是公示视图就可以操作
-
+    const canOperate = !readonly && !isPublicView;
     this.setData({
-      canOperate: canOperate,
-      userRole: displayRole,
+      isPublicView,
+      canOperate,
+      hasManagementAccess,
+      userRole: currentUser?.role || 'employee',
+      isSupervisor: currentUser?.is_supervisor === 1,
+      isAdmin: currentUser?.is_admin === 1,
       displayUserId: currentUser ? currentUser.id || 'authorized_user' : 'default_user'
     });
 
-    console.log('页面初始化 - canOperate:', canOperate, 'userRole:', currentUser ? currentUser.role : 'none', 'isPublicView:', isPublicView);
-
-    // 加载举报详情
     this.loadReportDetail();
   },
 
-  /**
-   * 检查用户是否有安全管理部权限
-   */
   checkManagementAccess(user) {
     if (!user) return false;
-
-    // 检查managed_sections字段
-    if (user.managed_sections && user.managed_sections.length > 0) {
-      return true;
-    }
-
-    // 检查角色
-    if (user.role === 'admin' || user.role === 'manager') {
-      return true;
-    }
-
+    if (user.managed_sections?.length > 0) return true;
+    if (user.role === 'admin' || user.role === 'manager') return true;
+    if (user.is_supervisor === 1) return true;
     return false;
   },
 
-  // 加载举报详情
   loadReportDetail() {
     const app = getApp();
-
     if (!app.globalData.token) {
-      this.setData({
-        error: '请先登录',
-        loading: false
-      });
+      this.setData({ error: '请先登录', loading: false });
       return;
     }
 
-    this.setData({
-      loading: true,
-      error: ''
-    });
+    this.setData({ loading: true, error: '' });
 
     wx.request({
       url: app.globalData.baseUrl + '/report/' + this.data.reportId,
       method: 'GET',
-      header: {
-        'Authorization': 'Bearer ' + app.globalData.token
-      },
+      header: { 'Authorization': 'Bearer ' + app.globalData.token },
       success: (res) => {
-        this.setData({
-          loading: false
-        });
-
+        this.setData({ loading: false });
         if (res.data.success) {
           const report = res.data.data;
-          console.log('获取举报详情成功:', report);
-
-          // 设置状态信息（统一为三状态）
-          let statusText = '待处理';
-          let statusClass = 'status-pending';
-
-          if (report.status === 'processing') {
-            statusText = '处理中';
-            statusClass = 'status-processing';
-          } else if (report.status === 'completed') {
-            statusText = '已办结';
-            statusClass = 'status-completed';
-          } else if (report.status === 'submitted') {
-            statusText = '待处理';
-            statusClass = 'status-pending';
-          }
-
-          // 重新获取用户权限信息
-          const app = getApp();
+          const statusClass = this.getStatusClass(report.status);
           const currentUser = app.globalData.currentUser;
-          console.log('重新加载详情 - 当前用户信息:', currentUser);
-
-          // 根据用户角色确定权限
-          // 不做基于角色的权限检查，前端控制菜单显示
-          // 公示视图或只读模式下不可操作
-          let canOperate = !this.data.readonly && !this.data.isPublicView; // 只要不是只读模式且不是公示视图就可以操作
 
           this.setData({
             report: {
@@ -186,248 +110,284 @@ Page({
             },
             currentStatus: report.status,
             statusText: this.mapStatus(report.status),
-            statusClass: statusClass,
-            canOperate: canOperate,
-            userRole: currentUser ? currentUser.role : 'employee'
+            statusClass,
+            userRole: currentUser?.role || 'employee'
           });
-
-          console.log('重新加载详情 - canOperate:', canOperate, 'userRole:', currentUser ? currentUser.role : 'employee', 'isPublicView:', this.data.isPublicView);
-
-          console.log('举报详情 - 当前状态:', report.status);
-          console.log('举报详情 - 是否显示待处理操作:', report.status === 'submitted');
-          console.log('举报详情 - 是否显示处理中操作:', report.status === 'processing');
         } else {
-          console.error('获取举报详情失败:', res.data);
-          this.setData({
-            error: res.data.message || '获取举报详情失败'
-          });
+          this.setData({ error: res.data.message || '获取举报详情失败' });
         }
       },
-      fail: (err) => {
-        console.error('获取举报详情请求失败:', err);
-        this.setData({
-          loading: false,
-          error: '网络错误，请重试'
-        });
+      fail: () => {
+        this.setData({ loading: false, error: '网络错误，请重试' });
       }
     });
   },
 
-  goBack() {
-    wx.navigateBack();
+  getStatusClass(status) {
+    const classMap = {
+      'submitted': 'status-pending',
+      'confirmed': 'status-confirming',
+      'supervisor_confirmed': 'status-processing',
+      'photo_uploaded': 'status-processing',
+      'completed': 'status-completed'
+    };
+    return classMap[status] || 'status-pending';
   },
 
-  // 映射隐患类型为中文
+  goBack() { wx.navigateBack(); },
+
   mapHazardType(type) {
     const mapping = {
-      'fire': '消防安全隐患',
-      'electric': '电气安全隐患',
-      'chemical': '化学品安全隐患',
-      'mechanical': '机械设备安全隐患',
-      'height': '高空作业安全隐患',
-      'edge': '临边防护安全隐患',
-      'environment': '环境安全隐患',
-      'ppe': '个人防护装备隐患',
-      'other': '其他安全隐患'
+      'fire': '消防安全隐患', 'electric': '电气安全隐患', 'chemical': '化学品安全隐患',
+      'mechanical': '机械设备安全隐患', 'height': '高空作业安全隐患', 'edge': '临边防护安全隐患',
+      'environment': '环境安全隐患', 'ppe': '个人防护装备隐患', 'other': '其他安全隐患'
     };
     return mapping[type] || type;
   },
 
-  // 映射紧急程度为中文
   mapSeverity(severity) {
-    const mapping = {
-      'low': '一般',
-      'medium': '紧急',
-      'high': '非常紧急',
-      'critical': '极其紧急'
-    };
+    const mapping = { 'low': '一般', 'medium': '紧急', 'high': '非常紧急', 'critical': '极其紧急' };
     return mapping[severity] || severity;
   },
 
-  // 映射状态为中文
   mapStatus(status) {
     const mapping = {
       'submitted': '待处理',
-      'processing': '处理中',
+      'confirmed': '待监理确认',
+      'supervisor_confirmed': '待整改',
+      'photo_uploaded': '待下发奖金',
       'completed': '已办结'
     };
     return mapping[status] || status;
   },
 
-  // 查看大图
   viewImage(e) {
     const src = e.currentTarget.dataset.src;
     const list = e.currentTarget.dataset.list;
     const urls = Array.isArray(list) ? list : (typeof list === 'string' ? list.split(',') : [src]);
-    wx.previewImage({
-      current: src,
-      urls: urls
-    });
+    wx.previewImage({ current: src, urls });
   },
 
-  // 确认处理
+  // 输入事件
+  onOpinionInput(e) { this.setData({ processingOpinion: e.detail.value }); },
+  onRewardInput(e) { this.setData({ rewardAmount: e.detail.value }); },
+  onSupervisorCommentInput(e) { this.setData({ supervisorComment: e.detail.value }); },
+
+  // 显示确认表单
+  showConfirmDialog() {
+    this.setData({ showConfirmForm: true });
+  },
+
+  // 取消确认
+  cancelConfirm() {
+    this.setData({ showConfirmForm: false });
+  },
+
+  // 安全部确认处理（填写意见+奖金）
   confirmReport() {
-    wx.showModal({
-      title: '确认处理',
-      content: '确认要处理此举报吗？确认后将进入处理中状态，需要后续上传处理照片。',
-      success: (res) => {
-        if (res.confirm) {
-          this.updateReportStatus('processing');
+    if (!this.data.processingOpinion?.trim()) {
+      wx.showToast({ title: '请填写处理意见', icon: 'none' });
+      return;
+    }
+    const amountValue = this.data.rewardAmount;
+    const amount = parseInt(amountValue, 10);
 
-          // 延迟返回上一页，让状态更新完成
-          setTimeout(() => {
-            wx.navigateBack();
-          }, 2500);
-        }
-      }
-    });
-  },
-
-  // 驳回办结（统一为已办结）
-  rejectReport() {
-    wx.showModal({
-      title: '驳回办结',
-      content: '确认要将此举报直接办结吗？驳回后无需上传照片。',
-      success: (res) => {
-        if (res.confirm) {
-          this.updateReportStatus('completed', true); // 传递true表示这是驳回办结
-
-          // 延迟返回上一页，让状态更新完成
-          setTimeout(() => {
-            wx.navigateBack();
-          }, 2500);
-        }
-      }
-    });
-  },
-
-  // 添加处理照片
-  addPhoto() {
-    if (this.data.rectifiedImages.length >= 3) {
-      wx.showToast({
-        title: '最多上传3张照片',
-        icon: 'none'
-      });
+    if (isNaN(amount) || amount <= 0 || amount.toString() !== amountValue.toString().trim()) {
+      wx.showToast({ title: '奖金金额必须为大于0的整数', icon: 'none' });
       return;
     }
 
+    wx.showModal({
+      title: '确认处理',
+      content: `处理意见：${this.data.processingOpinion}\n奖金：${amount}元`,
+      success: (res) => {
+        if (res.confirm) this.submitConfirm(amount);
+      }
+    });
+  },
+
+  submitConfirm(amount) {
+    const app = getApp();
+    wx.showLoading({ title: '提交中...' });
+    wx.request({
+      url: app.globalData.baseUrl + '/report/' + this.data.reportId + '/confirm',
+      method: 'POST',
+      header: { 'Authorization': 'Bearer ' + app.globalData.token, 'Content-Type': 'application/json' },
+      data: { processing_opinion: this.data.processingOpinion, reward_amount: amount },
+      success: (res) => {
+        wx.hideLoading();
+        if (res.data.success) {
+          wx.showToast({ title: '等待审批', icon: 'success' });
+          setTimeout(() => wx.navigateBack(), 1500);
+        } else {
+          wx.showToast({ title: res.data.message || '操作失败', icon: 'none' });
+        }
+      },
+      fail: () => { wx.hideLoading(); wx.showToast({ title: '网络错误', icon: 'none' }); }
+    });
+  },
+
+  // 安全部驳回
+  rejectReport() {
+    wx.showModal({
+      title: '驳回办结',
+      content: '确认要驳回此举报吗？驳回后将直接办结。',
+      confirmColor: '#ef4444',
+      success: (res) => {
+        if (res.confirm) this.submitReject();
+      }
+    });
+  },
+
+  submitReject() {
+    const app = getApp();
+    wx.showLoading({ title: '处理中...' });
+    wx.request({
+      url: app.globalData.baseUrl + '/report/' + this.data.reportId + '/confirm',
+      method: 'POST',
+      header: { 'Authorization': 'Bearer ' + app.globalData.token, 'Content-Type': 'application/json' },
+      data: { isRejected: true },
+      success: (res) => {
+        wx.hideLoading();
+        if (res.data.success) {
+          wx.showToast({ title: '已驳回', icon: 'success' });
+          setTimeout(() => wx.navigateBack(), 1500);
+        } else {
+          wx.showToast({ title: res.data.message || '操作失败', icon: 'none' });
+        }
+      },
+      fail: () => { wx.hideLoading(); wx.showToast({ title: '网络错误', icon: 'none' }); }
+    });
+  },
+
+  // 监理确认
+  supervisorConfirmReport() {
+    if (!this.data.supervisorComment?.trim()) {
+      wx.showToast({ title: '请填写监理意见', icon: 'none' });
+      return;
+    }
+
+    wx.showModal({
+      title: '监理确认',
+      content: `监理意见：${this.data.supervisorComment}\n\n确认此举报信息准确，同意进行整改？`,
+      success: (res) => {
+        if (res.confirm) this.submitSupervisorConfirm();
+      }
+    });
+  },
+
+  submitSupervisorConfirm() {
+    const app = getApp();
+    wx.showLoading({ title: '确认中...' });
+    wx.request({
+      url: app.globalData.baseUrl + '/report/' + this.data.reportId + '/supervisor-confirm',
+      method: 'POST',
+      header: { 'Authorization': 'Bearer ' + app.globalData.token, 'Content-Type': 'application/json' },
+      data: { supervisor_comment: this.data.supervisorComment || '' },
+      success: (res) => {
+        wx.hideLoading();
+        if (res.data.success) {
+          wx.showToast({ title: '监理已确认', icon: 'success' });
+          setTimeout(() => wx.navigateBack(), 1500);
+        } else {
+          wx.showToast({ title: res.data.message || '操作失败', icon: 'none' });
+        }
+      },
+      fail: () => { wx.hideLoading(); wx.showToast({ title: '网络错误', icon: 'none' }); }
+    });
+  },
+
+  // 监理驳回
+  supervisorRejectReport() {
+    if (!this.data.supervisorComment?.trim()) {
+      wx.showToast({ title: '驳回时必须填写监理意见', icon: 'none' });
+      return;
+    }
+
+    wx.showModal({
+      title: '驳回处理意见',
+      content: `监理意见：${this.data.supervisorComment}\n\n确认驳回安全部的处理意见？驳回后将退回安全部重新处理。`,
+      confirmColor: '#ef4444',
+      success: (res) => {
+        if (res.confirm) this.submitSupervisorReject();
+      }
+    });
+  },
+
+  submitSupervisorReject() {
+    const app = getApp();
+    wx.showLoading({ title: '处理中...' });
+    wx.request({
+      url: app.globalData.baseUrl + '/report/' + this.data.reportId + '/supervisor-confirm',
+      method: 'POST',
+      header: { 'Authorization': 'Bearer ' + app.globalData.token, 'Content-Type': 'application/json' },
+      data: { supervisor_comment: this.data.supervisorComment || '', isRejected: true },
+      success: (res) => {
+        wx.hideLoading();
+        if (res.data.success) {
+          wx.showToast({ title: '已驳回', icon: 'success' });
+          setTimeout(() => wx.navigateBack(), 1500);
+        } else {
+          wx.showToast({ title: res.data.message || '操作失败', icon: 'none' });
+        }
+      },
+      fail: () => { wx.hideLoading(); wx.showToast({ title: '网络错误', icon: 'none' }); }
+    });
+  },
+
+  // 添加整改照片
+  addRectifiedPhoto() {
+    if (this.data.rectifiedImages.length >= 3) {
+      wx.showToast({ title: '最多上传3张', icon: 'none' });
+      return;
+    }
     wx.chooseImage({
       count: 3 - this.data.rectifiedImages.length,
       sizeType: ['compressed'],
       sourceType: ['camera', 'album'],
       success: (res) => {
-        const tempFilePaths = res.tempFilePaths;
-
-        // 将临时文件路径添加到本地图片列表
-        const newImages = [...this.data.rectifiedImages, ...tempFilePaths];
-        // 最多保留3张照片
-        const limitedImages = newImages.slice(0, 3);
-        this.setData({
-          rectifiedImages: limitedImages
-        });
-
-        wx.showToast({
-          title: '图片已选择',
-          icon: 'success'
-        });
+        this.setData({ rectifiedImages: [...this.data.rectifiedImages, ...res.tempFilePaths].slice(0, 3) });
       }
     });
   },
 
-  // 删除照片
-  removePhoto(e) {
+  removeRectifiedPhoto(e) {
     const index = e.currentTarget.dataset.index;
     const images = [...this.data.rectifiedImages];
     images.splice(index, 1);
-    this.setData({
-      rectifiedImages: images
-    });
+    this.setData({ rectifiedImages: images });
   },
 
-  // 处理方案输入
-  onPlanInput(e) {
-    this.setData({
-      processingPlan: e.detail.value
-    });
-  },
-
-  // 完成办结
-  completeReport() {
-    // 检查处理方案
-    if (!this.data.processingPlan || this.data.processingPlan.trim() === '') {
-      wx.showToast({
-        title: '请填写处理方案',
-        icon: 'none'
-      });
-      return;
-    }
-
-    // 检查处理照片
+  // 上传处理照片
+  uploadProcessPhotos() {
     if (this.data.rectifiedImages.length === 0) {
-      wx.showToast({
-        title: '请上传处理照片',
-        icon: 'none'
-      });
+      wx.showToast({ title: '请上传处理照片', icon: 'none' });
       return;
     }
-
     wx.showModal({
-      title: '完成办结',
-      content: '确认要完成此举报的处理吗？',
-      success: (res) => {
-        if (res.confirm) {
-          // 提交处理数据
-          this.submitCompletion();
-        }
-      }
+      title: '上传处理照片',
+      content: '确认上传整改后的照片？',
+      success: (res) => { if (res.confirm) this.submitProcessPhotos(); }
     });
   },
 
-  // 提交完成数据
-  submitCompletion() {
+  submitProcessPhotos() {
     const app = getApp();
+    wx.showLoading({ title: '上传中...' });
 
-    if (!app.globalData.token) {
-      wx.showToast({
-        title: '请先登录',
-        icon: 'none'
-      });
-      return;
-    }
-
-    if (this.data.rectifiedImages.length === 0) {
-      wx.showToast({
-        title: '请上传处理照片',
-        icon: 'none'
-      });
-      return;
-    }
-
-    wx.showLoading({
-      title: '上传照片中...'
-    });
-
-    // 先上传所有图片到服务器
     const uploadPromises = this.data.rectifiedImages.map(imagePath => {
       return new Promise((resolve, reject) => {
         wx.uploadFile({
           url: app.globalData.baseUrl + '/upload',
           filePath: imagePath,
           name: 'file',
-          header: {
-            'Authorization': 'Bearer ' + app.globalData.token
-          },
+          header: { 'Authorization': 'Bearer ' + app.globalData.token },
           success: (res) => {
             try {
               const data = JSON.parse(res.data);
-              if (data.success) {
-                resolve(data.filePath);
-              } else {
-                reject(new Error(data.message));
-              }
-            } catch (err) {
-              reject(err);
-            }
+              if (data.success) resolve(data.filePath);
+              else reject(new Error(data.message));
+            } catch (err) { reject(err); }
           },
           fail: reject
         });
@@ -436,126 +396,136 @@ Page({
 
     Promise.all(uploadPromises)
       .then(filePaths => {
-        wx.showLoading({
-          title: '提交处理中...'
-        });
-
-        // 所有图片上传成功，提交完成数据到后端
         wx.request({
-          url: app.globalData.baseUrl + '/report/' + this.data.reportId + '/complete',
+          url: app.globalData.baseUrl + '/report/' + this.data.reportId + '/upload-photos',
           method: 'POST',
-          header: {
-            'Authorization': 'Bearer ' + app.globalData.token,
-            'Content-Type': 'application/json'
-          },
-          data: {
-            rectified_images: filePaths,
-            plan: this.data.processingPlan
-          },
+          header: { 'Authorization': 'Bearer ' + app.globalData.token, 'Content-Type': 'application/json' },
+          data: { rectified_images: filePaths },
           success: (res) => {
             wx.hideLoading();
             if (res.data.success) {
-              wx.showToast({
-                title: '处理完成',
-                icon: 'success',
-                duration: 2000
-              });
-
-              setTimeout(() => {
-                wx.navigateBack();
-              }, 2000);
+              wx.showToast({ title: '上传成功', icon: 'success' });
+              setTimeout(() => wx.navigateBack(), 1500);
             } else {
-              wx.showToast({
-                title: res.data.message || '提交失败',
-                icon: 'none'
-              });
+              wx.showToast({ title: res.data.message || '上传失败', icon: 'none' });
             }
           },
-          fail: (err) => {
-            wx.hideLoading();
-            console.error('提交完成数据失败:', err);
-            wx.showToast({
-              title: '网络错误',
-              icon: 'none'
-            });
-          }
+          fail: () => { wx.hideLoading(); wx.showToast({ title: '网络错误', icon: 'none' }); }
         });
       })
-      .catch(err => {
-        wx.hideLoading();
-        console.error('上传图片失败:', err);
-        wx.showToast({
-          title: '上传图片失败',
-          icon: 'none'
-        });
-      });
+      .catch(() => { wx.hideLoading(); wx.showToast({ title: '上传图片失败', icon: 'none' }); });
   },
 
-  // 更新举报状态
-  updateReportStatus(newStatus, isRejected = false) {
-    const app = getApp();
-
-    if (!app.globalData.token) {
-      wx.showToast({
-        title: '请先登录',
-        icon: 'none'
-      });
+  // 添加奖金截图
+  addRewardPhoto() {
+    if (this.data.rewardImages.length >= 3) {
+      wx.showToast({ title: '最多上传3张', icon: 'none' });
       return;
     }
+    wx.chooseImage({
+      count: 3 - this.data.rewardImages.length,
+      sizeType: ['compressed'],
+      sourceType: ['camera', 'album'],
+      success: (res) => {
+        this.setData({ rewardImages: [...this.data.rewardImages, ...res.tempFilePaths].slice(0, 3) });
+      }
+    });
+  },
 
-    wx.showLoading({
-      title: '处理中...'
+  removeRewardPhoto(e) {
+    const index = e.currentTarget.dataset.index;
+    const images = [...this.data.rewardImages];
+    images.splice(index, 1);
+    this.setData({ rewardImages: images });
+  },
+
+  // 上传奖金发放截图
+  uploadRewardProof() {
+    if (this.data.rewardImages.length === 0) {
+      wx.showToast({ title: '请上传奖金发放截图', icon: 'none' });
+      return;
+    }
+    wx.showModal({
+      title: '完成办结',
+      content: '确认已发放奖金并完成办结？',
+      success: (res) => { if (res.confirm) this.submitRewardProof(); }
+    });
+  },
+
+  submitRewardProof() {
+    const app = getApp();
+    wx.showLoading({ title: '上传中...' });
+
+    const uploadPromises = this.data.rewardImages.map(imagePath => {
+      return new Promise((resolve, reject) => {
+        wx.uploadFile({
+          url: app.globalData.baseUrl + '/upload',
+          filePath: imagePath,
+          name: 'file',
+          header: { 'Authorization': 'Bearer ' + app.globalData.token },
+          success: (res) => {
+            try {
+              const data = JSON.parse(res.data);
+              if (data.success) resolve(data.filePath);
+              else reject(new Error(data.message));
+            } catch (err) { reject(err); }
+          },
+          fail: reject
+        });
+      });
     });
 
-    // 准备请求数据
-    const requestData = {
-      status: newStatus
-    };
+    Promise.all(uploadPromises)
+      .then(filePaths => {
+        wx.request({
+          url: app.globalData.baseUrl + '/report/' + this.data.reportId + '/upload-reward',
+          method: 'POST',
+          header: { 'Authorization': 'Bearer ' + app.globalData.token, 'Content-Type': 'application/json' },
+          data: { reward_images: filePaths },
+          success: (res) => {
+            wx.hideLoading();
+            if (res.data.success) {
+              wx.showToast({ title: '办结成功', icon: 'success' });
+              setTimeout(() => wx.navigateBack(), 1500);
+            } else {
+              wx.showToast({ title: res.data.message || '操作失败', icon: 'none' });
+            }
+          },
+          fail: () => { wx.hideLoading(); wx.showToast({ title: '网络错误', icon: 'none' }); }
+        });
+      })
+      .catch(() => { wx.hideLoading(); wx.showToast({ title: '上传图片失败', icon: 'none' }); });
+  },
 
-    // 如果是驳回办结，添加特殊标识
-    if (isRejected) {
-      requestData.isRejected = true;
-      requestData.plan = '已驳回，无须处理';
-    }
+  // 删除举报（仅Admin）
+  deleteReport() {
+    wx.showModal({
+      title: '删除举报',
+      content: '确定要删除此举报记录吗？此操作不可恢复！',
+      confirmColor: '#ff4d4f',
+      success: (res) => {
+        if (res.confirm) this.submitDelete();
+      }
+    });
+  },
 
+  submitDelete() {
+    const app = getApp();
+    wx.showLoading({ title: '删除中...' });
     wx.request({
-      url: app.globalData.baseUrl + '/report/' + this.data.reportId + '/status',
-      method: 'PUT',
-      header: {
-        'Authorization': 'Bearer ' + app.globalData.token,
-        'Content-Type': 'application/json'
-      },
-      data: requestData,
+      url: app.globalData.baseUrl + '/report/' + this.data.reportId,
+      method: 'DELETE',
+      header: { 'Authorization': 'Bearer ' + app.globalData.token },
       success: (res) => {
         wx.hideLoading();
         if (res.data.success) {
-          console.log('更新举报状态成功:', newStatus);
-          wx.showToast({
-            title: '操作成功',
-            icon: 'success',
-            duration: 2000
-          });
-
-          // 重新加载举报详情以更新状态
-          setTimeout(() => {
-            this.loadReportDetail();
-          }, 1000);
+          wx.showToast({ title: '删除成功', icon: 'success' });
+          setTimeout(() => wx.navigateBack(), 1500);
         } else {
-          console.error('更新举报状态失败:', res.data.message);
-          wx.showToast({
-            title: res.data.message || '操作失败',
-            icon: 'none'
-          });
+          wx.showToast({ title: res.data.message || '删除失败', icon: 'none' });
         }
       },
-      fail: (err) => {
-        wx.hideLoading();
-        console.error('更新举报状态请求失败:', err);
-        wx.showToast({
-          title: '网络错误',
-          icon: 'none'
-        });
-      }
+      fail: () => { wx.hideLoading(); wx.showToast({ title: '网络错误', icon: 'none' }); }
     });
   }
 })

@@ -5,216 +5,247 @@ Page({
     data: {
         currentUser: null,
         currentSection: '',
+        activeTab: 'todo', // 'todo' or 'reports'
+
+        // 待办数据
+        todoCount: 0,
+        todoReports: [],
+        isLoadingTodo: false,
+
+        // 我的举报数据
         myReportsCount: 0,
-        isLoadingMyReports: false
+        myReports: [],
+        isLoadingMyReports: false,
+
+        // 权限
+        isSupervisor: false,
+        isManager: false
     },
 
     onLoad: function (options) {
-        console.log('个人中心页面加载，当前用户信息:', app.globalData.currentUser);
-        console.log('微信用户信息:', app.globalData.userInfo);
-
-        // 合并用户信息，优先使用currentUser，fallback到userInfo
-        const currentUser = app.globalData.currentUser;
-        const wechatUserInfo = app.globalData.userInfo;
-
-        const mergedUser = {
-            name: currentUser?.name || currentUser?.nickName || wechatUserInfo?.nickName || '微信用户',
-            role: currentUser?.role || 'employee',
-            department: currentUser?.department || '未设置部门',
-            avatar: currentUser?.avatar || currentUser?.avatarUrl || wechatUserInfo?.avatarUrl || '👷',
-            phone: currentUser?.phone || '138****1234'
-        };
-
-        console.log('合并后的用户信息:', mergedUser);
-
-        this.setData({
-            currentUser: mergedUser,
-            currentSection: app.globalData.currentSection || 'TJ01'
-        })
-
-        // 设置页面标题
-        wx.setNavigationBarTitle({
-            title: '个人中心'
-        })
-
-        this.loadMyReportsCount()
+        this.updateUserInfo();
+        wx.setNavigationBarTitle({ title: '个人中心' });
+        this.loadData();
     },
 
     onShow: function () {
-        console.log('个人中心页面显示，当前用户信息:', app.globalData.currentUser);
-        console.log('微信用户信息:', app.globalData.userInfo);
+        this.updateUserInfo();
+        this.loadData();
+    },
 
-        // 合并用户信息，优先使用currentUser，fallback到userInfo
+    loadData() {
+        this.loadTodoReports();
+        this.loadMyReports();
+    },
+
+    // 切换Tab
+    switchTab(e) {
+        const tab = e.currentTarget.dataset.tab;
+        if (tab !== this.data.activeTab) {
+            this.setData({ activeTab: tab });
+        }
+    },
+
+    updateUserInfo: function () {
         const currentUser = app.globalData.currentUser;
         const wechatUserInfo = app.globalData.userInfo;
+        const currentSection = app.globalData.currentSection;
 
         const mergedUser = {
-            // 使用登录后的用户信息，如果不存在则使用微信用户信息
             name: currentUser?.name || currentUser?.nickName || wechatUserInfo?.nickName || '微信用户',
             role: currentUser?.role || 'employee',
             department: currentUser?.department || '未设置部门',
-            avatar: currentUser?.avatar || currentUser?.avatarUrl || wechatUserInfo?.avatarUrl || '👷',
             phone: currentUser?.phone || '138****1234'
         };
 
-        console.log('合并后的用户信息:', mergedUser);
+        const isSupervisor = currentUser?.is_supervisor === 1;
+        const isManager = (currentUser?.managed_sections?.length > 0) || currentUser?.role === 'admin' || currentUser?.role === 'manager';
 
         this.setData({
             currentUser: mergedUser,
-            currentSection: app.globalData.currentSection || 'TJ01'
-        })
+            currentSection: currentSection || { section_code: 'TJ01' },
+            isSupervisor,
+            isManager
+        });
 
-        // 如果还没有登录用户信息，延迟检查一下（等待token验证完成）
         if (!currentUser) {
-            console.log('登录用户信息还未加载，延迟检查...');
             setTimeout(() => {
-                console.log('延迟检查后的登录用户信息:', app.globalData.currentUser);
-                console.log('延迟检查后的微信用户信息:', app.globalData.userInfo);
-
                 const updatedCurrentUser = app.globalData.currentUser;
                 const updatedWechatUser = app.globalData.userInfo;
-
-                // 重新构建用户信息
-                const updatedUser = {
-                    name: updatedCurrentUser?.name || updatedCurrentUser?.nickName || updatedWechatUser?.nickName || '微信用户',
-                    role: updatedCurrentUser?.role || 'employee',
-                    department: updatedCurrentUser?.department || '未设置部门',
-                    avatar: updatedCurrentUser?.avatar || updatedCurrentUser?.avatarUrl || updatedWechatUser?.avatarUrl || '👷',
-                    phone: updatedCurrentUser?.phone || '138****1234'
-                };
-
-                console.log('延迟重新构建的用户信息:', updatedUser);
-
+                const updatedSection = app.globalData.currentSection;
                 this.setData({
-                    currentUser: updatedUser
+                    currentUser: {
+                        name: updatedCurrentUser?.name || updatedCurrentUser?.nickName || updatedWechatUser?.nickName || '微信用户',
+                        role: updatedCurrentUser?.role || 'employee',
+                        department: updatedCurrentUser?.department || '未设置部门',
+                        phone: updatedCurrentUser?.phone || '138****1234'
+                    },
+                    currentSection: updatedSection || { section_code: 'TJ01' },
+                    isSupervisor: updatedCurrentUser?.is_supervisor === 1,
+                    isManager: (updatedCurrentUser?.managed_sections?.length > 0) || updatedCurrentUser?.role === 'admin' || updatedCurrentUser?.role === 'manager'
                 });
             }, 1000);
         }
-
-        this.loadMyReportsCount()
     },
 
-    loadMyReportsCount: function () {
-        const app = getApp();
+    // 加载待办列表
+    loadTodoReports: function () {
+        if (!app.globalData.token) {
+            this.setData({ todoCount: 0, todoReports: [], isLoadingTodo: false });
+            return;
+        }
+
+        this.setData({ isLoadingTodo: true });
         const currentSection = app.globalData.currentSection;
-        const currentUser = app.globalData.currentUser;
 
-        console.log('=== 个人中心加载举报数量 ===');
-        console.log('当前用户信息:', currentUser);
-        console.log('当前用户ID:', currentUser?.id);
-        console.log('当前用户角色:', currentUser?.role);
-        console.log('当前标段:', currentSection);
-        console.log('Token存在:', !!app.globalData.token);
+        wx.request({
+            url: app.globalData.baseUrl + '/report/todo',
+            method: 'GET',
+            header: { 'Authorization': 'Bearer ' + app.globalData.token },
+            data: currentSection?.section_code ? { section: currentSection.section_code } : {},
+            success: (res) => {
+                if (res.data.success) {
+                    const reports = res.data.data.reports || [];
+                    const total = res.data.data.pagination?.total || reports.length;
 
+                    const mapStatus = (status) => {
+                        const mapping = {
+                            'submitted': '待处理',
+                            'confirmed': '待监理确认',
+                            'supervisor_confirmed': '待整改',
+                            'photo_uploaded': '待下发奖金',
+                            'completed': '已办结'
+                        };
+                        return mapping[status] || status;
+                    };
+
+                    const mapHazardType = (type) => {
+                        const mapping = {
+                            'fire': '消防安全隐患',
+                            'electric': '电气安全隐患',
+                            'chemical': '化学品安全隐患',
+                            'mechanical': '机械设备安全隐患',
+                            'height': '高空作业安全隐患',
+                            'edge': '临边防护安全隐患',
+                            'environment': '环境安全隐患',
+                            'ppe': '个人防护装备隐患',
+                            'other': '其他安全隐患'
+                        };
+                        return mapping[type] || type;
+                    };
+
+                    const processedReports = reports.map(r => ({
+                        ...r,
+                        status_cn: mapStatus(r.status),
+                        hazard_type_cn: mapHazardType(r.hazard_type)
+                    }));
+
+                    this.setData({ todoCount: total, todoReports: processedReports });
+                } else {
+                    this.setData({ todoCount: 0, todoReports: [] });
+                }
+            },
+            fail: () => this.setData({ todoCount: 0, todoReports: [] }),
+            complete: () => this.setData({ isLoadingTodo: false })
+        });
+    },
+
+    // 加载我的举报列表
+    loadMyReports: function () {
+        const currentSection = app.globalData.currentSection;
         if (!app.globalData.token || !currentSection) {
-            this.setData({
-                myReportsCount: 0,
-                isLoadingMyReports: false
-            });
+            this.setData({ myReportsCount: 0, myReports: [], isLoadingMyReports: false });
             return;
         }
 
         this.setData({ isLoadingMyReports: true });
-        wx.showNavigationBarLoading();
-
-        const requestData = {
-            section: currentSection.section_code
-        };
-
-        console.log('请求参数:', requestData);
 
         wx.request({
             url: app.globalData.baseUrl + '/report/personal-reports',
             method: 'GET',
-            header: {
-                'Authorization': 'Bearer ' + app.globalData.token
-            },
-            data: requestData,
+            header: { 'Authorization': 'Bearer ' + app.globalData.token },
+            data: { section: currentSection.section_code },
             success: (res) => {
-                console.log('=== 举报数量查询响应 ===');
-                console.log('响应状态:', res.statusCode);
-                console.log('响应数据:', res.data);
-
                 if (res.data.success) {
-                    const total = res.data.data.pagination?.total || (res.data.data.reports?.length || 0);
                     const reports = res.data.data.reports || [];
+                    const total = res.data.data.pagination?.total || reports.length;
 
-                    console.log('举报总数:', total);
-                    console.log('举报列表:', reports);
+                    const mapStatus = (status) => {
+                        const mapping = {
+                            'submitted': '待处理',
+                            'confirmed': '待监理确认',
+                            'supervisor_confirmed': '待整改',
+                            'photo_uploaded': '待下发奖金',
+                            'completed': '已办结'
+                        };
+                        return mapping[status] || status;
+                    };
 
-                    this.setData({
-                        myReportsCount: total
-                    });
+                    const mapHazardType = (type) => {
+                        const mapping = {
+                            'fire': '消防安全隐患',
+                            'electric': '电气安全隐患',
+                            'chemical': '化学品安全隐患',
+                            'mechanical': '机械设备安全隐患',
+                            'height': '高空作业安全隐患',
+                            'edge': '临边防护安全隐患',
+                            'environment': '环境安全隐患',
+                            'ppe': '个人防护装备隐患',
+                            'other': '其他安全隐患'
+                        };
+                        return mapping[type] || type;
+                    };
+
+                    const processedReports = reports.map(r => ({
+                        ...r,
+                        status_cn: mapStatus(r.status),
+                        hazard_type_cn: mapHazardType(r.hazard_type),
+                        created_at_short: r.created_at ? r.created_at.substring(0, 10) : ''
+                    }));
+
+                    this.setData({ myReportsCount: total, myReports: processedReports });
                 } else {
-                    console.error('获取举报记录失败:', res.data.message);
-                    console.error('错误详情:', res.data);
-                    this.setData({
-                        myReportsCount: 0
-                    });
+                    this.setData({ myReportsCount: 0, myReports: [] });
                 }
             },
-            fail: (err) => {
-                console.error('获取举报记录请求失败:', err);
-                this.setData({
-                    myReportsCount: 0
-                });
-            },
-            complete: () => {
-                this.setData({ isLoadingMyReports: false });
-                wx.hideNavigationBarLoading();
-            }
+            fail: () => this.setData({ myReportsCount: 0, myReports: [] }),
+            complete: () => this.setData({ isLoadingMyReports: false })
         });
     },
 
-    goBack: function() {
-        wx.navigateBack()
+    goToDetail: function (e) {
+        const id = e.currentTarget.dataset.id;
+        wx.navigateTo({ url: '/pages/todo-detail/todo-detail?id=' + id });
     },
 
-    goToMyReports: function() {
-        wx.navigateTo({
-            url: '/pages/my-reports/my-reports'
-        })
+    goToReadonlyDetail: function (e) {
+        const id = e.currentTarget.dataset.id;
+        wx.navigateTo({ url: '/pages/report-detail/report-detail?id=' + id + '&readonly=1' });
     },
 
-    goToStats: function() {
-        wx.navigateTo({
-            url: '/pages/stats/stats'
-        })
-    },
+    goToStats: function () { wx.navigateTo({ url: '/pages/stats/stats' }); },
 
-    showSafetyKnowledge: function() {
+    showSafetyKnowledge: function () {
         wx.showModal({
             title: '安全知识',
             content: '消防安全：发现火情立即拨打119，使用灭火器时拔掉保险销，对准火焰根部喷射。\n\n用电安全：禁止私拉乱接电线，发现漏电立即断电。\n\n机械安全：操作设备前检查防护装置，严禁违章操作。',
             showCancel: false,
             confirmText: '我知道了'
-        })
+        });
     },
 
-    logout: function() {
+    logout: function () {
         wx.showModal({
             title: '退出登录',
             content: '确定要退出登录吗？',
             success: (res) => {
                 if (res.confirm) {
-                    // 清除用户数据
-                    app.globalData.currentUser = null
-                    app.globalData.currentSection = null
-
-                    wx.showToast({
-                        title: '已退出登录',
-                        icon: 'success',
-                        duration: 2000
-                    })
-
-                    // 返回首页
-                    setTimeout(() => {
-                        wx.reLaunch({
-                            url: '/pages/index/index'
-                        })
-                    }, 2000)
+                    app.globalData.currentUser = null;
+                    app.globalData.currentSection = null;
+                    wx.showToast({ title: '已退出登录', icon: 'success', duration: 2000 });
+                    setTimeout(() => wx.reLaunch({ url: '/pages/index/index' }), 2000);
                 }
             }
-        })
+        });
     }
 })

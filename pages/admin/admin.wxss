@@ -1,8 +1,21 @@
-/* 安全环保部管理页面样式 */
+/* 监管中心管理页面样式 */
 .manager-view {
     background: #f8f9fa;
     min-height: 100vh;
     padding-bottom: 120rpx;
+}
+
+/* 举报列表统计行 */
+.status-summary-row {
+    background: white;
+    padding: 20rpx 32rpx;
+    box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.06);
+}
+
+.total-count {
+    font-size: 28rpx;
+    color: #374151;
+    font-weight: 500;
 }
 
 /* 顶部导航栏 */
@@ -397,4 +410,4 @@
         padding: 16rpx;
     }
 }
-
+

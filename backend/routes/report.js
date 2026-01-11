@@ -30,6 +30,9 @@ router.get('/stats', reportController.getStats);
 // 导出当前标段隐患为Excel
 router.get('/export', reportController.exportReportsExcel);
 
+// 获取待办列表
+router.get('/todo', reportController.getTodoReports);
+
 // 获取举报详情
 router.get('/:id', reportController.getReportDetail);
 
@@ -44,5 +47,22 @@ router.post('/:id/images', reportController.uploadRectificationImages);
 
 // 添加举报历史
 router.post('/:id/history', reportController.addReportHistory);
+
+// ========== 新流程路由 ==========
+
+// 安全部确认处理（填写意见+奖金）
+router.post('/:id/confirm', reportController.confirmReport);
+
+// 监理确认
+router.post('/:id/supervisor-confirm', reportController.supervisorConfirm);
+
+// 上传处理照片（整改完成）
+router.post('/:id/upload-photos', reportController.uploadProcessPhotos);
+
+// 上传奖金发放截图（完成办结）
+router.post('/:id/upload-reward', reportController.uploadRewardProof);
+
+// 删除举报（仅Admin）
+router.delete('/:id', reportController.deleteReport);
 
 module.exports = router;

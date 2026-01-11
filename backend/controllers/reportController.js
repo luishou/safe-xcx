@@ -2,7 +2,7 @@ const pool = require('../config/database');
 const { formatDateTimeBeijing } = require('../utils/time');
 const XLSX = require('xlsx');
 
-  class ReportController {
+class ReportController {
   // 提交举报
   async submitReport(req, res) {
     try {
@@ -143,7 +143,7 @@ const XLSX = require('xlsx');
       }));
 
       const header = [
-        '序号','举报ID','举报人','隐患类型','严重程度','位置','状态','处理人','处理方案','上报时间','更新时间'
+        '序号', '举报ID', '举报人', '隐患类型', '严重程度', '位置', '状态', '处理人', '处理方案', '上报时间', '更新时间'
       ];
 
       const ws = XLSX.utils.json_to_sheet(data, { header });
@@ -228,7 +228,7 @@ const XLSX = require('xlsx');
         ${whereClause}
       `, params);
 
-        console.log('管理员举报查询结果:', {
+      console.log('管理员举报查询结果:', {
         查询到的记录数: rows.length,
         总数: countRows[0].total
       });
@@ -564,10 +564,10 @@ const XLSX = require('xlsx');
       const limitNum = parseInt(limit);
       const pageNum = parseInt(page);
       const offset = (pageNum - 1) * limitNum;
-  
+
       console.log('=== 获取公示举报列表 ===');
       console.log('查询参数:', { page, limit, section });
-  
+
       // 必须提供标段参数
       if (!section) {
         return res.status(400).json({
@@ -575,10 +575,10 @@ const XLSX = require('xlsx');
           message: '请提供标段参数'
         });
       }
-  
+
       const whereClause = 'WHERE section = ?';
       const params = [section];
-  
+
       const sql = `
         SELECT
           id, description, hazard_type, severity,
@@ -589,25 +589,25 @@ const XLSX = require('xlsx');
         ORDER BY created_at DESC
         LIMIT ${Number.isFinite(limitNum) ? limitNum : 20} OFFSET ${Number.isFinite(offset) ? offset : 0}
       `;
-  
+
       console.log('=== 公示举报列表SQL ===');
       console.log('完整SQL:', sql);
       console.log('SQL参数:', params);
-  
+
       const [rows] = await pool.execute(sql, params);
-  
+
       const [countRows] = await pool.execute(`
         SELECT COUNT(*) as total
         FROM reports
         ${whereClause}
       `, params);
-  
+
       console.log('公示举报查询结果:', {
         查询到的记录数: rows.length,
         总数: countRows[0].total,
         标段: section
       });
-  
+
       // 安全解析JSON数据
       const safeParseJSON = (jsonString) => {
         try {
@@ -618,7 +618,7 @@ const XLSX = require('xlsx');
           return [];
         }
       };
-  
+
       const formattedRows = rows.map((r) => ({
         ...r,
         created_at: formatDateTimeBeijing(r.created_at),
@@ -626,7 +626,7 @@ const XLSX = require('xlsx');
         initial_images: safeParseJSON(r.initial_images),
         rectified_images: safeParseJSON(r.rectified_images)
       }));
-  
+
       res.json({
         success: true,
         data: {
@@ -655,7 +655,11 @@ const XLSX = require('xlsx');
       const { id } = req.params;
 
       const [rows] = await pool.execute(`
-        SELECT * FROM reports WHERE id = ?
+        SELECT r.*, 
+               s.nick_name as supervisor_name
+        FROM reports r
+        LEFT JOIN users s ON r.supervisor_id = s.id
+        WHERE r.id = ?
       `, [id]);
 
       if (rows.length === 0) {
@@ -667,16 +671,11 @@ const XLSX = require('xlsx');
 
       const report = rows[0];
 
-      // 统一状态，仅返回 submitted / processing / completed
-      const normalizeStatus = (st) => {
-        if (st === 'submitted' || st === 'pending') return 'submitted';
-        if (st === 'processing' || st === 'assigned') return 'processing';
-        if (st === 'completed' || st === 'rejected') return 'completed';
-        return st;
-      };
-      report.status = normalizeStatus(report.status);
-
-      // 不做权限检查，前端控制菜单显示
+      // 新流程不做状态归一化，直接返回实际状态
+      // 旧数据兼容：processing/assigned映射为supervisor_confirmed
+      if (report.status === 'processing' || report.status === 'assigned') {
+        report.status = 'supervisor_confirmed';
+      }
 
       // 获取历史记录
       const [historyRows] = await pool.execute(`
@@ -691,67 +690,33 @@ const XLSX = require('xlsx');
       const safeParseJSON = (jsonString) => {
         try {
           if (!jsonString) return [];
+          if (Array.isArray(jsonString)) return jsonString;
 
-          // 如果已经是数组，直接返回
-          if (Array.isArray(jsonString)) {
-            return jsonString;
-          }
-
-          console.log('尝试解析JSON数据:', jsonString);
-
-          // 如果是字符串，先尝试直接解析
           let cleanedString = jsonString;
-
-          // 处理JavaScript数组格式（单引号问题）
           if (typeof jsonString === 'string') {
-            // 如果包含反引号，尝试清理数据
             if (jsonString.includes('`')) {
-              console.log('检测到包含反引号的数据，尝试清理:', jsonString);
-
-              // 移除反引号并清理空格
-              cleanedString = jsonString
-                .replace(/`/g, '"')  // 将反引号替换为双引号
-                .replace(/\s+/g, ' ') // 规范化空格
-                .trim();
+              cleanedString = jsonString.replace(/`/g, '"').replace(/\s+/g, ' ').trim();
             }
-
-            // 处理JavaScript数组的单引号问题 [ 'url' ] -> [ "url" ]
             if (cleanedString.startsWith('[') && cleanedString.endsWith(']')) {
-              console.log('检测到JavaScript数组格式，尝试修复:', cleanedString);
-
-              // 先尝试简单的单引号替换
               try {
                 cleanedString = cleanedString.replace(/'/g, '"');
                 const testParsed = JSON.parse(cleanedString);
-                console.log('通过单引号替换成功解析:', testParsed);
                 return Array.isArray(testParsed) ? testParsed : [];
               } catch (e) {
-                console.log('单引号替换失败，尝试更复杂的修复');
-              }
-
-              // 如果简单替换失败，尝试提取URL并重新构建有效的JSON数组
-              const urlMatch = cleanedString.match(/https?:\/\/[^\s"'\]]+/g);
-              if (urlMatch && urlMatch.length > 0) {
-                cleanedString = JSON.stringify(urlMatch);
-                console.log('通过URL提取修复后的JSON数据:', cleanedString);
+                const urlMatch = cleanedString.match(/https?:\/\/[^\s"'\]]+/g);
+                if (urlMatch && urlMatch.length > 0) {
+                  return urlMatch;
+                }
               }
             }
           }
-
           const parsed = JSON.parse(cleanedString);
           return Array.isArray(parsed) ? parsed : [];
         } catch (error) {
-          console.error('JSON解析失败:', error, '原始数据:', jsonString);
-
-          // 最后的尝试：如果数据看起来包含URL，尝试提取URL
           if (typeof jsonString === 'string') {
             const urlMatch = jsonString.match(/https?:\/\/[^\s"'`\]]+/g);
-            if (urlMatch) {
-              console.log('从错误数据中提取到URL:', urlMatch);
-              return urlMatch;
-            }
+            if (urlMatch) return urlMatch;
           }
-
           return [];
         }
       };
@@ -760,7 +725,9 @@ const XLSX = require('xlsx');
       const formattedReport = {
         ...report,
         created_at: formatDateTimeBeijing(report.created_at),
-        updated_at: formatDateTimeBeijing(report.updated_at)
+        updated_at: formatDateTimeBeijing(report.updated_at),
+        supervisor_confirmed_at: report.supervisor_confirmed_at ? formatDateTimeBeijing(report.supervisor_confirmed_at) : null,
+        reward_paid_at: report.reward_paid_at ? formatDateTimeBeijing(report.reward_paid_at) : null
       };
 
       const formattedHistory = (historyRows || []).map(h => ({
@@ -775,7 +742,12 @@ const XLSX = require('xlsx');
           history: formattedHistory,
           initial_images: safeParseJSON(report.initial_images),
           rectified_images: safeParseJSON(report.rectified_images),
-          plan: report.plan
+          reward_images: safeParseJSON(report.reward_images),
+          plan: report.plan,
+          processing_opinion: report.processing_opinion,
+          reward_amount: report.reward_amount,
+          supervisor_comment: report.supervisor_comment,
+          processor_name: [...historyRows].reverse().find(h => h.action === '安全部确认')?.nick_name || null
         }
       });
     } catch (error) {
@@ -1171,6 +1143,410 @@ const XLSX = require('xlsx');
     } catch (error) {
       console.error('获取统计数据失败:', error);
       res.status(500).json({ success: false, message: '获取统计数据失败', error: error.message });
+    }
+  }
+
+  // ========== 新流程方法 ==========
+
+  // 安全部确认处理（填写处理意见+奖金金额）或驳回
+  async confirmReport(req, res) {
+    try {
+      const { id } = req.params;
+      const { processing_opinion, reward_amount, isRejected } = req.body;
+
+      if (!req.user) {
+        return res.status(401).json({ success: false, message: '请先登录' });
+      }
+
+      // 检查举报是否存在且状态为submitted
+      const [reportRows] = await pool.execute('SELECT id, status FROM reports WHERE id = ?', [id]);
+      if (reportRows.length === 0) {
+        return res.status(404).json({ success: false, message: '举报记录不存在' });
+      }
+      if (reportRows[0].status !== 'submitted') {
+        return res.status(400).json({ success: false, message: '当前状态不允许此操作' });
+      }
+
+      // 驳回逻辑
+      if (isRejected) {
+        const [result] = await pool.execute(`
+          UPDATE reports
+          SET status = 'completed',
+              processing_opinion = ?,
+              updated_at = ?
+          WHERE id = ?
+        `, ['已驳回，无须处理', new Date(), id]);
+
+        if (result.affectedRows === 0) {
+          return res.status(404).json({ success: false, message: '更新失败' });
+        }
+
+        await pool.execute(`
+          INSERT INTO report_history (report_id, user_id, action, description, created_at)
+          VALUES (?, ?, ?, ?, ?)
+        `, [id, req.user.userId, '驳回办结', '安全部驳回，无须处理', new Date()]);
+
+        return res.json({ success: true, message: '已驳回办结' });
+      }
+
+      // 正常确认逻辑
+      if (!processing_opinion || processing_opinion.trim() === '') {
+        return res.status(400).json({ success: false, message: '请填写处理意见' });
+      }
+
+      if (reward_amount === undefined || reward_amount === null || reward_amount < 0) {
+        return res.status(400).json({ success: false, message: '请填写有效的奖金金额' });
+      }
+
+      const [result] = await pool.execute(`
+        UPDATE reports
+        SET status = 'confirmed',
+            processing_opinion = ?,
+            reward_amount = ?,
+            updated_at = ?
+        WHERE id = ?
+      `, [processing_opinion, reward_amount, new Date(), id]);
+
+      if (result.affectedRows === 0) {
+        return res.status(404).json({ success: false, message: '更新失败' });
+      }
+
+      await pool.execute(`
+        INSERT INTO report_history (report_id, user_id, action, description, created_at)
+        VALUES (?, ?, ?, ?, ?)
+      `, [id, req.user.userId, '安全部确认', `处理意见：${processing_opinion}，奖金：${reward_amount}元`, new Date()]);
+
+      res.json({ success: true, message: '已确认处理，等待监理确认' });
+    } catch (error) {
+      console.error('安全部确认处理失败:', error);
+      res.status(500).json({ success: false, message: '操作失败', error: error.message });
+    }
+  }
+
+  // 监理确认或驳回
+  async supervisorConfirm(req, res) {
+    try {
+      const { id } = req.params;
+      const { supervisor_comment, isRejected } = req.body;
+
+      if (!req.user) {
+        return res.status(401).json({ success: false, message: '请先登录' });
+      }
+
+      // 检查是否为监理用户
+      const [userRows] = await pool.execute('SELECT is_supervisor FROM users WHERE id = ?', [req.user.userId]);
+      if (userRows.length === 0 || userRows[0].is_supervisor !== 1) {
+        return res.status(403).json({ success: false, message: '仅监理可操作' });
+      }
+
+      // 检查举报是否存在且状态为confirmed
+      const [reportRows] = await pool.execute('SELECT id, status FROM reports WHERE id = ?', [id]);
+      if (reportRows.length === 0) {
+        return res.status(404).json({ success: false, message: '举报记录不存在' });
+      }
+      if (reportRows[0].status !== 'confirmed') {
+        return res.status(400).json({ success: false, message: '当前状态不允许此操作' });
+      }
+
+      // 驳回逻辑：回退到submitted状态，保留之前的处理信息供参考
+      if (isRejected) {
+        // 驳回时监理意见必填
+        if (!supervisor_comment || supervisor_comment.trim() === '') {
+          return res.status(400).json({ success: false, message: '驳回时请填写驳回理由' });
+        }
+
+        const [result] = await pool.execute(`
+          UPDATE reports
+          SET status = 'submitted',
+              supervisor_id = ?,
+              supervisor_comment = ?,
+              updated_at = ?
+          WHERE id = ?
+        `, [req.user.userId, supervisor_comment, new Date(), id]);
+
+        if (result.affectedRows === 0) {
+          return res.status(404).json({ success: false, message: '更新失败' });
+        }
+
+        await pool.execute(`
+          INSERT INTO report_history (report_id, user_id, action, description, created_at)
+          VALUES (?, ?, ?, ?, ?)
+        `, [id, req.user.userId, '监理驳回', supervisor_comment || '监理驳回，退回安全部重新处理', new Date()]);
+
+        return res.json({ success: true, message: '已驳回，退回安全部重新处理' });
+      }
+
+      // 正常确认逻辑
+      const [result] = await pool.execute(`
+        UPDATE reports
+        SET status = 'supervisor_confirmed',
+            supervisor_id = ?,
+            supervisor_comment = ?,
+            supervisor_confirmed_at = ?,
+            updated_at = ?
+        WHERE id = ?
+      `, [req.user.userId, supervisor_comment || '', new Date(), new Date(), id]);
+
+      if (result.affectedRows === 0) {
+        return res.status(404).json({ success: false, message: '更新失败' });
+      }
+
+      await pool.execute(`
+        INSERT INTO report_history (report_id, user_id, action, description, created_at)
+        VALUES (?, ?, ?, ?, ?)
+      `, [id, req.user.userId, '监理确认', supervisor_comment || '监理已确认', new Date()]);
+
+      res.json({ success: true, message: '监理确认成功，等待整改' });
+    } catch (error) {
+      console.error('监理确认失败:', error);
+      res.status(500).json({ success: false, message: '操作失败', error: error.message });
+    }
+  }
+
+  // 上传处理照片（整改完成）
+  async uploadProcessPhotos(req, res) {
+    try {
+      const { id } = req.params;
+      const { rectified_images } = req.body;
+
+      if (!req.user) {
+        return res.status(401).json({ success: false, message: '请先登录' });
+      }
+
+      if (!rectified_images || rectified_images.length === 0) {
+        return res.status(400).json({ success: false, message: '请上传处理照片' });
+      }
+
+      // 检查举报是否存在且状态为supervisor_confirmed
+      const [reportRows] = await pool.execute('SELECT id, status FROM reports WHERE id = ?', [id]);
+      if (reportRows.length === 0) {
+        return res.status(404).json({ success: false, message: '举报记录不存在' });
+      }
+      if (reportRows[0].status !== 'supervisor_confirmed') {
+        return res.status(400).json({ success: false, message: '当前状态不允许此操作' });
+      }
+
+      const [result] = await pool.execute(`
+        UPDATE reports
+        SET status = 'photo_uploaded',
+            rectified_images = ?,
+            updated_at = ?
+        WHERE id = ?
+      `, [JSON.stringify(rectified_images), new Date(), id]);
+
+      if (result.affectedRows === 0) {
+        return res.status(404).json({ success: false, message: '更新失败' });
+      }
+
+      // 添加历史记录
+      await pool.execute(`
+        INSERT INTO report_history (report_id, user_id, action, description, created_at)
+        VALUES (?, ?, ?, ?, ?)
+      `, [id, req.user.userId, '上传处理照片', '已上传整改后照片', new Date()]);
+
+      res.json({ success: true, message: '处理照片上传成功，等待下发奖金' });
+    } catch (error) {
+      console.error('上传处理照片失败:', error);
+      res.status(500).json({ success: false, message: '操作失败', error: error.message });
+    }
+  }
+
+  // 上传奖金发放截图（完成办结）
+  async uploadRewardProof(req, res) {
+    try {
+      const { id } = req.params;
+      const { reward_images } = req.body;
+
+      if (!req.user) {
+        return res.status(401).json({ success: false, message: '请先登录' });
+      }
+
+      if (!reward_images || reward_images.length === 0) {
+        return res.status(400).json({ success: false, message: '请上传奖金发放截图' });
+      }
+
+      // 检查举报是否存在且状态为photo_uploaded
+      const [reportRows] = await pool.execute('SELECT id, status FROM reports WHERE id = ?', [id]);
+      if (reportRows.length === 0) {
+        return res.status(404).json({ success: false, message: '举报记录不存在' });
+      }
+      if (reportRows[0].status !== 'photo_uploaded') {
+        return res.status(400).json({ success: false, message: '当前状态不允许此操作' });
+      }
+
+      const [result] = await pool.execute(`
+        UPDATE reports
+        SET status = 'completed',
+            reward_images = ?,
+            reward_paid_at = ?,
+            updated_at = ?
+        WHERE id = ?
+      `, [JSON.stringify(reward_images), new Date(), new Date(), id]);
+
+      if (result.affectedRows === 0) {
+        return res.status(404).json({ success: false, message: '更新失败' });
+      }
+
+      // 添加历史记录
+      await pool.execute(`
+        INSERT INTO report_history (report_id, user_id, action, description, created_at)
+        VALUES (?, ?, ?, ?, ?)
+      `, [id, req.user.userId, '完成办结', '已上传奖金发放截图，流程完结', new Date()]);
+
+      res.json({ success: true, message: '办结成功' });
+    } catch (error) {
+      console.error('上传奖金截图失败:', error);
+      res.status(500).json({ success: false, message: '操作失败', error: error.message });
+    }
+  }
+
+  // 删除举报（仅Admin可操作）
+  async deleteReport(req, res) {
+    try {
+      const { id } = req.params;
+
+      if (!req.user) {
+        return res.status(401).json({ success: false, message: '请先登录' });
+      }
+
+      // 检查是否为Admin用户
+      const [userRows] = await pool.execute('SELECT is_admin FROM users WHERE id = ?', [req.user.userId]);
+      if (userRows.length === 0 || userRows[0].is_admin !== 1) {
+        return res.status(403).json({ success: false, message: '仅管理员可删除举报' });
+      }
+
+      // 开始事务，同时删除历史记录
+      const connection = await pool.getConnection();
+      await connection.beginTransaction();
+
+      try {
+        // 删除历史记录
+        await connection.execute('DELETE FROM report_history WHERE report_id = ?', [id]);
+
+        // 删除举报
+        const [result] = await connection.execute('DELETE FROM reports WHERE id = ?', [id]);
+
+        if (result.affectedRows === 0) {
+          await connection.rollback();
+          return res.status(404).json({ success: false, message: '举报记录不存在' });
+        }
+
+        await connection.commit();
+        res.json({ success: true, message: '删除成功' });
+      } catch (error) {
+        await connection.rollback();
+        throw error;
+      } finally {
+        connection.release();
+      }
+    } catch (error) {
+      console.error('删除举报失败:', error);
+      res.status(500).json({ success: false, message: '删除失败', error: error.message });
+    }
+  }
+
+  // 获取待办列表
+  async getTodoReports(req, res) {
+    try {
+      const { page = 1, limit = 20, section } = req.query;
+      const limitNum = parseInt(limit);
+      const pageNum = parseInt(page);
+      const offset = (pageNum - 1) * limitNum;
+
+      if (!req.user) {
+        return res.status(401).json({ success: false, message: '请先登录' });
+      }
+
+      // 获取用户信息
+      const [userRows] = await pool.execute(
+        'SELECT is_supervisor, is_admin, managed_sections FROM users WHERE id = ?',
+        [req.user.userId]
+      );
+
+      if (userRows.length === 0) {
+        return res.status(404).json({ success: false, message: '用户不存在' });
+      }
+
+      const user = userRows[0];
+      const isSupervisor = user.is_supervisor === 1;
+      const isAdmin = user.is_admin === 1;
+      const managedSections = JSON.parse(user.managed_sections || '[]');
+
+      // 收集待办状态
+      const todoStatuses = [];
+
+      // 监理待办：待监理确认
+      if (isSupervisor) {
+        todoStatuses.push('confirmed');
+      }
+
+      // 安全管理/本标段管理员待办：待确认处理、待整改图片、待发放奖金
+      // 这里如果用户是超级管理员或是设置了管理标段的用户
+      if (isAdmin || managedSections.length > 0) {
+        todoStatuses.push('submitted', 'supervisor_confirmed', 'photo_uploaded');
+      }
+
+      if (todoStatuses.length === 0) {
+        return res.json({
+          success: true,
+          data: {
+            reports: [],
+            pagination: { total: 0, page: pageNum, limit: limitNum, totalPages: 0 }
+          }
+        });
+      }
+
+      let whereClause = `WHERE status IN (${todoStatuses.map(() => '?').join(',')})`;
+      const params = [...todoStatuses];
+
+      // 如果指定了标段
+      if (section) {
+        whereClause += ' AND section = ?';
+        params.push(section);
+      } else if (!isAdmin && managedSections.length > 0) {
+        // 如果不是超级管理员但有管理权限的标段，只看自己管辖的标段
+        const placeholders = managedSections.map(() => '?').join(',');
+        whereClause += ` AND section IN (${placeholders})`;
+        params.push(...managedSections);
+      }
+
+      const sql = `
+        SELECT id, reporter_name, description, hazard_type, severity,
+               location, section, status, created_at, updated_at
+        FROM reports
+        ${whereClause}
+        ORDER BY updated_at DESC
+        LIMIT ${limitNum} OFFSET ${offset}
+      `;
+
+      const [rows] = await pool.execute(sql, params);
+
+      const [countRows] = await pool.execute(`
+        SELECT COUNT(*) as total FROM reports ${whereClause}
+      `, params);
+
+      const { formatDateTimeBeijing } = require('../utils/time');
+      const formattedRows = rows.map(r => ({
+        ...r,
+        created_at: formatDateTimeBeijing(r.created_at),
+        updated_at: formatDateTimeBeijing(r.updated_at)
+      }));
+
+      res.json({
+        success: true,
+        data: {
+          reports: formattedRows,
+          pagination: {
+            total: countRows[0].total,
+            page: pageNum,
+            limit: limitNum,
+            totalPages: Math.ceil(countRows[0].total / limitNum)
+          }
+        }
+      });
+    } catch (error) {
+      console.error('获取待办列表失败:', error);
+      res.status(500).json({ success: false, message: '获取待办列表失败', error: error.message });
     }
   }
 }

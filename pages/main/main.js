@@ -1,42 +1,23 @@
 // pages/main/main.js
 Page({
-
-  /**
-   * 页面的初始数据
-   */
   data: {
     currentUser: {},
     currentSection: null,
-    currentTab: 'pending', // 当前选中的标签
-
-    // 状态统计数据
+    currentTab: 'pending',
     pendingCount: 0,
     processingCount: 0,
     completedCount: 0,
-
-    // 待处理工单数据
     pendingReports: [],
-
-    // 处理中工单数据
     processingReports: [],
-
-    // 已办结工单数据
     completedReports: [],
-
     loading: true
   },
 
-  /**
-   * 生命周期函数--监听页面加载
-   */
   onLoad(options) {
     this.loadData();
     this.loadUserInfo();
   },
 
-  /**
-   * 生命周期函数--监听页面显示
-   */
   onShow() {
     this.loadData();
     this.loadUserInfo();
@@ -60,83 +41,58 @@ Page({
     const app = getApp();
     const currentSection = app.globalData.currentSection;
 
-    if (!currentSection) {
-      console.log('未选择标段，无法加载数据');
-      this.setData({
-        loading: false
-      });
+    if (!currentSection || !app.globalData.token) {
+      this.setData({ loading: false });
       return;
     }
 
-    if (!app.globalData.token) {
-      console.log('未登录，无法加载数据');
-      this.setData({
-        loading: false
-      });
-      return;
-    }
+    this.setData({ loading: true });
 
-    this.setData({
-      loading: true
-    });
-
-    // 后端按状态分组拉取，避免前端再筛选
     const baseUrl = app.globalData.baseUrl + '/report/list';
     const headers = { 'Authorization': 'Bearer ' + app.globalData.token };
     const section = currentSection.section_code;
 
     const mapHazardType = (type) => {
       const mapping = {
-        'fire': '消防安全隐患',
-        'electric': '电气安全隐患',
-        'chemical': '化学品安全隐患',
-        'mechanical': '机械设备安全隐患',
-        'height': '高空作业安全隐患',
-        'edge': '临边防护安全隐患',
-        'environment': '环境安全隐患',
-        'ppe': '个人防护装备隐患',
-        'other': '其他安全隐患'
+        'fire': '消防安全隐患', 'electric': '电气安全隐患', 'chemical': '化学品安全隐患',
+        'mechanical': '机械设备安全隐患', 'height': '高空作业安全隐患', 'edge': '临边防护安全隐患',
+        'environment': '环境安全隐患', 'ppe': '个人防护装备隐患', 'other': '其他安全隐患'
       };
       return mapping[type] || type;
     };
 
     const mapSeverity = (severity) => {
-      const mapping = {
-        'low': '一般',
-        'medium': '紧急',
-        'high': '非常紧急',
-        'critical': '极其紧急'
-      };
+      const mapping = { 'low': '一般', 'medium': '紧急', 'high': '非常紧急', 'critical': '极其紧急' };
       return mapping[severity] || severity;
     };
 
     const mapStatus = (status) => {
       const mapping = {
         'submitted': '待处理',
-        'processing': '处理中',
+        'confirmed': '待监理确认',
+        'supervisor_confirmed': '待整改',
+        'photo_uploaded': '待下发奖金',
         'completed': '已办结'
       };
       return mapping[status] || status;
     };
 
     const { formatBeijing } = require('../../utils/time.js');
-    const processReports = (reports) => {
-      return reports.map(report => ({
-        ...report,
-        hazardType: mapHazardType(report.hazard_type),
-        severity: mapSeverity(report.severity),
-        status: mapStatus(report.status),
-        reporter: report.reporter_name || '未知',
-        reporter_verified: report.reporter_verified || false,
-        reportTime: formatBeijing(report.created_at),
-        location: report.location,
-        priority: report.severity,
-        assignee: report.assignee_name,
-        processTime: formatBeijing(report.processed_at),
-        completeTime: formatBeijing(report.completed_at),
-        resultType: 'confirmed'
-      }));
-    };
+    const processReports = (reports) => reports.map(report => ({
+      ...report,
+      hazardType: mapHazardType(report.hazard_type),
+      severity: mapSeverity(report.severity),
+      status: mapStatus(report.status),
+      reporter: report.reporter_name || '未知',
+      reporter_verified: report.reporter_verified || false,
+      reportTime: formatBeijing(report.created_at),
+      location: report.location,
+      priority: report.severity,
+      assignee: report.assignee_name,
+      processTime: formatBeijing(report.processed_at),
+      completeTime: formatBeijing(report.completed_at),
+      resultType: 'confirmed'
+    }));
 
     const requests = [
       { key: 'pending', status: 'submitted' },
@@ -145,7 +101,6 @@ Page({
     ];
 
     let finished = 0;
-
     requests.forEach(req => {
       wx.request({
         url: baseUrl,
@@ -153,59 +108,31 @@ Page({
         header: headers,
         data: { section, status: req.status },
         success: (res) => {
-          if (res.data && res.data.success) {
-            const reports = res.data.data.reports || [];
-            const processed = processReports(reports);
+          if (res.data?.success) {
+            const processed = processReports(res.data.data.reports || []);
             const update = {};
-            if (req.key === 'pending') {
-              update.pendingReports = processed;
-              update.pendingCount = processed.length;
-            } else if (req.key === 'processing') {
-              update.processingReports = processed;
-              update.processingCount = processed.length;
-            } else if (req.key === 'completed') {
-              update.completedReports = processed;
-              update.completedCount = processed.length;
-            }
+            if (req.key === 'pending') { update.pendingReports = processed; update.pendingCount = processed.length; }
+            else if (req.key === 'processing') { update.processingReports = processed; update.processingCount = processed.length; }
+            else if (req.key === 'completed') { update.completedReports = processed; update.completedCount = processed.length; }
             this.setData(update);
           } else {
             wx.showToast({ title: '获取举报记录失败', icon: 'none' });
           }
         },
-        fail: () => {
-          wx.showToast({ title: '网络错误', icon: 'none' });
-        },
+        fail: () => wx.showToast({ title: '网络错误', icon: 'none' }),
         complete: () => {
           finished += 1;
-          if (finished === requests.length) {
-            this.setData({ loading: false });
-          }
+          if (finished === requests.length) this.setData({ loading: false });
         }
       });
     });
   },
 
-  goBack: function() {
-    wx.reLaunch({
-      url: '/pages/index/index'
-    });
-  },
+  goBack: function () { wx.reLaunch({ url: '/pages/index/index' }); },
+  switchTab(e) { this.setData({ currentTab: e.currentTarget.dataset.tab }); },
 
-  // 切换状态标签
-  switchTab(e) {
-    const tab = e.currentTarget.dataset.tab;
-    this.setData({
-      currentTab: tab
-    });
-  },
-
-  // 显示举报详情（所有状态通用）
   showReportDetail(e) {
     const id = e.currentTarget.dataset.id;
-    const status = this.data.currentTab;
-
-    wx.navigateTo({
-      url: `/pages/report-detail/report-detail?id=${id}&status=${status}`
-    });
+    wx.navigateTo({ url: `/pages/report-detail/report-detail?id=${id}&status=${this.data.currentTab}` });
   }
 })

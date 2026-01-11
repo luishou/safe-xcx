@@ -602,8 +602,7 @@
 
 .reward-input {
     width: 100%;
-    min-height: 88rpx;
-    padding: 20rpx 24rpx;
+    padding: 24rpx;
     border: 2rpx solid #e5e7eb;
     border-radius: 16rpx;
     font-size: 32rpx;

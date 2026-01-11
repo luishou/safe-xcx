@@ -5,7 +5,7 @@ class User {
   static async findByOpenid(openid) {
     try {
       const [rows] = await pool.execute(
-        'SELECT id, openid, nick_name as nickName, avatar_url as avatarUrl, managed_sections, role, status, is_verified, verification_status, created_at, updated_at FROM users WHERE openid = ?',
+        'SELECT id, openid, nick_name as nickName, avatar_url as avatarUrl, managed_sections, role, status, is_verified, verification_status, is_supervisor, is_admin, created_at, updated_at FROM users WHERE openid = ?',
         [openid]
       );
       return rows.length > 0 ? rows[0] : null;
@@ -19,7 +19,7 @@ class User {
   static async findById(id) {
     try {
       const [rows] = await pool.execute(
-        'SELECT id, openid, nick_name as nickName, avatar_url as avatarUrl, managed_sections, role, status, is_verified, verification_status, created_at, updated_at FROM users WHERE id = ?',
+        'SELECT id, openid, nick_name as nickName, avatar_url as avatarUrl, managed_sections, role, status, is_verified, verification_status, is_supervisor, is_admin, created_at, updated_at FROM users WHERE id = ?',
         [id]
       );
       return rows.length > 0 ? rows[0] : null;

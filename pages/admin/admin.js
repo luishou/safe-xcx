@@ -1,45 +1,25 @@
 // pages/admin/admin.js
 Page({
-  /**
-   * 页面的初始数据
-   */
   data: {
     currentSection: null,
-    currentTab: 'pending', // 当前选中的标签
-    isAdmin: false, // 是否为管理员视图（true=安全环保部，false=举报公示）
-
-    // 状态统计数据
+    currentTab: 'pending',
+    isAdmin: false,
     pendingCount: 0,
     processingCount: 0,
     completedCount: 0,
-
-    // 待处理工单数据
     pendingReports: [],
-
-    // 处理中工单数据
     processingReports: [],
-
-    // 已办结工单数据
     completedReports: [],
-
-    // 举报公示：所有状态的统一列表
     allReports: [],
-
     loading: true,
     currentUser: null,
-    // 饼图相关数据
     hazardDistribution: [],
     canvasWidth: 0,
     canvasHeight: 0,
-    // 视图面板：stats 或 tasks
     currentPanel: 'tasks',
-
-    // 统计筛选
-    statsFilterType: 'all', // all | month | year | custom
+    statsFilterType: 'all',
     customStartDate: '',
     customEndDate: '',
-
-    // 统计汇总
     statsPendingCount: 0,
     statsProcessingCount: 0,
     statsCompletedCount: 0,
@@ -47,23 +27,13 @@ Page({
     resolutionRate: 0
   },
 
-  /**
-   * 生命周期函数--监听页面加载
-   */
   onLoad(options) {
-    // 解析isAdmin参数，用于区分显示"安全环保部"还是"举报公示"
     const isAdmin = options.isAdmin === 'true' || options.isAdmin === true;
-    this.setData({
-      isAdmin: isAdmin
-    });
-    
+    this.setData({ isAdmin });
     this.loadData();
     this.loadUserInfo();
   },
 
-  /**
-   * 生命周期函数--监听页面显示
-   */
   onShow() {
     this.loadData();
     this.loadUserInfo();
@@ -72,15 +42,10 @@ Page({
   loadUserInfo() {
     const app = getApp();
     const currentUser = app.globalData.currentUser;
-
-    console.log('管理员页面 - 当前用户:', currentUser);
-
-    // 不做权限检查，前端控制菜单显示
-
     this.setData({
       currentUser: currentUser || {
-        name: '安全环保部',
-        department: '安全部门',
+        name: '监管中心',
+        department: '监管部门',
         avatar: '/images/manager-avatar.png',
         phone: '137****9012'
       },
@@ -92,76 +57,46 @@ Page({
     const app = getApp();
     const currentSection = app.globalData.currentSection;
 
-    if (!currentSection) {
-      console.log('未选择标段，无法加载数据');
-      this.setData({
-        loading: false
-      });
+    if (!currentSection || !app.globalData.token) {
+      this.setData({ loading: false });
       return;
     }
 
-    if (!app.globalData.token) {
-      console.log('未登录，无法加载数据');
-      this.setData({
-        loading: false
-      });
-      return;
-    }
+    this.setData({ loading: true });
 
-    this.setData({
-      loading: true
-    });
-
-    // 定义映射与处理函数
     const mapHazardType = (type) => {
       const mapping = {
-        'fire': '消防安全隐患',
-        'electric': '电气安全隐患',
-        'chemical': '化学品安全隐患',
-        'mechanical': '机械设备安全隐患',
-        'height': '高空作业安全隐患',
-        'edge': '临边防护安全隐患',
-        'environment': '环境安全隐患',
-        'ppe': '个人防护装备隐患',
-        'other': '其他安全隐患'
+        'fire': '消防安全隐患', 'electric': '电气安全隐患', 'chemical': '化学品安全隐患',
+        'mechanical': '机械设备安全隐患', 'height': '高空作业安全隐患', 'edge': '临边防护安全隐患',
+        'environment': '环境安全隐患', 'ppe': '个人防护装备隐患', 'other': '其他安全隐患'
       };
       return mapping[type] || type;
     };
 
     const mapSeverity = (severity) => {
-      const mapping = {
-        'low': '一般',
-        'medium': '紧急',
-        'high': '非常紧急',
-        'critical': '极其紧急'
-      };
+      const mapping = { 'low': '一般', 'medium': '紧急', 'high': '非常紧急', 'critical': '极其紧急' };
       return mapping[severity] || severity;
     };
 
     const mapStatus = (status) => {
       const mapping = {
         'submitted': '待处理',
-        'processing': '处理中',
+        'confirmed': '待监理确认',
+        'supervisor_confirmed': '待整改',
+        'photo_uploaded': '待下发奖金',
         'completed': '已办结'
       };
       return mapping[status] || status;
     };
 
     const { formatBeijing } = require('../../utils/time.js');
-    const processReports = (reports) => {
-      // 隐患类型颜色映射
-      const hazardTypeColors = {
-        '消防安全隐患': '#ef4444',
-        '电气安全隐患': '#f97316',
-        '化学品安全隐患': '#3b82f6',
-        '机械设备安全隐患': '#f59e0b',
-        '高空作业安全隐患': '#fb7185',
-        '临边防护安全隐患': '#10b981',
-        '环境安全隐患': '#059669',
-        '个人防护装备隐患': '#6366f1',
-        '其他安全隐患': '#8b5cf6'
-      };
+    const hazardTypeColors = {
+      '消防安全隐患': '#ef4444', '电气安全隐患': '#f97316', '化学品安全隐患': '#3b82f6',
+      '机械设备安全隐患': '#f59e0b', '高空作业安全隐患': '#fb7185', '临边防护安全隐患': '#10b981',
+      '环境安全隐患': '#059669', '个人防护装备隐患': '#6366f1', '其他安全隐患': '#8b5cf6'
+    };
 
+    const processReports = (reports) => {
       return (reports || []).map(report => ({
         ...report,
         hazardType: mapHazardType(report.hazard_type),
@@ -179,7 +114,6 @@ Page({
       }));
     };
 
-    // 三类状态的后端查询，分别请求（统一为三状态）
     const tabStatuses = {
       pending: ['submitted'],
       processing: ['processing'],
@@ -191,9 +125,7 @@ Page({
       done += 1;
       if (done === 3) {
         this.setData({ loading: false });
-        // 统计与图表改为使用后端统计接口
         this.fetchStats();
-        // 生成举报公示的统一列表
         this.generateAllReports();
       }
     };
@@ -205,7 +137,7 @@ Page({
         header: { 'Authorization': 'Bearer ' + app.globalData.token },
         data: { section: currentSection.section_code, status: statuses.join(',') },
         success: (res) => {
-          if (res.data && res.data.success) {
+          if (res.data?.success) {
             onSuccess(res.data.data.reports || []);
           } else {
             wx.showToast({ title: '获取举报记录失败', icon: 'none' });
@@ -213,8 +145,7 @@ Page({
           }
           finishOne();
         },
-        fail: (err) => {
-          console.error('获取举报记录请求失败:', err);
+        fail: () => {
           wx.showToast({ title: '网络错误', icon: 'none' });
           onSuccess([]);
           finishOne();
@@ -222,59 +153,33 @@ Page({
       });
     };
 
-    // 请求待处理
     fetchByStatuses(tabStatuses.pending, (list) => {
       const processed = processReports(list);
-      this.setData({
-        pendingReports: processed,
-        pendingCount: processed.length
-      });
+      this.setData({ pendingReports: processed, pendingCount: processed.length });
     });
 
-    // 请求处理中
     fetchByStatuses(tabStatuses.processing, (list) => {
       const processed = processReports(list);
-      this.setData({
-        processingReports: processed,
-        processingCount: processed.length
-      });
+      this.setData({ processingReports: processed, processingCount: processed.length });
     });
 
-    // 请求已办结
     fetchByStatuses(tabStatuses.completed, (list) => {
       const processed = processReports(list);
-      this.setData({
-        completedReports: processed,
-        completedCount: processed.length
-      });
+      this.setData({ completedReports: processed, completedCount: processed.length });
     });
   },
 
-  // 统计隐患类型分布
   processHazardDistribution(reports) {
     const totalReports = reports.length;
     const hazardTypes = {};
     const hazardColors = {
-      'fire': '#ef4444',
-      'electric': '#f97316',
-      'chemical': '#3b82f6',
-      'mechanical': '#f59e0b',
-      'height': '#fb7185',
-      'edge': '#10b981',
-      'environment': '#059669',
-      'ppe': '#6366f1',
-      'other': '#8b5cf6'
+      'fire': '#ef4444', 'electric': '#f97316', 'chemical': '#3b82f6', 'mechanical': '#f59e0b',
+      'height': '#fb7185', 'edge': '#10b981', 'environment': '#059669', 'ppe': '#6366f1', 'other': '#8b5cf6'
     };
     const hazardNames = {
-      'fire': '消防隐患',
-      'electric': '用电隐患',
-      'chemical': '化学品隐患',
-      'mechanical': '机械设备隐患',
-      'height': '高空作业安全隐患',
-      'edge': '临边防护安全隐患',
-      'environment': '环境安全隐患',
-      'ppe': '个人防护装备隐患',
-      'other': '其他隐患'
+      'fire': '消防隐患', 'electric': '用电隐患', 'chemical': '化学品隐患', 'mechanical': '机械设备隐患',
+      'height': '高空作业安全隐患', 'edge': '临边防护安全隐患', 'environment': '环境安全隐患',
+      'ppe': '个人防护装备隐患', 'other': '其他隐患'
     };
 
     reports.forEach(report => {
@@ -290,70 +195,44 @@ Page({
 
     const totalPercentage = hazardDistribution.reduce((sum, item) => sum + item.percentage, 0);
     if (totalPercentage < 100 && hazardDistribution.length > 0) {
-      const largestItem = hazardDistribution.reduce((max, item) =>
-        item.percentage > max.percentage ? item : max
-      );
+      const largestItem = hazardDistribution.reduce((max, item) => item.percentage > max.percentage ? item : max);
       largestItem.percentage += (100 - totalPercentage);
     }
 
     this.setData({ hazardDistribution });
   },
 
-  // 设置画布尺寸
   setCanvasSize() {
-    if (!this.data.hazardDistribution || this.data.hazardDistribution.length === 0) return;
-
+    if (!this.data.hazardDistribution?.length) return;
     const systemInfo = wx.getSystemInfoSync();
-    const screenWidth = systemInfo.screenWidth;
-    const canvasSize = Math.round(screenWidth * 0.72);
-
-    this.setData({
-      canvasWidth: canvasSize,
-      canvasHeight: canvasSize
-    });
-
-    setTimeout(() => {
-      this.drawPieChart();
-    }, 200);
+    const canvasSize = Math.round(systemInfo.screenWidth * 0.72);
+    this.setData({ canvasWidth: canvasSize, canvasHeight: canvasSize });
+    setTimeout(() => this.drawPieChart(), 200);
   },
 
-  // 绘制饼图
   drawPieChart() {
-    if (!this.data.hazardDistribution || this.data.hazardDistribution.length === 0) return;
-
+    if (!this.data.hazardDistribution?.length) return;
     const canvasSize = this.data.canvasWidth;
-    const centerX = canvasSize / 2;
-    const centerY = canvasSize / 2;
-    const radius = canvasSize * 0.35;
-    const innerRadius = canvasSize * 0.18;
-
+    const centerX = canvasSize / 2, centerY = canvasSize / 2;
+    const radius = canvasSize * 0.35, innerRadius = canvasSize * 0.18;
     const ctx = wx.createCanvasContext('adminPieChart', this);
     let currentAngle = -Math.PI / 2;
 
     this.data.hazardDistribution.forEach(item => {
       if (item.percentage > 0) {
         const sliceAngle = (item.percentage / 100) * 2 * Math.PI;
-
         ctx.beginPath();
         ctx.arc(centerX, centerY, radius, currentAngle, currentAngle + sliceAngle);
         ctx.arc(centerX, centerY, innerRadius, currentAngle + sliceAngle, currentAngle, true);
         ctx.closePath();
         ctx.setFillStyle(item.color);
         ctx.fill();
-
         ctx.beginPath();
-        ctx.moveTo(
-          centerX + Math.cos(currentAngle) * innerRadius,
-          centerY + Math.sin(currentAngle) * innerRadius
-        );
-        ctx.lineTo(
-          centerX + Math.cos(currentAngle) * radius,
-          centerY + Math.sin(currentAngle) * radius
-        );
+        ctx.moveTo(centerX + Math.cos(currentAngle) * innerRadius, centerY + Math.sin(currentAngle) * innerRadius);
+        ctx.lineTo(centerX + Math.cos(currentAngle) * radius, centerY + Math.sin(currentAngle) * radius);
         ctx.setStrokeStyle('#ffffff');
         ctx.setLineWidth(2);
         ctx.stroke();
-
         currentAngle += sliceAngle;
       }
     });
@@ -363,40 +242,19 @@ Page({
     ctx.setStrokeStyle('#ffffff');
     ctx.setLineWidth(3);
     ctx.stroke();
-
     ctx.beginPath();
     ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
     ctx.setStrokeStyle('#ffffff');
     ctx.setLineWidth(3);
     ctx.stroke();
-
     ctx.draw(true);
   },
 
-  // 进入安全知识管理
-  goKnowledgeAdmin() {
-    wx.navigateTo({ url: '/pages/knowledge-admin/knowledge-admin' });
-  },
+  goKnowledgeAdmin() { wx.navigateTo({ url: '/pages/knowledge-admin/knowledge-admin' }); },
+  goVerificationAdmin() { wx.navigateTo({ url: '/pages/verification-admin/verification-admin' }); },
+  goBack: function () { wx.reLaunch({ url: '/pages/index/index' }); },
+  showStatsPanel() { this.setData({ currentPanel: 'stats' }); this.fetchStats(); },
 
-  // 进入认证管理
-  goVerificationAdmin() {
-    wx.navigateTo({ url: '/pages/verification-admin/verification-admin' });
-  },
-
-  goBack: function () {
-    wx.reLaunch({
-      url: '/pages/index/index'
-    });
-  },
-
-  // 切换面板为统计
-  showStatsPanel() {
-    this.setData({ currentPanel: 'stats' });
-    // 切换到统计时，按照当前筛选拉取统计数据
-    this.fetchStats();
-  },
-
-  // 导出Excel（当前标段全部隐患）
   exportExcel() {
     const app = getApp();
     const currentSection = app.globalData.currentSection;
@@ -408,7 +266,6 @@ Page({
     }
 
     const url = `${app.globalData.baseUrl}/report/export?section=${encodeURIComponent(currentSection.section_code)}`;
-
     wx.showLoading({ title: '导出中...' });
 
     wx.downloadFile({
@@ -416,172 +273,62 @@ Page({
       header: { 'Authorization': `Bearer ${token}` },
       success: (res) => {
         if (res.statusCode === 200) {
-          // 优先使用系统“另存为”能力（PC端可选择目录）
-          if (wx.canIUse && wx.canIUse('saveFileToDisk')) {
-            wx.saveFileToDisk({
-              filePath: res.tempFilePath,
-              success: () => {
-                wx.showModal({
-                  title: '文件已保存',
-                  content: '是否打开文件？',
-                  confirmText: '打开文件',
-                  cancelText: '完成',
-                  success: (m) => {
-                    if (m.confirm) {
-                      wx.openDocument({ filePath: res.tempFilePath, fileType: 'xlsx' });
-                    }
-                  }
-                });
-              },
-              fail: () => {
-                // 回退：保存到小程序沙箱目录并提示
-                const fs = wx.getFileSystemManager();
-                const filename = `隐患导出_${currentSection.section_code}_${Date.now()}.xlsx`;
-                const dest = `${wx.env.USER_DATA_PATH}/${filename}`;
-                fs.copyFile({
-                  src: res.tempFilePath,
-                  dest,
-                  success: () => {
-                    wx.showModal({
-                      title: '文件已保存',
-                      content: `文件已保存：${filename}`,
-                      confirmText: '打开文件',
-                      cancelText: '完成',
-                      success: (m) => {
-                        if (m.confirm) {
-                          wx.openDocument({ filePath: dest, fileType: 'xlsx' });
-                        }
-                      }
-                    });
-                  },
-                  fail: () => {
-                    wx.saveFile({
-                      tempFilePath: res.tempFilePath,
-                      success: (saveRes) => {
-                        wx.showModal({
-                          title: '文件已保存',
-                          content: `文件已保存：${saveRes.savedFilePath}`,
-                          confirmText: '打开文件',
-                          cancelText: '完成',
-                          success: (m) => {
-                            if (m.confirm) {
-                              wx.openDocument({ filePath: saveRes.savedFilePath, fileType: 'xlsx' });
-                            }
-                          }
-                        });
-                      },
-                      fail: () => {
-                        wx.showToast({ title: '保存失败', icon: 'none' });
-                      }
-                    });
-                  }
-                });
-              }
-            });
-          } else {
-            // 不支持另存为API的设备，回退至沙箱保存
-            const fs = wx.getFileSystemManager();
-            const filename = `隐患导出_${currentSection.section_code}_${Date.now()}.xlsx`;
-            const dest = `${wx.env.USER_DATA_PATH}/${filename}`;
-            fs.copyFile({
-              src: res.tempFilePath,
-              dest,
-              success: () => {
-                wx.showModal({
-                  title: '文件已保存',
-                  content: `文件已保存：${filename}`,
-                  confirmText: '打开文件',
-                  cancelText: '完成',
-                  success: (m) => {
-                    if (m.confirm) {
-                      wx.openDocument({ filePath: dest, fileType: 'xlsx' });
-                    }
-                  }
-                });
-              },
-              fail: () => {
-                wx.saveFile({
-                  tempFilePath: res.tempFilePath,
-                  success: (saveRes) => {
-                    wx.showModal({
-                      title: '文件已保存',
-                      content: `文件已保存：${saveRes.savedFilePath}`,
-                      confirmText: '打开文件',
-                      cancelText: '完成',
-                      success: (m) => {
-                        if (m.confirm) {
-                          wx.openDocument({ filePath: saveRes.savedFilePath, fileType: 'xlsx' });
-                        }
-                      }
-                    });
-                  },
-                  fail: () => {
-                    wx.showToast({ title: '保存失败', icon: 'none' });
-                  }
-                });
-              }
-            });
-          }
+          this._saveAndOpenFile(res.tempFilePath, currentSection.section_code);
         } else {
           wx.showToast({ title: '导出失败', icon: 'none' });
         }
       },
-      fail: (err) => {
-        console.error('导出失败:', err);
-        wx.showToast({ title: '网络错误', icon: 'none' });
-      },
-      complete: () => {
-        wx.hideLoading();
-      }
+      fail: () => wx.showToast({ title: '网络错误', icon: 'none' }),
+      complete: () => wx.hideLoading()
     });
   },
 
-  // 切换面板为任务中心
-  showTasksPanel() {
-    this.setData({ currentPanel: 'tasks' });
+  _saveAndOpenFile(tempFilePath, sectionCode) {
+    const filename = `隐患导出_${sectionCode}_${Date.now()}.xlsx`;
+    const dest = `${wx.env.USER_DATA_PATH}/${filename}`;
+    const fs = wx.getFileSystemManager();
+
+    fs.copyFile({
+      src: tempFilePath,
+      dest,
+      success: () => {
+        wx.showModal({
+          title: '文件已保存',
+          content: `文件已保存：${filename}`,
+          confirmText: '打开文件',
+          cancelText: '完成',
+          success: (m) => { if (m.confirm) wx.openDocument({ filePath: dest, fileType: 'xlsx' }); }
+        });
+      },
+      fail: () => wx.showToast({ title: '保存失败', icon: 'none' })
+    });
   },
 
-  // 统计：计算时间范围
+  showTasksPanel() { this.setData({ currentPanel: 'tasks' }); },
+
   computeDateRange(type) {
     const now = new Date();
     let start = new Date();
-    if (type === 'all') {
-      // 显示所有数据，返回null表示不限制时间
-      return { startDate: null, endDate: null };
-    } else if (type === 'month') {
-      start = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-    } else if (type === 'year') {
-      start = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
-    } else {
-      // custom 使用用户选择的日期
-      if (this.data.customStartDate && this.data.customEndDate) {
-        start = new Date(this.data.customStartDate + 'T00:00:00');
-        const end = new Date(this.data.customEndDate + 'T23:59:59');
-        return { startDate: start.toISOString(), endDate: end.toISOString() };
-      }
-      // 未选择完整日期范围时不加时间条件
-      return { startDate: null, endDate: null };
-    }
-    const end = now;
-    return { startDate: start.toISOString(), endDate: end.toISOString() };
+    if (type === 'all') return { startDate: null, endDate: null };
+    if (type === 'month') start = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    else if (type === 'year') start = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
+    else if (type === 'custom' && this.data.customStartDate && this.data.customEndDate) {
+      start = new Date(this.data.customStartDate + 'T00:00:00');
+      const end = new Date(this.data.customEndDate + 'T23:59:59');
+      return { startDate: start.toISOString(), endDate: end.toISOString() };
+    } else return { startDate: null, endDate: null };
+    return { startDate: start.toISOString(), endDate: now.toISOString() };
   },
 
-  // 统计：切换筛选类型
   onChangeStatsFilter(e) {
     const type = e.currentTarget.dataset.type;
     this.setData({ statsFilterType: type });
-    if (type !== 'custom') {
-      this.fetchStats();
-    }
+    if (type !== 'custom') this.fetchStats();
   },
 
-  // 统计：自定义日期选择
-  onStartDateChange(e) {
-    this.setData({ customStartDate: e.detail.value });
-  },
-  onEndDateChange(e) {
-    this.setData({ customEndDate: e.detail.value });
-  },
+  onStartDateChange(e) { this.setData({ customStartDate: e.detail.value }); },
+  onEndDateChange(e) { this.setData({ customEndDate: e.detail.value }); },
+
   applyCustomFilter() {
     if (!this.data.customStartDate || !this.data.customEndDate) {
       wx.showToast({ title: '请选择开始和结束日期', icon: 'none' });
@@ -590,30 +337,22 @@ Page({
     this.fetchStats();
   },
 
-  // 统计：拉取后端统计数据并更新视图
   fetchStats() {
     const app = getApp();
     const currentSection = app.globalData.currentSection;
-    if (!currentSection || !app.globalData.token) {
-      return;
-    }
+    if (!currentSection || !app.globalData.token) return;
 
     const type = this.data.statsFilterType;
     const range = this.computeDateRange(type);
     const requestData = { section: currentSection.section_code };
 
-    // 自定义优先使用用户选择的日期范围
     if (type === 'custom' && this.data.customStartDate && this.data.customEndDate) {
-      const start = new Date(this.data.customStartDate + 'T00:00:00').toISOString();
-      const end = new Date(this.data.customEndDate + 'T23:59:59').toISOString();
-      requestData.startDate = start;
-      requestData.endDate = end;
+      requestData.startDate = new Date(this.data.customStartDate + 'T00:00:00').toISOString();
+      requestData.endDate = new Date(this.data.customEndDate + 'T23:59:59').toISOString();
     } else if (range.startDate && range.endDate) {
       requestData.startDate = range.startDate;
       requestData.endDate = range.endDate;
     }
-
-    console.log('统计数据请求参数:', requestData);
 
     wx.request({
       url: app.globalData.baseUrl + '/report/stats',
@@ -621,49 +360,31 @@ Page({
       header: { 'Authorization': 'Bearer ' + app.globalData.token },
       data: requestData,
       success: (res) => {
-        if (res.data && res.data.success) {
+        if (res.data?.success) {
           const { statusCounts, hazardDistribution, totalReports, resolutionRate } = res.data.data || {};
-
-          console.log('统计数据返回的状态分布:', statusCounts);
-
-          // 统一三状态统计卡片：直接使用后端聚合结果
           const pending = statusCounts.submitted || 0;
           const processing = statusCounts.processing || 0;
           const completed = statusCounts.completed || 0;
 
-          // 将后端的类型分布(count)转为百分比供环形图使用
           const total = hazardDistribution.reduce((sum, item) => sum + (item.count || 0), 0);
           const hazardColors = {
-            'fire': '#ef4444',
-            'electric': '#f97316',
-            'chemical': '#3b82f6',
-            'mechanical': '#f59e0b',
-            'height': '#fb7185',
-            'edge': '#10b981',
-            'environment': '#059669',
-            'ppe': '#6366f1',
-            'other': '#8b5cf6'
+            'fire': '#ef4444', 'electric': '#f97316', 'chemical': '#3b82f6', 'mechanical': '#f59e0b',
+            'height': '#fb7185', 'edge': '#10b981', 'environment': '#059669', 'ppe': '#6366f1', 'other': '#8b5cf6'
           };
           const hazardNames = {
-            'fire': '消防隐患',
-            'electric': '用电隐患',
-            'chemical': '化学品隐患',
-            'mechanical': '机械设备隐患',
-            'height': '高空作业安全隐患',
-            'edge': '临边防护安全隐患',
-            'environment': '环境安全隐患',
-            'ppe': '个人防护装备隐患',
-            'other': '其他隐患'
+            'fire': '消防隐患', 'electric': '用电隐患', 'chemical': '化学品隐患', 'mechanical': '机械设备隐患',
+            'height': '高空作业安全隐患', 'edge': '临边防护安全隐患', 'environment': '环境安全隐患',
+            'ppe': '个人防护装备隐患', 'other': '其他隐患'
           };
+
           let dist = (hazardDistribution || []).map(h => ({
             name: hazardNames[h.type] || h.type,
             color: hazardColors[h.type] || '#6b7280',
             percentage: total > 0 ? Math.round(((h.count || 0) / total) * 100) : 0
           }));
+
           const totalPct = dist.reduce((s, i) => s + i.percentage, 0);
-          if (totalPct < 100 && dist.length > 0) {
-            dist[0].percentage += (100 - totalPct);
-          }
+          if (totalPct < 100 && dist.length > 0) dist[0].percentage += (100 - totalPct);
 
           this.setData({
             statsPendingCount: pending,
@@ -674,93 +395,42 @@ Page({
             resolutionRate: resolutionRate || 0
           });
 
-          // 更新画布绘制
           this.setCanvasSize();
         } else {
           wx.showToast({ title: '统计数据获取失败', icon: 'none' });
         }
       },
-      fail: (err) => {
-        console.error('统计数据请求失败:', err);
-        wx.showToast({ title: '网络错误', icon: 'none' });
-      }
+      fail: () => wx.showToast({ title: '网络错误', icon: 'none' })
     });
   },
 
-  // 切换状态标签
-  switchTab(e) {
-    const tab = e.currentTarget.dataset.tab;
-    this.setData({
-      currentTab: tab
-    });
-  },
+  switchTab(e) { this.setData({ currentTab: e.currentTarget.dataset.tab }); },
 
-  // 显示举报详情（所有状态通用）
   showReportDetail(e) {
     const id = e.currentTarget.dataset.id;
     const status = this.data.currentTab;
-
-    // 举报公示页面（isAdmin=false）传递isPublicView=true参数，详情页只读
     const isPublicView = !this.data.isAdmin;
-
-    wx.navigateTo({
-      url: `/pages/report-detail/report-detail?id=${id}&status=${status}&isPublicView=${isPublicView}`
-    });
+    wx.navigateTo({ url: `/pages/report-detail/report-detail?id=${id}&status=${status}&isPublicView=${isPublicView}` });
   },
 
-  // 刷新所有数据
   refreshAllData() {
-    wx.showLoading({
-      title: '刷新中...'
-    });
-
-    // 刷新任务中心数据
+    wx.showLoading({ title: '刷新中...' });
     this.loadData();
-
-    // 如果当前在统计面板，也刷新统计数据
-    if (this.data.currentPanel === 'stats') {
-      this.fetchStats();
-    }
-
+    if (this.data.currentPanel === 'stats') this.fetchStats();
     setTimeout(() => {
       wx.hideLoading();
-      wx.showToast({
-        title: '刷新完成',
-        icon: 'success'
-      });
+      wx.showToast({ title: '刷新完成', icon: 'success' });
     }, 1000);
   },
 
-  // 生成举报公示的统一列表（包含所有状态）
   generateAllReports() {
     const { pendingReports, processingReports, completedReports } = this.data;
-
-    // 为每个报告添加状态样式和文本
     const allReports = [
-      ...pendingReports.map(item => ({
-        ...item,
-        statusClass: 'pending-item',
-        statusText: '待处理'
-      })),
-      ...processingReports.map(item => ({
-        ...item,
-        statusClass: 'processing-item',
-        statusText: '处理中'
-      })),
-      ...completedReports.map(item => ({
-        ...item,
-        statusClass: 'completed-item',
-        statusText: '已办结'
-      }))
+      ...pendingReports.map(item => ({ ...item, statusClass: 'pending-item', statusText: '待处理' })),
+      ...processingReports.map(item => ({ ...item, statusClass: 'processing-item', statusText: '处理中' })),
+      ...completedReports.map(item => ({ ...item, statusClass: 'completed-item', statusText: '已办结' }))
     ];
-
-    // 按时间倒序排列（最新的在前面）
-    allReports.sort((a, b) => {
-      return new Date(b.created_at) - new Date(a.created_at);
-    });
-
-    this.setData({
-      allReports: allReports
-    });
+    allReports.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    this.setData({ allReports });
   }
 })

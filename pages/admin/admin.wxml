@@ -1,19 +1,19 @@
-<!-- 安全环保部管理界面 -->
+<!-- 监管中心管理界面 -->
 <view class="manager-view">
     <!-- 顶部导航栏 -->
     <view class="top-nav">
         <view class="back-btn" bindtap="goBack">
             <text>← 返回</text>
         </view>
-        <view class="nav-title">{{currentSection.section_name || ('第' + currentSection + '标段')}} - {{isAdmin ? '安全环保部' : '举报公示'}}</view>
+        <view class="nav-title">{{currentSection.section_name || ('第' + currentSection + '标段')}} - {{isAdmin ? '监管中心' : '举报公示'}}</view>
     </view>
 
-    <!-- 顶部图标菜单：统计 / 任务中心（仅管理员可见） -->
+    <!-- 顶部图标菜单：统计 / 举报列表（仅管理员可见） -->
     <view class="icon-menu" wx:if="{{isAdmin}}">
-        <!-- 左侧：任务中心 -->
+        <!-- 左侧：举报列表 -->
         <view class="icon-card {{currentPanel === 'tasks' ? 'selected' : ''}}" bindtap="showTasksPanel">
             <text class="icon-emoji">🗂️</text>
-            <text class="icon-label">任务中心</text>
+            <text class="icon-label">举报列表</text>
         </view>
         <!-- 右侧：统计 -->
         <view class="icon-card {{currentPanel === 'stats' ? 'selected' : ''}}" bindtap="showStatsPanel">
@@ -106,32 +106,20 @@
         </view>
     </view>
 
-    <!-- 状态切换标签 -->
-    <!-- 状态切换标签（仅管理员可见） -->
-    <view class="status-tabs" wx:if="{{currentPanel === 'tasks' && isAdmin}}">
-        <view class="status-tab {{currentTab === 'pending' ? 'active' : ''}}" bindtap="switchTab" data-tab="pending">
-            <text class="tab-count">{{pendingCount}}</text>
-            <text class="tab-label">待处理</text>
-        </view>
-        <view class="status-tab {{currentTab === 'processing' ? 'active' : ''}}" bindtap="switchTab" data-tab="processing">
-            <text class="tab-count">{{processingCount}}</text>
-            <text class="tab-label">处理中</text>
-        </view>
-        <view class="status-tab {{currentTab === 'completed' ? 'active' : ''}}" bindtap="switchTab" data-tab="completed">
-            <text class="tab-count">{{completedCount}}</text>
-            <text class="tab-label">已办结</text>
-        </view>
+    <!-- 举报列表统计概览（管理员可见） -->
+    <view class="status-summary-row" wx:if="{{currentPanel === 'tasks' && isAdmin}}">
+        <text class="total-count">共 {{allReports.length}} 条举报记录</text>
     </view>
 
     <!-- 举报工单列表 -->
     <view class="reports-container" wx:if="{{currentPanel === 'tasks' || !isAdmin}}">
-        <!-- 管理员：按状态标签显示 -->
+        <!-- 管理员：显示所有状态的举报列表 -->
         <block wx:if="{{isAdmin}}">
-            <!-- 待处理列表 -->
-            <view class="reports-list" wx:if="{{currentTab === 'pending'}}">
-                <view wx:for="{{pendingReports}}" wx:key="id" class="report-item pending-item" bindtap="showReportDetail" data-id="{{item.id}}">
+            <view class="reports-list public-list">
+                <view wx:for="{{allReports}}" wx:key="id" class="report-item {{item.statusClass}}" bindtap="showReportDetail" data-id="{{item.id}}">
                     <view class="item-header">
                         <view class="item-type" style="background: {{item.hazardTypeColor}};">{{item.hazardType}}</view>
+                        <view class="item-status {{item.statusClass}}">{{item.statusText}}</view>
                     </view>
                     <view class="item-desc">{{item.description}}</view>
                     <view class="item-meta">
@@ -139,43 +127,8 @@
                         <text class="time">{{item.reportTime}}</text>
                     </view>
                 </view>
-                <view class="empty-state" wx:if="{{pendingReports.length === 0}}">
-                    <text class="empty-text">暂无待处理事项</text>
-                </view>
-            </view>
-
-            <!-- 处理中列表 -->
-            <view class="reports-list" wx:if="{{currentTab === 'processing'}}">
-                <view wx:for="{{processingReports}}" wx:key="id" class="report-item processing-item" bindtap="showReportDetail" data-id="{{item.id}}">
-                    <view class="item-header">
-                        <view class="item-type" style="background: {{item.hazardTypeColor}};">{{item.hazardType}}</view>
-                    </view>
-                    <view class="item-desc">{{item.description}}</view>
-                    <view class="item-meta">
-                        <text class="reporter">举报人: {{item.reporter}}</text>
-                        <text class="time">{{item.reportTime}}</text>
-                    </view>
-                </view>
-                <view class="empty-state" wx:if="{{processingReports.length === 0}}">
-                    <text class="empty-text">暂无处理中事项</text>
-                </view>
-            </view>
-
-            <!-- 已办结列表 -->
-            <view class="reports-list" wx:if="{{currentTab === 'completed'}}">
-                <view wx:for="{{completedReports}}" wx:key="id" class="report-item completed-item" bindtap="showReportDetail" data-id="{{item.id}}">
-                    <view class="item-header">
-                        <view class="item-type" style="background: {{item.hazardTypeColor}};">{{item.hazardType}}</view>
-                        <view class="item-status confirmed">已办结</view>
-                    </view>
-                    <view class="item-desc">{{item.description}}</view>
-                    <view class="item-meta">
-                        <text class="reporter">举报人: {{item.reporter}}</text>
-                        <text class="complete-time">{{item.completeTime}}</text>
-                    </view>
-                </view>
-                <view class="empty-state" wx:if="{{completedReports.length === 0}}">
-                    <text class="empty-text">暂无已办结事项</text>
+                <view class="empty-state" wx:if="{{allReports.length === 0}}">
+                    <text class="empty-text">暂无举报记录</text>
                 </view>
             </view>
         </block>

@@ -1,90 +1,69 @@
 <!-- 个人中心页面 -->
 <view class="profile-page">
-    <!-- 顶部区域 -->
-    <view class="header">
-        <view class="back-btn" bindtap="goBack">
-            <text class="iconfont icon-arrow-left"></text>
-            <text>返回</text>
-        </view>
-        <view class="title">个人中心</view>
+    <!-- 用户信息头部 -->
+    <view class="user-header">
+        <view class="user-name">{{currentUser.name || '用户'}}</view>
+        <view class="user-section">第{{currentSection.section_code || currentSection}}标段</view>
     </view>
 
-    <!-- 用户信息卡片 -->
-    <view class="user-card">
-        <view class="avatar">{{currentUser.avatar}}</view>
-        <view class="user-info">
-            <view class="name">{{currentUser.name}}</view>
-            <view class="department">{{currentUser.department}}</view>
-            <view class="section">第{{currentSection}}标段</view>
+    <!-- Tab切换 -->
+    <view class="tabs">
+        <view class="tab {{activeTab === 'todo' ? 'active' : ''}}" bindtap="switchTab" data-tab="todo">
+            <text>我的待办</text>
+            <view class="badge" wx:if="{{todoCount > 0}}">{{todoCount}}</view>
         </view>
-    </view>
-
-    <!-- 功能菜单 -->
-    <view class="menu-list">
-        <!-- 我的举报 -->
-        <view class="menu-item" bindtap="goToMyReports">
-            <view class="menu-left">
-                <text class="iconfont icon-file-text"></text>
-                <text>我的举报</text>
-            </view>
-            <view class="menu-right">
-                <block wx:if="{{isLoadingMyReports}}">
-                    <text class="loading-text">加载中…</text>
-                </block>
-                <block wx:else>
-                    <text class="count">{{myReportsCount}}</text>
-                </block>
-                <text class="iconfont icon-chevron-right"></text>
-            </view>
-        </view>
-
-        <!-- 统计数据 -->
-        <view class="menu-item" bindtap="goToStats">
-            <view class="menu-left">
-                <text class="iconfont icon-bar-chart"></text>
-                <text>统计数据</text>
-            </view>
-            <view class="menu-right">
-                <text class="iconfont icon-chevron-right"></text>
-            </view>
-        </view>
-
-        <!-- 安全知识 -->
-        <view class="menu-item" bindtap="showSafetyKnowledge">
-            <view class="menu-left">
-                <text class="iconfont icon-book-open"></text>
-                <text>安全知识</text>
-            </view>
-            <view class="menu-right">
-                <text class="iconfont icon-chevron-right"></text>
-            </view>
-        </view>
-
-        <!-- 联系电话 -->
-        <view class="menu-item">
-            <view class="menu-left">
-                <text class="iconfont icon-phone"></text>
-                <text>联系电话</text>
-            </view>
-            <view class="menu-right">
-                <text>{{currentUser.phone}}</text>
-            </view>
-        </view>
-
-        <!-- 版本信息 -->
-        <view class="menu-item">
-            <view class="menu-left">
-                <text class="iconfont icon-info"></text>
-                <text>版本信息</text>
-            </view>
-            <view class="menu-right">
-                <text>v1.0.0</text>
-            </view>
+        <view class="tab {{activeTab === 'reports' ? 'active' : ''}}" bindtap="switchTab" data-tab="reports">
+            <text>我的举报</text>
+            <view class="badge" wx:if="{{myReportsCount > 0}}">{{myReportsCount}}</view>
         </view>
     </view>
 
-    <!-- 退出登录 -->
-    <view class="logout-btn" bindtap="logout">
-        <text>退出登录</text>
+    <!-- 列表内容区域 -->
+    <view class="list-container">
+        <!-- 待办列表 -->
+        <block wx:if="{{activeTab === 'todo'}}">
+            <view class="loading-state" wx:if="{{isLoadingTodo}}">加载中...</view>
+            <view class="empty-state" wx:elif="{{todoReports.length === 0}}">
+                <text>暂无待办事项</text>
+            </view>
+            <view wx:else class="report-list">
+                <view class="report-item todo-card" wx:for="{{todoReports}}" wx:key="id" bindtap="goToDetail" data-id="{{item.id}}">
+                    <view class="card-header">
+                        <text class="hazard-type">{{item.hazard_type_cn}}</text>
+                        <text class="status-tag status-{{item.status}}">{{item.status_cn}}</text>
+                    </view>
+                    <view class="card-content">
+                        <text class="description">{{item.description}}</text>
+                    </view>
+                    <view class="card-footer">
+                        <text class="location">📍 {{item.location}}</text>
+                        <text class="time">{{item.updated_at}}</text>
+                    </view>
+                </view>
+            </view>
+        </block>
+
+        <!-- 我的举报列表 -->
+        <block wx:if="{{activeTab === 'reports'}}">
+            <view class="loading-state" wx:if="{{isLoadingMyReports}}">加载中...</view>
+            <view class="empty-state" wx:elif="{{myReports.length === 0}}">
+                <text>暂无举报记录</text>
+            </view>
+            <view wx:else class="report-list">
+                <view class="report-item" wx:for="{{myReports}}" wx:key="id" bindtap="goToReadonlyDetail" data-id="{{item.id}}">
+                    <view class="card-header">
+                        <text class="hazard-type">{{item.hazard_type_cn}}</text>
+                        <text class="status-tag status-{{item.status}}">{{item.status_cn}}</text>
+                    </view>
+                    <view class="card-content">
+                        <text class="description">{{item.description}}</text>
+                    </view>
+                    <view class="card-footer">
+                        <text class="location">📍 {{item.location}}</text>
+                        <text class="time">{{item.created_at_short}}</text>
+                    </view>
+                </view>
+            </view>
+        </block>
     </view>
 </view>
