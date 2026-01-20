@@ -325,9 +325,29 @@ Page({
         });
     },
 
-    // 跳转到认证页面
+    // 点击认证状态 - 显示提示
     goToVerification: function () {
-        wx.navigateTo({ url: '/pages/verification/verification' });
+        const app = getApp();
+        const currentUser = app.globalData.currentUser;
+        const isVerified = currentUser && (currentUser.is_verified === 1 || currentUser.is_verified === true);
+
+        if (isVerified) {
+            // 已认证，显示认证信息
+            wx.showModal({
+                title: '认证状态',
+                content: '您已完成认证',
+                showCancel: false,
+                confirmText: '确定'
+            });
+        } else {
+            // 未认证，显示提示信息
+            wx.showModal({
+                title: '未认证',
+                content: '您尚未认证，请联系标段负责人后台认证',
+                showCancel: false,
+                confirmText: '知道了'
+            });
+        }
     },
 
     onReady: function () { },

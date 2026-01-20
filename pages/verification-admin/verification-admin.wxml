@@ -1,5 +1,13 @@
 <!--pages/verification-admin/verification-admin.wxml-->
 <view class="admin-container">
+  <!-- 顶部返回按钮 -->
+  <view class="header">
+    <view class="back-btn" bindtap="goBack">
+      <text>← 返回</text>
+    </view>
+    <view class="header-title">认证管理</view>
+  </view>
+
   <!-- 标签页切换 -->
   <view class="tabs">
     <view
@@ -14,75 +22,110 @@
     </view>
   </view>
 
-  <!-- 认证列表 -->
-  <view class="verification-list">
-    <view wx:if="{{isLoading}}" class="loading">
-      <text class="loading-text">加载中...</text>
-    </view>
+  <!-- 加载状态 -->
+  <view wx:if="{{isLoading}}" class="loading">
+    <text class="loading-text">加载中...</text>
+  </view>
 
-    <view wx:elif="{{verifications.length === 0}}" class="empty">
-      <text class="empty-text">暂无{{currentTabLabel}}记录</text>
+  <!-- 待认证用户列表 -->
+  <view wx:elif="{{selectedTab === 'unverified'}}" class="user-list">
+    <view wx:if="{{unverifiedUsers.length === 0}}" class="empty">
+      <text class="empty-text">暂无待认证用户</text>
     </view>
 
     <view wx:else>
       <view
-        wx:for="{{verifications}}"
+        wx:for="{{unverifiedUsers}}"
         wx:key="id"
-        class="verification-item"
-        data-item="{{item}}"
-        bindtap="viewDetail"
+        class="user-item"
       >
-        <!-- 头部信息 -->
-        <view class="item-header">
-          <view class="item-name">{{item.name}}</view>
-          <view class="item-status status-{{item.status}}">
-            {{getStatusText(item.status)}}
-          </view>
-        </view>
-
-        <!-- 详细信息 -->
-        <view class="item-info">
-          <view class="info-row">
-            <text class="info-label">身份证号：</text>
-            <text class="info-value">{{item.idCard}}</text>
-          </view>
-          <view class="info-row">
-            <text class="info-label">手机号：</text>
-            <text class="info-value">{{item.phone}}</text>
-          </view>
-          <view class="info-row">
-            <text class="info-label">所属标段：</text>
-            <text class="info-value">{{item.sectionName || '未选择'}}</text>
-          </view>
-          <view class="info-row">
-            <text class="info-label">申请时间：</text>
-            <text class="info-value">{{item.createdAt}}</text>
-          </view>
-          <view wx:if="{{item.reviewComment}}" class="info-row">
-            <text class="info-label">审核意见：</text>
-            <text class="info-value comment">{{item.reviewComment}}</text>
+        <!-- 用户信息 -->
+        <view class="user-info">
+          <image class="user-avatar" src="{{item.avatarUrl}}" mode="aspectFill"></image>
+          <view class="user-details">
+            <view class="user-name">{{item.nickName}}</view>
+            <view class="user-meta">
+              <text class="meta-item">注册时间：{{item.createdAt}}</text>
+            </view>
           </view>
         </view>
 
         <!-- 操作按钮 -->
-        <view wx:if="{{item.status === 'pending'}}" class="item-actions">
+        <view class="user-actions">
           <button
-            class="action-btn approve"
+            class="action-btn confirm"
             data-id="{{item.id}}"
-            catchtap="approveVerification"
+            bindtap="confirmVerification"
           >
-            通过
-          </button>
-          <button
-            class="action-btn reject"
-            data-id="{{item.id}}"
-            catchtap="rejectVerification"
-          >
-            拒绝
+            确认认证
           </button>
         </view>
       </view>
     </view>
   </view>
-</view>
 
+  <!-- 已认证用户列表 -->
+  <view wx:elif="{{selectedTab === 'verified'}}" class="user-list">
+    <view wx:if="{{verifiedUsers.length === 0}}" class="empty">
+      <text class="empty-text">暂无已认证用户</text>
+    </view>
+
+    <view wx:else>
+      <view
+        wx:for="{{verifiedUsers}}"
+        wx:key="id"
+        class="user-item verified"
+      >
+        <!-- 用户信息 -->
+        <view class="user-info">
+          <image class="user-avatar" src="{{item.avatarUrl}}" mode="aspectFill"></image>
+          <view class="user-details">
+            <view class="user-name-row">
+              <view class="user-name">{{item.nickName}}</view>
+              <view class="verified-badge">✓ 已认证</view>
+            </view>
+            <view class="real-name">真实姓名：{{item.realName}}</view>
+            <view class="user-meta">
+              <text class="meta-item">注册时间：{{item.createdAt}}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 自定义认证确认弹窗 -->
+  <view wx:if="{{showConfirmModal}}" class="modal-overlay" bindtap="closeConfirmModal">
+    <view class="modal-container" catchtap="stopPropagation">
+      <view class="modal-header">
+        <text class="modal-title">确认认证</text>
+      </view>
+
+      <view class="modal-content" catchtap="stopPropagation">
+        <!-- 用户昵称（只读展示） -->
+        <view class="modal-field">
+          <text class="field-label">用户昵称</text>
+          <view class="field-display">{{selectedUser.nickName}}</view>
+        </view>
+
+        <!-- 真实姓名（可编辑） -->
+        <view class="modal-field">
+          <text class="field-label required">真实姓名</text>
+          <input 
+            class="field-input" 
+            placeholder="请输入真实姓名（2-10个中文字符）" 
+            value="{{realNameInput}}"
+            bindinput="onRealNameInput"
+            catchtap="stopPropagation"
+            maxlength="10"
+          />
+        </view>
+      </view>
+
+      <view class="modal-footer">
+        <button class="modal-btn cancel" bindtap="closeConfirmModal">取消</button>
+        <button class="modal-btn confirm" bindtap="submitConfirmModal">确认</button>
+      </view>
+    </view>
+  </view>
+</view>

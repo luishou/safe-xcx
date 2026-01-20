@@ -91,8 +91,7 @@
         </button>
         <view wx:if="{{!isVerified}}" class="verification-tip">
             <text class="tip-icon">⚠️</text>
-            <text class="tip-text">提交举报需要先完成实名认证</text>
-            <text class="tip-link" bindtap="goToVerification">去认证</text>
+            <text class="tip-text">您尚未认证，请联系标段负责人后台认证</text>
         </view>
     </view>
 </view>

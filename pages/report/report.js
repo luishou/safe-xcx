@@ -34,7 +34,6 @@ Page({
   },
 
   goBack() { wx.navigateBack(); },
-  goToVerification() { wx.navigateTo({ url: '/pages/verification/verification' }); },
 
   selectHazardType(e) {
     this.setData({ hazardSelectedKey: e.currentTarget.dataset.key });
@@ -181,10 +180,9 @@ Page({
       wx.hideLoading();
       wx.showModal({
         title: '需要认证',
-        content: '提交举报需要先完成实名认证，是否前往认证页面？',
-        confirmText: '去认证',
-        cancelText: '取消',
-        success: (res) => { if (res.confirm) wx.navigateTo({ url: '/pages/verification/verification' }); }
+        content: '您尚未认证，请联系标段负责人在后台完成认证后再提交举报。',
+        showCancel: false,
+        confirmText: '知道了'
       });
       return;
     }
