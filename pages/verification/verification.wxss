@@ -8,7 +8,7 @@
 /* 页面头部 */
 .page-header {
   text-align: center;
-  margin-bottom: 60rpx;
+  margin-bottom: 40rpx;
 }
 
 .page-title {
@@ -25,118 +25,76 @@
   color: rgba(255, 255, 255, 0.8);
 }
 
-/* 表单区域 */
-.form-section {
+/* 标段选择器 */
+.section-picker {
   background: white;
-  border-radius: 24rpx;
-  padding: 48rpx 32rpx;
-  box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.1);
-}
-
-.form-item {
+  border-radius: 16rpx;
+  padding: 24rpx 32rpx;
   margin-bottom: 32rpx;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.1);
 }
 
-.form-label {
+.picker-label {
   display: block;
-  font-size: 28rpx;
-  color: #374151;
-  margin-bottom: 16rpx;
-  font-weight: 500;
-}
-
-.form-input {
-  width: 100%;
-  height: 88rpx;
-  background: #f9fafb;
-  border: 2rpx solid #e5e7eb;
-  border-radius: 12rpx;
-  padding: 0 24rpx;
-  font-size: 28rpx;
-  color: #111827;
-  box-sizing: border-box;
-}
-
-.form-input:focus {
-  border-color: #667eea;
-  background: white;
-}
-
-.picker {
-  width: 100%;
-  height: 88rpx;
-  background: #f9fafb;
-  border: 2rpx solid #e5e7eb;
-  border-radius: 12rpx;
-  padding: 0 24rpx;
-  font-size: 28rpx;
-  color: #111827;
-  display: flex;
-  align-items: center;
-  box-sizing: border-box;
-}
-
-/* 提交按钮 */
-.submit-btn {
-  width: 100%;
-  height: 96rpx;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border: none;
-  border-radius: 12rpx;
-  font-size: 32rpx;
-  font-weight: bold;
-  margin-top: 48rpx;
-  box-shadow: 0 8rpx 16rpx rgba(102, 126, 234, 0.3);
-}
-
-.submit-btn.disabled {
-  opacity: 0.6;
-}
-
-/* 温馨提示 */
-.tips {
-  margin-top: 48rpx;
-  padding: 24rpx;
-  background: #fef3c7;
-  border-radius: 12rpx;
-  border-left: 6rpx solid #f59e0b;
-}
-
-.tips-title {
-  display: block;
-  font-size: 28rpx;
-  font-weight: bold;
-  color: #92400e;
+  font-size: 24rpx;
+  color: #6b7280;
   margin-bottom: 12rpx;
 }
 
-.tips-text {
-  display: block;
+.picker-value {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 32rpx;
+  color: #111827;
+  font-weight: 500;
+}
+
+.picker-arrow {
   font-size: 24rpx;
-  color: #b45309;
-  line-height: 1.8;
-  margin-bottom: 8rpx;
+  color: #9ca3af;
+}
+
+/* 锁定状态的标段显示 */
+.picker-value.locked {
+  background: #f3f4f6;
+  padding: 16rpx 20rpx;
+  border-radius: 8rpx;
+  border: 2rpx solid #e5e7eb;
+}
+
+.lock-icon {
+  font-size: 28rpx;
+}
+
+/* 状态容器 */
+.status-container {
+  margin-bottom: 32rpx;
 }
 
 /* 状态区域 */
 .status-section {
   background: white;
   border-radius: 24rpx;
-  padding: 80rpx 48rpx;
+  padding: 60rpx 40rpx;
   text-align: center;
   box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.1);
 }
 
 .status-icon {
-  width: 160rpx;
-  height: 160rpx;
+  width: 140rpx;
+  height: 140rpx;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 80rpx;
-  margin: 0 auto 32rpx;
+  font-size: 64rpx;
+  margin: 0 auto 24rpx;
+}
+
+.status-icon.none {
+  background: #f3f4f6;
+  color: #9ca3af;
 }
 
 .status-icon.pending {
@@ -156,17 +114,17 @@
 
 .status-title {
   display: block;
-  font-size: 40rpx;
+  font-size: 36rpx;
   font-weight: bold;
   color: #111827;
-  margin-bottom: 16rpx;
+  margin-bottom: 12rpx;
 }
 
 .status-desc {
   display: block;
   font-size: 28rpx;
   color: #6b7280;
-  margin-bottom: 24rpx;
+  margin-bottom: 16rpx;
   line-height: 1.6;
 }
 
@@ -174,13 +132,102 @@
   display: block;
   font-size: 24rpx;
   color: #9ca3af;
+  margin-top: 16rpx;
+}
+
+/* 表单项 */
+.form-item {
   margin-top: 24rpx;
+  text-align: left;
+}
+
+.form-label {
+  display: block;
+  font-size: 26rpx;
+  color: #374151;
+  margin-bottom: 12rpx;
+  font-weight: 500;
+}
+
+.form-label.required::after {
+  content: ' *';
+  color: #ef4444;
+}
+
+.form-input {
+  width: 100%;
+  height: 88rpx;
+  background: #f9fafb;
+  border: 2rpx solid #e5e7eb;
+  border-radius: 12rpx;
+  padding: 0 24rpx;
+  font-size: 28rpx;
+  color: #111827;
+  box-sizing: border-box;
+}
+
+.form-input:focus {
+  border-color: #667eea;
+  background: white;
+}
+
+/* 待审核信息 */
+.pending-info {
+  margin-top: 24rpx;
+  padding: 20rpx;
+  background: #f9fafb;
+  border-radius: 12rpx;
+  text-align: left;
+}
+
+/* 提交按钮 */
+.submit-btn {
+  width: 100%;
+  height: 88rpx;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 12rpx;
+  font-size: 32rpx;
+  font-weight: bold;
+  margin-top: 32rpx;
+  box-shadow: 0 8rpx 16rpx rgba(102, 126, 234, 0.3);
+}
+
+.submit-btn.disabled {
+  opacity: 0.6;
+}
+
+/* 温馨提示 */
+.tips {
+  margin-top: 32rpx;
+  padding: 24rpx;
+  background: #fef3c7;
+  border-radius: 12rpx;
+  border-left: 6rpx solid #f59e0b;
+  text-align: left;
+}
+
+.tips-title {
+  display: block;
+  font-size: 26rpx;
+  font-weight: bold;
+  color: #92400e;
+  margin-bottom: 12rpx;
+}
+
+.tips-text {
+  display: block;
+  font-size: 24rpx;
+  color: #b45309;
+  line-height: 1.8;
+  margin-bottom: 6rpx;
 }
 
 /* 认证信息 */
 .verified-info {
-  margin-top: 48rpx;
-  padding: 32rpx;
+  margin-top: 32rpx;
+  padding: 24rpx;
   background: #f9fafb;
   border-radius: 12rpx;
   text-align: left;
@@ -188,7 +235,7 @@
 
 .info-row {
   display: flex;
-  margin-bottom: 16rpx;
+  margin-bottom: 12rpx;
 }
 
 .info-row:last-child {
@@ -197,20 +244,20 @@
 
 .info-label {
   width: 160rpx;
-  font-size: 28rpx;
+  font-size: 26rpx;
   color: #6b7280;
 }
 
 .info-value {
   flex: 1;
-  font-size: 28rpx;
+  font-size: 26rpx;
   color: #111827;
 }
 
 /* 拒绝原因 */
 .reject-reason {
-  margin-top: 32rpx;
-  padding: 24rpx;
+  margin-top: 24rpx;
+  padding: 20rpx;
   background: #fee2e2;
   border-radius: 12rpx;
   text-align: left;
@@ -218,15 +265,15 @@
 
 .reason-title {
   display: block;
-  font-size: 28rpx;
+  font-size: 26rpx;
   font-weight: bold;
   color: #dc2626;
-  margin-bottom: 12rpx;
+  margin-bottom: 8rpx;
 }
 
 .reason-text {
   display: block;
-  font-size: 26rpx;
+  font-size: 24rpx;
   color: #991b1b;
   line-height: 1.6;
 }
@@ -234,14 +281,92 @@
 /* 重新申请按钮 */
 .reapply-btn {
   width: 100%;
-  height: 96rpx;
+  height: 88rpx;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   border: none;
   border-radius: 12rpx;
   font-size: 32rpx;
   font-weight: bold;
-  margin-top: 48rpx;
+  margin-top: 32rpx;
+}
+
+/* 认证概览 */
+.overview-section {
+  background: white;
+  border-radius: 16rpx;
+  padding: 24rpx;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.1);
+}
+
+.overview-title {
+  display: block;
+  font-size: 28rpx;
+  font-weight: bold;
+  color: #374151;
+  margin-bottom: 16rpx;
+}
+
+.overview-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16rpx;
+}
+
+.overview-item {
+  flex: 1;
+  min-width: 200rpx;
+  padding: 16rpx 20rpx;
+  background: #f9fafb;
+  border-radius: 12rpx;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border: 2rpx solid #e5e7eb;
+}
+
+.overview-item.approved {
+  background: #ecfdf5;
+  border-color: #10b981;
+}
+
+.overview-item.pending {
+  background: #fffbeb;
+  border-color: #f59e0b;
+}
+
+.overview-item.rejected {
+  background: #fef2f2;
+  border-color: #ef4444;
+}
+
+.overview-name {
+  font-size: 26rpx;
+  color: #374151;
+  font-weight: 500;
+}
+
+.overview-status {
+  font-size: 22rpx;
+  padding: 4rpx 12rpx;
+  border-radius: 8rpx;
+  background: #e5e7eb;
+  color: #6b7280;
+}
+
+.overview-item.approved .overview-status {
+  background: #d1fae5;
+  color: #059669;
+}
+
+.overview-item.pending .overview-status {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.overview-item.rejected .overview-status {
+  background: #fee2e2;
+  color: #dc2626;
 }
 
 /* 加载状态 */

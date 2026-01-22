@@ -375,3 +375,16 @@
   color: #667eea;
   font-weight: 500;
 }
+
+/* 可点击的提示文字 */
+.tip-text.clickable {
+  color: #667eea;
+  font-weight: 500;
+  text-decoration: underline;
+}
+
+/* 审核中状态 */
+.tip-text.pending {
+  color: #92400e;
+  font-style: italic;
+}

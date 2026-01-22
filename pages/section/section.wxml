@@ -21,16 +21,22 @@
             <text class="font-bold text-lg">安全知识</text>
         </view>
 
-        <!-- 个人中心 -->
+        <!-- 任务管理 -->
         <view class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl p-6 text-white transition-all duration-300 hover:shadow-xl hover:scale-105 flex flex-col items-center justify-center" bindtap="handlePersonalCenter">
             <text class="text-4xl mb-3">👤</text>
-            <text class="font-bold text-lg">个人中心</text>
+            <text class="font-bold text-lg">任务管理</text>
         </view>
 
-        <!-- 监管中心（管理员和监理可见） -->
-        <view wx:if="{{isAdmin || isSupervisor}}" class="bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl p-6 text-white transition-all duration-300 hover:shadow-xl hover:scale-105 flex flex-col items-center justify-center" bindtap="goToAdmin">
+        <!-- 数据中心（安全环保部/监理/标段管理员可见） -->
+        <view wx:if="{{hasDataCenterAccess}}" class="bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl p-6 text-white transition-all duration-300 hover:shadow-xl hover:scale-105 flex flex-col items-center justify-center" bindtap="goToAdmin">
             <text class="text-4xl mb-3">🛡️</text>
-            <text class="font-bold text-lg">监管中心</text>
+            <text class="font-bold text-lg">数据中心</text>
+        </view>
+
+        <!-- 认证管理（仅标段管理员可见） -->
+        <view wx:if="{{isSectionAdmin}}" class="bg-gradient-to-br from-teal-500 to-teal-600 rounded-2xl p-6 text-white transition-all duration-300 hover:shadow-xl hover:scale-105 flex flex-col items-center justify-center" bindtap="goToVerificationAdmin">
+            <text class="text-4xl mb-3">✅</text>
+            <text class="font-bold text-lg">认证管理</text>
         </view>
 
         <!-- 举报公示（所有用户可见） -->

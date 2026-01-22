@@ -6,7 +6,9 @@ Page({
         section: '',
         sectionInfo: null,
         isAdmin: false,
-        isSupervisor: false
+        isSupervisor: false,
+        isSectionAdmin: false,  // 标段管理员（可管理认证）
+        hasDataCenterAccess: false  // 数据中心访问权限（安全环保部/监理/标段管理员）
     },
 
     onLoad: function (options) {
@@ -60,42 +62,51 @@ Page({
                         department: userInfo.department || '未设置部门',
                         avatar: userInfo.avatarUrl || userInfo.avatar || '👷',
                         avatarUrl: userInfo.avatarUrl || userInfo.avatar || '👷',
-                        managed_sections: userInfo.managed_sections,
-                        is_supervisor: userInfo.is_supervisor
+                        sectionRoles: userInfo.sectionRoles || [],
+                        managedSections: userInfo.managedSections || []
                     };
-                    this.checkManagementAccess(currentSection, userInfo.managed_sections, userInfo.is_supervisor);
+                    this.checkManagementAccess(currentSection, userInfo.sectionRoles, userInfo.managedSections);
                 } else {
-                    this.setData({ isAdmin: false, hasManagementAccess: false });
+                    this.setData({ isAdmin: false, isSectionAdmin: false, hasManagementAccess: false, hasDataCenterAccess: false });
                 }
             },
             fail: () => {
-                this.setData({ isAdmin: false, hasManagementAccess: false });
+                this.setData({ isAdmin: false, isSectionAdmin: false, hasManagementAccess: false, hasDataCenterAccess: false });
             }
         });
     },
 
-    checkManagementAccess: function (currentSection, managedSections, isSupervisor) {
-        let hasManagementAccess = false;
+    checkManagementAccess: function (currentSection, sectionRoles, managedSections) {
         const currentSectionCode = (currentSection || '').trim();
+        
+        // 使用新的权限系统：检查用户在当前标段的角色
+        const roles = sectionRoles || [];
+        const currentSectionRoles = currentSectionCode 
+            ? roles.filter(r => r.sectionCode === currentSectionCode)
+            : roles;
+        
+        // 检查是否有标段管理员角色
+        const hasSectionAdmin = currentSectionRoles.some(r => r.roleType === 'section_admin');
+        // 检查是否有监理角色
+        const hasSupervisor = currentSectionRoles.some(r => r.roleType === 'supervisor');
+        // 检查是否有安全环保部角色
+        const hasSafetyAdmin = currentSectionRoles.some(r => r.roleType === 'safety_admin');
+        
+        // 检查管理标段列表
+        const managedSectionCodes = Array.isArray(managedSections) ? managedSections : [];
+        const hasManagementAccess = currentSectionCode 
+            ? managedSectionCodes.includes(currentSectionCode) || hasSectionAdmin
+            : managedSectionCodes.length > 0 || hasSectionAdmin;
 
-        if (managedSections && currentSection) {
-            try {
-                let parsedSections = Array.isArray(managedSections)
-                    ? managedSections
-                    : JSON.parse(managedSections || '[]');
-                parsedSections = (parsedSections || [])
-                    .filter(v => typeof v === 'string')
-                    .map(v => v.trim());
-                hasManagementAccess = currentSectionCode ? parsedSections.includes(currentSectionCode) : false;
-            } catch {
-                hasManagementAccess = false;
-            }
-        }
+        // 数据中心访问权限：安全环保部/监理/标段管理员
+        const hasDataCenterAccess = hasSafetyAdmin || hasSupervisor || hasSectionAdmin;
 
         this.setData({
             isAdmin: hasManagementAccess,
-            isSupervisor: isSupervisor === 1,
-            hasManagementAccess: hasManagementAccess
+            isSupervisor: hasSupervisor,
+            isSectionAdmin: hasSectionAdmin,
+            hasManagementAccess: hasManagementAccess,
+            hasDataCenterAccess: hasDataCenterAccess
         });
     },
 
@@ -160,6 +171,24 @@ Page({
         }
 
         wx.navigateTo({ url: `/pages/admin/admin?isAdmin=true` });
+    },
+
+    goToVerificationAdmin: function () {
+        if (!app.globalData.currentUser) {
+            wx.showToast({ title: '请先授权登录', icon: 'none', duration: 2000 });
+            return;
+        }
+
+        if (this.data.sectionInfo) {
+            app.globalData.currentSection = this.data.sectionInfo;
+        } else {
+            app.globalData.currentSection = {
+                section_code: this.data.section,
+                section_name: `第${this.data.section}标段`
+            };
+        }
+
+        wx.navigateTo({ url: '/pages/verification-admin/verification-admin' });
     },
 
     goToReportPublic: function () {

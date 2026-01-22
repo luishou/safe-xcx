@@ -24,7 +24,7 @@ Page({
 
     onLoad: function (options) {
         this.updateUserInfo();
-        wx.setNavigationBarTitle({ title: '个人中心' });
+        wx.setNavigationBarTitle({ title: '任务管理' });
         this.loadData();
     },
 
@@ -58,8 +58,13 @@ Page({
             phone: currentUser?.phone || '138****1234'
         };
 
-        const isSupervisor = currentUser?.is_supervisor === 1;
-        const isManager = (currentUser?.managed_sections?.length > 0) || currentUser?.role === 'admin' || currentUser?.role === 'manager';
+        // 使用新的权限系统判断角色
+        const sectionRoles = currentUser?.sectionRoles || [];
+        const isSupervisor = sectionRoles.some(r => r.roleType === 'supervisor');
+        const managedSections = currentUser?.managedSections || [];
+        const isManager = managedSections.length > 0 || 
+                         sectionRoles.some(r => r.roleType === 'section_admin') ||
+                         currentUser?.role === 'admin' || currentUser?.role === 'manager';
 
         this.setData({
             currentUser: mergedUser,
@@ -81,8 +86,10 @@ Page({
                         phone: updatedCurrentUser?.phone || '138****1234'
                     },
                     currentSection: updatedSection || { section_code: 'TJ01' },
-                    isSupervisor: updatedCurrentUser?.is_supervisor === 1,
-                    isManager: (updatedCurrentUser?.managed_sections?.length > 0) || updatedCurrentUser?.role === 'admin' || updatedCurrentUser?.role === 'manager'
+                    isSupervisor: (updatedCurrentUser?.sectionRoles || []).some(r => r.roleType === 'supervisor'),
+                    isManager: (updatedCurrentUser?.managedSections || []).length > 0 || 
+                              (updatedCurrentUser?.sectionRoles || []).some(r => r.roleType === 'section_admin') ||
+                              updatedCurrentUser?.role === 'admin' || updatedCurrentUser?.role === 'manager'
                 });
             }, 1000);
         }

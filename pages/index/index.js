@@ -48,11 +48,10 @@ Page({
             department: user.department || '未设置部门',
             avatar: user.avatarUrl || user.avatar || '👷',
             avatarUrl: user.avatarUrl || user.avatar || '👷',
-            managed_sections: user.managed_sections,
-            is_verified: user.is_verified,
-            is_supervisor: user.is_supervisor,  // 保留监理标识
-            is_admin: user.is_admin,            // 保留管理员标识
-            role: user.role                     // 保留角色信息
+            sectionRoles: user.sectionRoles || [],
+            managedSections: user.managedSections || [],
+            verifications: user.verifications || [],
+            role: user.role
         };
     },
 
@@ -132,16 +131,20 @@ Page({
         // 可在此处上传到服务器记录授权日志
     },
 
-    // 解析 managed_sections
-    _parseManagedSections: function (managedSections) {
-        try {
-            const parsed = Array.isArray(managedSections)
-                ? managedSections
-                : JSON.parse(managedSections || '[]');
-            return (parsed || []).filter(v => typeof v === 'string').map(v => v.trim());
-        } catch {
-            return [];
+    // 获取用户管理的标段列表（使用新的权限系统）
+    _getManagedSections: function (user) {
+        if (!user) return [];
+        // 优先使用新的 managedSections
+        if (user.managedSections && Array.isArray(user.managedSections)) {
+            return user.managedSections;
         }
+        // 从 sectionRoles 中提取 section_admin 角色的标段
+        if (user.sectionRoles && Array.isArray(user.sectionRoles)) {
+            return user.sectionRoles
+                .filter(r => r.roleType === 'section_admin')
+                .map(r => r.sectionCode);
+        }
+        return [];
     },
 
     // 检查授权后选择标段
@@ -169,9 +172,9 @@ Page({
                     const user = res.data.data.user || {};
                     app.globalData.currentUser = this._formatUserInfo(user);
 
-                    const parsed = this._parseManagedSections(user.managed_sections);
+                    const managedSections = this._getManagedSections(user);
                     const currentCode = sectionInfo?.section_code || section;
-                    const hasAccess = currentCode ? parsed.includes(currentCode) : false;
+                    const hasAccess = currentCode ? managedSections.includes(currentCode) : false;
 
                     if (!hasAccess) {
                         wx.showToast({ title: '非该标段管理员，管理功能隐藏', icon: 'none', duration: 2000 });
@@ -325,7 +328,7 @@ Page({
         });
     },
 
-    // 点击认证状态 - 显示提示
+    // 点击认证状态 - 跳转到认证页面
     goToVerification: function () {
         const app = getApp();
         const currentUser = app.globalData.currentUser;
@@ -340,12 +343,9 @@ Page({
                 confirmText: '确定'
             });
         } else {
-            // 未认证，显示提示信息
-            wx.showModal({
-                title: '未认证',
-                content: '您尚未认证，请联系标段负责人后台认证',
-                showCancel: false,
-                confirmText: '知道了'
+            // 未认证，跳转到认证页面
+            wx.navigateTo({
+                url: '/pages/verification/verification'
             });
         }
     },

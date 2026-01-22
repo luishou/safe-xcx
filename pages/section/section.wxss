@@ -63,6 +63,14 @@
     background: linear-gradient(135deg, #f97316, #ea580c);
 }
 
+.from-teal-500 {
+    background: linear-gradient(135deg, #14b8a6, #0d9488);
+}
+
+.to-teal-600 {
+    background: linear-gradient(135deg, #14b8a6, #0d9488);
+}
+
 /* 其他样式继承自首页 */
 .text-center {
     text-align: center;

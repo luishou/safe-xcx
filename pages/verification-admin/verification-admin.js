@@ -57,7 +57,7 @@ Page({
           const users = res.data.data.users || []
           const formattedUsers = users.map(u => ({
             ...u,
-            createdAt: formatBeijing(u.createdAt)
+            submittedAt: formatBeijing(u.submittedAt)
           }))
           this.setData({ unverifiedUsers: formattedUsers })
         } else {
@@ -81,7 +81,7 @@ Page({
           const users = res.data.data.users || []
           const formattedUsers = users.map(u => ({
             ...u,
-            createdAt: formatBeijing(u.createdAt)
+            reviewedAt: formatBeijing(u.reviewedAt)
           }))
           this.setData({ verifiedUsers: formattedUsers })
         } else {
@@ -94,19 +94,20 @@ Page({
   },
 
   confirmVerification(e) {
-    const userId = e.currentTarget.dataset.id
-    const user = this.data.unverifiedUsers.find(u => u.id === userId)
+    const { verificationId, userId, nickName, realName, sectionCode, sectionName } = e.currentTarget.dataset
 
-    if (!user) {
-      wx.showToast({ title: '用户不存在', icon: 'none' })
-      return
-    }
-
-    // 显示自定义弹窗
+    // 显示自定义弹窗，预填充用户提交的姓名
     this.setData({
       showConfirmModal: true,
-      selectedUser: user,
-      realNameInput: ''
+      selectedUser: {
+        verificationId,
+        userId,
+        nickName,
+        submittedRealName: realName,  // 用户提交的原始姓名
+        sectionCode,
+        sectionName
+      },
+      realNameInput: realName || ''  // 预填充用户提交的姓名，管理员可以修改
     })
   },
 
@@ -141,13 +142,22 @@ Page({
       return
     }
 
-    const userId = this.data.selectedUser.id
+    const { verificationId, userId, sectionCode } = this.data.selectedUser
     this.closeConfirmModal()
-    this.submitConfirmation(userId, realName)
+    this.submitConfirmation(verificationId, userId, realName, sectionCode)
   },
 
-  submitConfirmation(userId, realName) {
+  submitConfirmation(verificationId, userId, realName, sectionCode) {
     wx.showLoading({ title: '处理中...' })
+
+    // 使用新的 verificationId 参数，同时保持向后兼容
+    const requestData = { realName }
+    if (verificationId) {
+      requestData.verificationId = verificationId
+    } else {
+      requestData.userId = userId
+      requestData.sectionCode = sectionCode
+    }
 
     wx.request({
       url: `${app.globalData.baseUrl}/verifications/confirm`,
@@ -156,7 +166,7 @@ Page({
         'Authorization': `Bearer ${wx.getStorageSync('token')}`,
         'Content-Type': 'application/json'
       },
-      data: { userId, realName },
+      data: requestData,
       success: (res) => {
         if (res.statusCode === 200 && res.data.success) {
           wx.showToast({ title: '认证成功', icon: 'success' })

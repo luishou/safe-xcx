@@ -39,6 +39,14 @@ Page({
     const app = getApp();
     const currentUser = app.globalData.currentUser;
 
+    // 获取当前标段代码（从报告详情中获取或使用默认值）
+    const currentSectionCode = app.globalData.currentSection?.section_code;
+    
+    // 检查用户在当前标段的角色
+    const sectionRoles = currentUser?.sectionRoles || [];
+    const isSupervisor = sectionRoles.some(r => r.roleType === 'supervisor' && (!currentSectionCode || r.sectionCode === currentSectionCode));
+    const isAdmin = sectionRoles.some(r => r.roleType === 'section_admin' && (!currentSectionCode || r.sectionCode === currentSectionCode));
+
     // 如果是从待办进入，直接启用操作权限
     if (fromTodo) {
       this.setData({
@@ -46,8 +54,8 @@ Page({
         canOperate: true,
         hasManagementAccess: true,
         userRole: currentUser?.role || 'employee',
-        isSupervisor: currentUser?.is_supervisor === 1,
-        isAdmin: currentUser?.is_admin === 1,
+        isSupervisor: isSupervisor,
+        isAdmin: isAdmin,
         displayUserId: currentUser ? currentUser.id || 'authorized_user' : 'default_user'
       });
       this.loadReportDetail();
@@ -65,8 +73,8 @@ Page({
       canOperate,
       hasManagementAccess,
       userRole: currentUser?.role || 'employee',
-      isSupervisor: currentUser?.is_supervisor === 1,
-      isAdmin: currentUser?.is_admin === 1,
+      isSupervisor: isSupervisor,
+      isAdmin: isAdmin,
       displayUserId: currentUser ? currentUser.id || 'authorized_user' : 'default_user'
     });
 
@@ -75,9 +83,11 @@ Page({
 
   checkManagementAccess(user) {
     if (!user) return false;
-    if (user.managed_sections?.length > 0) return true;
+    // 使用新的权限系统：检查是否有管理标段
+    if (user.managedSections && user.managedSections.length > 0) return true;
+    // 检查标段角色
+    if (user.sectionRoles && user.sectionRoles.some(r => r.roleType === 'section_admin')) return true;
     if (user.role === 'admin' || user.role === 'manager') return true;
-    if (user.is_supervisor === 1) return true;
     return false;
   },
 

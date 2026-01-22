@@ -53,7 +53,10 @@ Page({
 
   checkManagementAccess(user) {
     if (!user) return false;
-    if (user.managed_sections?.length > 0) return true;
+    // 使用新的权限系统：检查是否有管理标段
+    if (user.managedSections && user.managedSections.length > 0) return true;
+    // 检查标段角色
+    if (user.sectionRoles && user.sectionRoles.some(r => r.roleType === 'section_admin')) return true;
     if (user.role === 'admin' || user.role === 'manager') return true;
     return false;
   },

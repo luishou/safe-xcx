@@ -44,7 +44,7 @@ Page({
     const currentUser = app.globalData.currentUser;
     this.setData({
       currentUser: currentUser || {
-        name: '监管中心',
+        name: '数据中心',
         department: '监管部门',
         avatar: '/images/manager-avatar.png',
         phone: '137****9012'
@@ -114,9 +114,13 @@ Page({
       }));
     };
 
+    // 状态映射关系：
+    // 待处理：submitted
+    // 处理中：confirmed, supervisor_confirmed, photo_uploaded
+    // 已办结：completed
     const tabStatuses = {
       pending: ['submitted'],
-      processing: ['processing'],
+      processing: ['confirmed', 'supervisor_confirmed', 'photo_uploaded'],
       completed: ['completed']
     };
 

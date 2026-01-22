@@ -1114,9 +1114,15 @@ class ReportController {
         statusCountsRaw[row.status] = row.count;
       });
 
+      // 状态映射关系：
+      // 待处理：submitted
+      // 处理中：confirmed, supervisor_confirmed, photo_uploaded
+      // 已办结：completed
       const statusCounts = {
         submitted: statusCountsRaw.submitted || 0,
-        processing: statusCountsRaw.processing || 0,
+        processing: (statusCountsRaw.confirmed || 0) + 
+                    (statusCountsRaw.supervisor_confirmed || 0) + 
+                    (statusCountsRaw.photo_uploaded || 0),
         completed: statusCountsRaw.completed || 0
       };
 
@@ -1216,7 +1222,7 @@ class ReportController {
         VALUES (?, ?, ?, ?, ?)
       `, [id, req.user.userId, '安全部确认', `处理意见：${processing_opinion}，奖金：${reward_amount}元`, new Date()]);
 
-      res.json({ success: true, message: '已确认处理，等待监理确认' });
+      res.json({ success: true, message: '已确认处理' });
     } catch (error) {
       console.error('安全部确认处理失败:', error);
       res.status(500).json({ success: false, message: '操作失败', error: error.message });
@@ -1233,20 +1239,27 @@ class ReportController {
         return res.status(401).json({ success: false, message: '请先登录' });
       }
 
-      // 检查是否为监理用户
-      const [userRows] = await pool.execute('SELECT is_supervisor FROM users WHERE id = ?', [req.user.userId]);
-      if (userRows.length === 0 || userRows[0].is_supervisor !== 1) {
-        return res.status(403).json({ success: false, message: '仅监理可操作' });
-      }
-
-      // 检查举报是否存在且状态为confirmed
-      const [reportRows] = await pool.execute('SELECT id, status FROM reports WHERE id = ?', [id]);
+      // 先查询举报所属标段和状态
+      const [reportRows] = await pool.execute('SELECT id, section, status FROM reports WHERE id = ?', [id]);
       if (reportRows.length === 0) {
         return res.status(404).json({ success: false, message: '举报记录不存在' });
       }
-      if (reportRows[0].status !== 'confirmed') {
+
+      const report = reportRows[0];
+      if (report.status !== 'confirmed') {
         return res.status(400).json({ success: false, message: '当前状态不允许此操作' });
       }
+
+      // 检查用户在该标段是否有监理角色
+      const [roleRows] = await pool.execute(`
+        SELECT 1 FROM user_section_roles
+        WHERE user_id = ? AND section_code = ? AND role_type = 'supervisor'
+      `, [req.user.userId, report.section]);
+
+      if (roleRows.length === 0) {
+        return res.status(403).json({ success: false, message: '仅监理可操作' });
+      }
+
 
       // 驳回逻辑：回退到submitted状态，保留之前的处理信息供参考
       if (isRejected) {
@@ -1400,7 +1413,7 @@ class ReportController {
     }
   }
 
-  // 删除举报（仅Admin可操作）
+  // 删除举报（仅标段管理员/安全部可操作）
   async deleteReport(req, res) {
     try {
       const { id } = req.params;
@@ -1409,11 +1422,25 @@ class ReportController {
         return res.status(401).json({ success: false, message: '请先登录' });
       }
 
-      // 检查是否为Admin用户
-      const [userRows] = await pool.execute('SELECT is_admin FROM users WHERE id = ?', [req.user.userId]);
-      if (userRows.length === 0 || userRows[0].is_admin !== 1) {
+      // 先查询举报所属标段
+      const [reportRows] = await pool.execute('SELECT section FROM reports WHERE id = ?', [id]);
+      if (reportRows.length === 0) {
+        return res.status(404).json({ success: false, message: '举报记录不存在' });
+      }
+
+      const sectionCode = reportRows[0].section;
+
+      // 检查用户在该标段是否有管理员角色（section_admin 或 safety_admin）
+      const [roleRows] = await pool.execute(`
+        SELECT 1 FROM user_section_roles
+        WHERE user_id = ? AND section_code = ? 
+        AND role_type IN ('section_admin', 'safety_admin')
+      `, [req.user.userId, sectionCode]);
+
+      if (roleRows.length === 0) {
         return res.status(403).json({ success: false, message: '仅管理员可删除举报' });
       }
+
 
       // 开始事务，同时删除历史记录
       const connection = await pool.getConnection();
@@ -1445,7 +1472,7 @@ class ReportController {
     }
   }
 
-  // 获取待办列表
+  // 获取待办列表（使用新的角色系统）
   async getTodoReports(req, res) {
     try {
       const { page = 1, limit = 20, section } = req.query;
@@ -1457,36 +1484,15 @@ class ReportController {
         return res.status(401).json({ success: false, message: '请先登录' });
       }
 
-      // 获取用户信息
-      const [userRows] = await pool.execute(
-        'SELECT is_supervisor, is_admin, managed_sections FROM users WHERE id = ?',
-        [req.user.userId]
-      );
+      // 从新的 user_section_roles 表获取用户的所有角色
+      const [roleRows] = await pool.execute(`
+        SELECT DISTINCT section_code, role_type
+        FROM user_section_roles
+        WHERE user_id = ?
+      `, [req.user.userId]);
 
-      if (userRows.length === 0) {
-        return res.status(404).json({ success: false, message: '用户不存在' });
-      }
-
-      const user = userRows[0];
-      const isSupervisor = user.is_supervisor === 1;
-      const isAdmin = user.is_admin === 1;
-      const managedSections = JSON.parse(user.managed_sections || '[]');
-
-      // 收集待办状态
-      const todoStatuses = [];
-
-      // 监理待办：待监理确认
-      if (isSupervisor) {
-        todoStatuses.push('confirmed');
-      }
-
-      // 安全管理/本标段管理员待办：待确认处理、待整改图片、待发放奖金
-      // 这里如果用户是超级管理员或是设置了管理标段的用户
-      if (isAdmin || managedSections.length > 0) {
-        todoStatuses.push('submitted', 'supervisor_confirmed', 'photo_uploaded');
-      }
-
-      if (todoStatuses.length === 0) {
+      if (roleRows.length === 0) {
+        // 用户没有任何角色，返回空列表
         return res.json({
           success: true,
           data: {
@@ -1496,18 +1502,60 @@ class ReportController {
         });
       }
 
-      let whereClause = `WHERE status IN (${todoStatuses.map(() => '?').join(',')})`;
-      const params = [...todoStatuses];
+      // 按角色类型分类标段
+      const supervisorSections = [];     // 监理角色的标段
+      const adminSections = [];          // 安全部/标段管理员角色的标段
 
-      // 如果指定了标段
+      roleRows.forEach(role => {
+        if (role.role_type === 'supervisor') {
+          supervisorSections.push(role.section_code);
+        }
+        if (role.role_type === 'safety_admin' || role.role_type === 'section_admin') {
+          adminSections.push(role.section_code);
+        }
+      });
+
+      // 构建查询条件
+      let whereConditions = [];
+      const params = [];
+
+      // 监理待办：待监理确认 (confirmed状态)
+      // 只有拥有 supervisor 角色的用户才能看到
+      if (supervisorSections.length > 0) {
+        const supervisorPlaceholders = supervisorSections.map(() => '?').join(',');
+        whereConditions.push(`(status = 'confirmed' AND section IN (${supervisorPlaceholders}))`);
+        params.push(...supervisorSections);
+      }
+
+      // 安全部/标段管理员待办：
+      // - submitted: 待安全部确认
+      // - supervisor_confirmed: 待上传整改图片
+      // - photo_uploaded: 待发放奖金
+      if (adminSections.length > 0) {
+        const adminStatuses = ['submitted', 'supervisor_confirmed', 'photo_uploaded'];
+        const statusPlaceholders = adminStatuses.map(() => '?').join(',');
+        const sectionPlaceholders = adminSections.map(() => '?').join(',');
+
+        whereConditions.push(`(status IN (${statusPlaceholders}) AND section IN (${sectionPlaceholders}))`);
+        params.push(...adminStatuses, ...adminSections);
+      }
+
+      if (whereConditions.length === 0) {
+        return res.json({
+          success: true,
+          data: {
+            reports: [],
+            pagination: { total: 0, page: pageNum, limit: limitNum, totalPages: 0 }
+          }
+        });
+      }
+
+      let whereClause = `WHERE (${whereConditions.join(' OR ')})`;
+
+      // 如果指定了标段，再加上标段过滤
       if (section) {
         whereClause += ' AND section = ?';
         params.push(section);
-      } else if (!isAdmin && managedSections.length > 0) {
-        // 如果不是超级管理员但有管理权限的标段，只看自己管辖的标段
-        const placeholders = managedSections.map(() => '?').join(',');
-        whereClause += ` AND section IN (${placeholders})`;
-        params.push(...managedSections);
       }
 
       const sql = `

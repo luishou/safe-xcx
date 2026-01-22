@@ -19,6 +19,7 @@ Page({
     contact: '',
     anonymous: false,
     isVerified: false,
+    verificationStatus: 'none', // none, pending, approved, rejected
     canSubmit: false
   },
 
@@ -30,6 +31,41 @@ Page({
       currentUser,
       currentSection: app.globalData.currentSection,
       isVerified
+    });
+    // 获取当前标段的认证状态
+    this.loadVerificationStatus();
+  },
+
+  onShow() {
+    // 页面显示时刷新认证状态
+    this.loadVerificationStatus();
+  },
+
+  loadVerificationStatus() {
+    const app = getApp();
+    if (!app.globalData.token) return;
+
+    wx.request({
+      url: app.globalData.baseUrl + '/verifications/my',
+      method: 'GET',
+      header: { 'Authorization': 'Bearer ' + app.globalData.token },
+      success: (res) => {
+        if (res.data.success) {
+          const verifications = res.data.data.verifications || [];
+          const currentSection = this.data.currentSection;
+          const sectionCode = currentSection?.section_code;
+
+          // 查找当前标段的认证状态
+          const verification = verifications.find(v => v.sectionCode === sectionCode);
+          const status = verification ? verification.status : 'none';
+          const isVerified = status === 'approved';
+
+          this.setData({
+            verificationStatus: status,
+            isVerified
+          });
+        }
+      }
     });
   },
 
@@ -154,6 +190,15 @@ Page({
   onContactInput(e) { this.setData({ contact: e.detail.value }); },
   toggleAnonymous() { this.setData({ anonymous: !this.data.anonymous }); },
 
+  // 跳转到认证页面
+  goToVerification() {
+    const currentSection = this.data.currentSection;
+    const sectionCode = currentSection?.section_code || '';
+    wx.navigateTo({
+      url: '/pages/verification/verification?sectionCode=' + sectionCode
+    });
+  },
+
   checkCanSubmit() {
     const { hazardSelectedKey, location, description, urgency } = this.data;
     const canSubmit = !!hazardSelectedKey && location.trim() !== '' && description.trim() !== '' && urgency !== '';
@@ -175,15 +220,29 @@ Page({
       return;
     }
 
-    const userVerified = app.globalData.currentUser?.is_verified === 1 || app.globalData.currentUser?.is_verified === true;
-    if (!userVerified) {
+    if (!this.data.isVerified) {
       wx.hideLoading();
-      wx.showModal({
-        title: '需要认证',
-        content: '您尚未认证，请联系标段负责人在后台完成认证后再提交举报。',
-        showCancel: false,
-        confirmText: '知道了'
-      });
+      const status = this.data.verificationStatus;
+      if (status === 'pending') {
+        wx.showModal({
+          title: '认证审核中',
+          content: '您的认证申请正在审核中，请等待管理员审核通过后再提交举报。',
+          showCancel: false,
+          confirmText: '知道了'
+        });
+      } else {
+        wx.showModal({
+          title: '需要认证',
+          content: '您在当前标段尚未认证，是否前往提交认证申请？',
+          cancelText: '取消',
+          confirmText: '去认证',
+          success: (res) => {
+            if (res.confirm) {
+              this.goToVerification();
+            }
+          }
+        });
+      }
       return;
     }
 

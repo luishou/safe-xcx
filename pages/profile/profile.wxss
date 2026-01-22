@@ -1,4 +1,4 @@
-/* 个人中心页面 */
+/* 任务管理页面 */
 .profile-page {
     min-height: 100vh;
     background: #f8f9fa;

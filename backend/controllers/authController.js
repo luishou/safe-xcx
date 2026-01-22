@@ -1,6 +1,6 @@
 const axios = require('axios');
 const jwt = require('jsonwebtoken');
-const { User } = require('../models/database');
+const { User, UserVerification, UserSectionRole } = require('../models/database');
 
 class AuthController {
   // 微信小程序登录
@@ -120,10 +120,18 @@ class AuthController {
         { expiresIn: process.env.JWT_EXPIRES_IN }
       );
 
+      // 获取用户在各标段的角色和认证状态
+      const sectionRoles = await User.getSectionRoles(user.id);
+      const verifications = await UserVerification.getAllStatusByUser(user.id);
+
       console.log('=== 登录成功返回用户信息 ===');
       console.log('is_verified:', user.is_verified);
       console.log('verification_status:', user.verification_status);
-      console.log('完整用户数据:', JSON.stringify(user, null, 2));
+      console.log('sectionRoles:', sectionRoles);
+      console.log('verifications:', verifications);
+
+      // 获取用户管理的标段列表（基于新的角色系统）
+      const managedSections = await User.getManagedSections(user.id);
 
       res.json({
         success: true,
@@ -137,11 +145,10 @@ class AuthController {
             avatarUrl: user.avatarUrl,
             role: user.role,
             status: user.status,
-            managed_sections: user.managed_sections,
-            is_verified: user.is_verified,
-            verification_status: user.verification_status,
-            is_supervisor: user.is_supervisor,
-            is_admin: user.is_admin
+            // 使用新的权限系统
+            sectionRoles: sectionRoles,
+            verifications: verifications,
+            managedSections: managedSections.map(s => s.sectionCode)
           }
         }
       });
@@ -192,6 +199,11 @@ class AuthController {
         { expiresIn: process.env.JWT_EXPIRES_IN }
       );
 
+      // 获取用户在各标段的角色和认证状态
+      const sectionRoles = await User.getSectionRoles(user.id);
+      const verifications = await UserVerification.getAllStatusByUser(user.id);
+      const managedSections = await User.getManagedSections(user.id);
+
       res.json({
         success: true,
         message: 'Token刷新成功',
@@ -202,11 +214,10 @@ class AuthController {
             nickName: user.nickName,
             avatarUrl: user.avatarUrl,
             role: user.role,
-            managed_sections: user.managed_sections,
-            is_verified: user.is_verified,
-            verification_status: user.verification_status,
-            is_supervisor: user.is_supervisor,
-            is_admin: user.is_admin
+            // 使用新的权限系统
+            sectionRoles: sectionRoles,
+            verifications: verifications,
+            managedSections: managedSections.map(s => s.sectionCode)
           }
         }
       });
@@ -244,13 +255,19 @@ class AuthController {
         });
       }
 
+      // 获取用户在各标段的角色和认证状态
+      const sectionRoles = await User.getSectionRoles(user.id);
+      const verifications = await UserVerification.getAllStatusByUser(user.id);
+      const managedSections = await User.getManagedSections(user.id);
+
       // 打印用户信息
       console.log('=== Token验证用户信息 ===');
       console.log('用户ID:', user.id);
       console.log('昵称:', user.nickName);
       console.log('角色:', user.role);
       console.log('状态:', user.status);
-      console.log('管理标段:', user.managed_sections);
+      console.log('标段角色:', sectionRoles);
+      console.log('管理标段:', managedSections.map(s => s.sectionCode));
       console.log('===========================');
 
       res.json({
@@ -262,11 +279,10 @@ class AuthController {
             nickName: user.nickName,
             avatarUrl: user.avatarUrl,
             role: user.role,
-            managed_sections: user.managed_sections,
-            is_verified: user.is_verified,
-            verification_status: user.verification_status,
-            is_supervisor: user.is_supervisor,
-            is_admin: user.is_admin
+            // 使用新的权限系统
+            sectionRoles: sectionRoles,
+            verifications: verifications,
+            managedSections: managedSections.map(s => s.sectionCode)
           }
         }
       });

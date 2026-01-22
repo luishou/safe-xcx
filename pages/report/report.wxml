@@ -89,9 +89,10 @@
         >
             提交举报
         </button>
-        <view wx:if="{{!isVerified}}" class="verification-tip">
+        <view wx:if="{{!isVerified}}" class="verification-tip" bindtap="goToVerification">
             <text class="tip-icon">⚠️</text>
-            <text class="tip-text">您尚未认证，请联系标段负责人后台认证</text>
+            <text wx:if="{{verificationStatus === 'pending'}}" class="tip-text pending">您的认证申请正在审核中，请等待...</text>
+            <text wx:else class="tip-text clickable">您尚未认证，点击此处提交认证申请 ></text>
         </view>
     </view>
 </view>

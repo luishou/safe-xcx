@@ -4,21 +4,24 @@ const { formatBeijing } = require('../../utils/time.js')
 
 Page({
   data: {
-    name: '',
-    idCard: '',
-    phone: '',
-    sectionId: '',
-    sectionName: '',
     sections: [],
-    verificationStatus: 'none',
-    verificationInfo: null,
+    sectionIndex: 0,
+    currentSection: null,
+    sectionLocked: false, // 标段是否锁定不可修改
+    verifications: [],
+    currentVerification: { status: 'none' },
+    realName: '',
     isLoading: false,
     isSubmitting: false
   },
 
   onLoad: function (options) {
+    // 如果从其他页面传入了 sectionCode，记录下来并锁定标段
+    if (options.sectionCode) {
+      this.targetSectionCode = options.sectionCode;
+      this.setData({ sectionLocked: true });
+    }
     this.loadSections();
-    this.loadVerificationStatus();
   },
 
   onShow: function () {
@@ -33,11 +36,21 @@ Page({
         if (res.data.success && res.data.data) {
           const sections = res.data.data;
           if (sections.length > 0) {
+            // 如果有目标标段，选中它
+            let targetIndex = 0;
+            if (this.targetSectionCode) {
+              const idx = sections.findIndex(s => s.section_code === this.targetSectionCode);
+              if (idx >= 0) targetIndex = idx;
+            }
+
             this.setData({
               sections,
-              sectionId: sections[0].id,
-              sectionName: sections[0].section_name
+              sectionIndex: targetIndex,
+              currentSection: sections[targetIndex]
             });
+
+            // 加载认证状态
+            this.loadVerificationStatus();
           }
         }
       },
@@ -57,69 +70,102 @@ Page({
       success: (res) => {
         if (res.data.success) {
           const data = res.data.data;
-          const verificationInfo = data.verification ? {
-            ...data.verification,
-            createdAt: formatBeijing(data.verification.createdAt),
-            reviewedAt: formatBeijing(data.verification.reviewedAt)
-          } : null;
+          const verifications = (data.verifications || []).map(v => ({
+            ...v,
+            submittedAt: formatBeijing(v.submittedAt),
+            reviewedAt: formatBeijing(v.reviewedAt)
+          }));
 
-          this.setData({
-            verificationStatus: data.status,
-            verificationInfo,
-            isVerified: data.isVerified
-          });
+          this.setData({ verifications });
 
-          if (data.isVerified) app.globalData.isVerified = true;
+          // 更新当前标段的认证状态
+          this.updateCurrentVerification();
         }
       },
       complete: () => this.setData({ isLoading: false })
     });
   },
 
-  onNameInput: function (e) { this.setData({ name: e.detail.value }); },
-  onIdCardInput: function (e) { this.setData({ idCard: e.detail.value }); },
-  onPhoneInput: function (e) { this.setData({ phone: e.detail.value }); },
+  updateCurrentVerification: function () {
+    const { currentSection, verifications } = this.data;
+    if (!currentSection) return;
+
+    const sectionCode = currentSection.section_code;
+    const verification = verifications.find(v => v.sectionCode === sectionCode);
+
+    this.setData({
+      currentVerification: verification || { status: 'none' },
+      // 如果有之前提交的姓名，预填充
+      realName: verification && verification.realName ? verification.realName : ''
+    });
+  },
 
   onSectionChange: function (e) {
-    const index = e.detail.value;
+    const index = parseInt(e.detail.value);
+    const section = this.data.sections[index];
+
     this.setData({
-      sectionId: this.data.sections[index].id,
-      sectionName: this.data.sections[index].section_name
+      sectionIndex: index,
+      currentSection: section
+    });
+
+    this.updateCurrentVerification();
+  },
+
+  selectSection: function (e) {
+    const sectionCode = e.currentTarget.dataset.sectionCode;
+    const index = this.data.sections.findIndex(s => s.section_code === sectionCode);
+    if (index >= 0) {
+      this.setData({
+        sectionIndex: index,
+        currentSection: this.data.sections[index]
+      });
+      this.updateCurrentVerification();
+    }
+  },
+
+  onRealNameInput: function (e) {
+    this.setData({
+      realName: e.detail.value
     });
   },
 
   submitVerification: function () {
-    const { name, idCard, phone, sectionId } = this.data;
+    const { currentSection, realName } = this.data;
 
-    if (!name || !idCard || !phone || !sectionId) {
-      wx.showToast({ title: '请填写完整信息', icon: 'none' });
+    if (!currentSection) {
+      wx.showToast({ title: '请选择标段', icon: 'none' });
       return;
     }
 
-    const idCardRegex = /^[1-9]\d{5}(18|19|20)\d{2}((0[1-9])|(1[0-2]))(([0-2][1-9])|10|20|30|31)\d{3}[0-9Xx]$/;
-    if (!idCardRegex.test(idCard)) {
-      wx.showToast({ title: '身份证号格式不正确', icon: 'none' });
+    if (!realName || !realName.trim()) {
+      wx.showToast({ title: '请填写真实姓名', icon: 'none' });
       return;
     }
 
-    const phoneRegex = /^1[3-9]\d{9}$/;
-    if (!phoneRegex.test(phone)) {
-      wx.showToast({ title: '手机号格式不正确', icon: 'none' });
+    // 验证姓名格式（2-10个中文字符）
+    if (!/^[\u4e00-\u9fa5]{2,10}$/.test(realName.trim())) {
+      wx.showToast({ title: '请输入2-10个中文字符', icon: 'none' });
       return;
     }
 
     this.setData({ isSubmitting: true });
 
     wx.request({
-      url: app.globalData.baseUrl + '/verifications',
+      url: app.globalData.baseUrl + '/verifications/submit',
       method: 'POST',
-      header: { 'Authorization': 'Bearer ' + app.globalData.token },
-      data: { name, idCard, phone, sectionId },
+      header: {
+        'Authorization': 'Bearer ' + app.globalData.token,
+        'Content-Type': 'application/json'
+      },
+      data: {
+        sectionCode: currentSection.section_code,
+        realName: realName.trim()
+      },
       success: (res) => {
         if (res.data.success) {
           wx.showToast({ title: '提交成功', icon: 'success' });
           this.loadVerificationStatus();
-          this.setData({ name: '', idCard: '', phone: '' });
         } else {
           wx.showToast({ title: res.data.message || '提交失败', icon: 'none' });
         }
@@ -127,9 +173,5 @@ Page({
       fail: () => wx.showToast({ title: '提交失败', icon: 'none' }),
       complete: () => this.setData({ isSubmitting: false })
     });
-  },
-
-  reapply: function () {
-    this.setData({ verificationStatus: 'none', verificationInfo: null });
   }
 });

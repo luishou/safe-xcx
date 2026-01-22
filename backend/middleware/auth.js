@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const { User } = require('../models/database');
+const { User, UserSectionRole } = require('../models/database');
 
 // JWT认证中间件
 const authenticateToken = async (req, res, next) => {
@@ -26,6 +26,9 @@ const authenticateToken = async (req, res, next) => {
       });
     }
 
+    // 获取用户管理的标段列表（基于新的角色系统）
+    const managedSections = await User.getManagedSections(user.id);
+    
     // 设置完整的用户信息到req.user
     req.user = {
       userId: user.id,
@@ -33,7 +36,7 @@ const authenticateToken = async (req, res, next) => {
       role: user.role,
       nickName: user.nickName,
       avatarUrl: user.avatarUrl,
-      managed_sections: user.managed_sections
+      managedSections: managedSections.map(s => s.sectionCode)
     };
     
     next();

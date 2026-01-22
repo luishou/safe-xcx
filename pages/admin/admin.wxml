@@ -1,11 +1,11 @@
-<!-- 监管中心管理界面 -->
+<!-- 数据中心管理界面 -->
 <view class="manager-view">
     <!-- 顶部导航栏 -->
     <view class="top-nav">
         <view class="back-btn" bindtap="goBack">
             <text>← 返回</text>
         </view>
-        <view class="nav-title">{{currentSection.section_name || ('第' + currentSection + '标段')}} - {{isAdmin ? '监管中心' : '举报公示'}}</view>
+        <view class="nav-title">{{currentSection.section_name || ('第' + currentSection + '标段')}} - {{isAdmin ? '数据中心' : '举报公示'}}</view>
     </view>
 
     <!-- 顶部图标菜单：统计 / 举报列表（仅管理员可见） -->
@@ -24,11 +24,6 @@
         <view class="icon-card" bindtap="goKnowledgeAdmin">
             <text class="icon-emoji">📚</text>
             <text class="icon-label">安全知识</text>
-        </view>
-        <!-- 认证管理入口 -->
-        <view class="icon-card" bindtap="goVerificationAdmin">
-            <text class="icon-emoji">✅</text>
-            <text class="icon-label">认证管理</text>
         </view>
     </view>
 

@@ -33,18 +33,21 @@ Page({
         this.setData({ reportId: parseInt(id) });
 
         const currentUser = app.globalData.currentUser;
+        const currentSection = app.globalData.currentSection?.section_code;
 
-        // 详细调试信息
-        console.log('【待办详情】========== 用户信息调试 ==========');
-        console.log('【待办详情】完整currentUser对象:', JSON.stringify(currentUser, null, 2));
-        console.log('【待办详情】currentUser.is_supervisor:', currentUser?.is_supervisor);
-        console.log('【待办详情】typeof is_supervisor:', typeof currentUser?.is_supervisor);
-        console.log('【待办详情】isSupervisor判断结果:', currentUser?.is_supervisor === 1);
-        console.log('【待办详情】========================================');
+        // 使用新的权限系统判断角色
+        const sectionRoles = currentUser?.sectionRoles || [];
+        const currentSectionRoles = currentSection 
+            ? sectionRoles.filter(r => r.sectionCode === currentSection)
+            : sectionRoles;
+        
+        const isSupervisor = currentSectionRoles.some(r => r.roleType === 'supervisor');
+        const isAdmin = currentSectionRoles.some(r => r.roleType === 'section_admin') ||
+                       (currentUser?.managedSections || []).length > 0;
 
         this.setData({
-            isSupervisor: currentUser?.is_supervisor === 1,
-            isAdmin: currentUser?.is_admin === 1
+            isSupervisor: isSupervisor,
+            isAdmin: isAdmin
         });
         this.loadReportDetail();
     },
@@ -161,7 +164,7 @@ Page({
             success: (res) => {
                 wx.hideLoading();
                 if (res.data.success) {
-                    wx.showToast({ title: '已确认，等待监理', icon: 'success' });
+                    wx.showToast({ title: '已确认', icon: 'success' });
                     setTimeout(() => wx.navigateBack(), 1500);
                 } else {
                     wx.showToast({ title: res.data.message || '操作失败', icon: 'none' });

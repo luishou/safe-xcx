@@ -1,4 +1,4 @@
-const { User } = require('../models/database');
+const { User, UserSectionRole } = require('../models/database');
 
 class UserController {
   // 获取用户信息
@@ -13,6 +13,10 @@ class UserController {
         });
       }
 
+      // 获取用户管理的标段列表（基于新的角色系统）
+      const managedSections = await User.getManagedSections(user.id);
+      const sectionRoles = await User.getSectionRoles(user.id);
+
       res.json({
         success: true,
         data: {
@@ -21,7 +25,8 @@ class UserController {
           avatarUrl: user.avatarUrl,
           role: user.role,
           status: user.status,
-          managed_sections: user.managed_sections,
+          sectionRoles: sectionRoles,
+          managedSections: managedSections.map(s => s.sectionCode),
           createdAt: user.created_at
         }
       });
@@ -48,6 +53,10 @@ class UserController {
 
       const user = await User.update(req.user.userId, updateData);
 
+      // 获取用户管理的标段列表（基于新的角色系统）
+      const managedSections = await User.getManagedSections(user.id);
+      const sectionRoles = await User.getSectionRoles(user.id);
+
       res.json({
         success: true,
         message: '用户信息更新成功',
@@ -56,7 +65,8 @@ class UserController {
           nickName: user.nickName,
           avatarUrl: user.avatarUrl,
           role: user.role,
-          managed_sections: user.managed_sections,
+          sectionRoles: sectionRoles,
+          managedSections: managedSections.map(s => s.sectionCode),
           updatedAt: user.updated_at
         }
       });

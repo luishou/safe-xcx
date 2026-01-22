@@ -4,13 +4,12 @@
     <view class="header">
         <view class="logo-container">
             <view class="logo-circle">
-                <image src="/images/shield-icon.png" class="shield-icon" mode="aspectFit"></image>
+                <text class="shield-icon">🛡️</text>
             </view>
         </view>
 
         <view class="title-section">
-            <text class="main-title">中泰段智慧安全隐患系统</text>
-            <text class="sub-title">320国道余杭中泰段工程项目</text>
+            <text class="main-title">中泰段智慧安全质量隐患系统</text>
         </view>
     </view>
 
@@ -39,17 +38,6 @@
         <view class="user-details">
             <text class="user-name">{{userInfo.nickName || '微信用户'}}</text>
             <text class="user-status">已授权登录</text>
-        </view>
-        <!-- 认证状态 -->
-        <view class="verification-status" bindtap="goToVerification">
-            <view wx:if="{{isVerified}}" class="verified-status">
-                <text class="status-icon">✓</text>
-                <text class="status-text">已认证</text>
-            </view>
-            <view wx:else class="unverified-status">
-                <text class="status-icon">!</text>
-                <text class="status-text">未认证</text>
-            </view>
         </view>
     </view>
 
@@ -106,4 +94,4 @@
         </view>
     </view>
 </view>
-
+

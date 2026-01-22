@@ -1,4 +1,4 @@
-/* 监管中心管理页面样式 */
+/* 数据中心管理页面样式 */
 .manager-view {
     background: #f8f9fa;
     min-height: 100vh;
