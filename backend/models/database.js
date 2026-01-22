@@ -222,7 +222,7 @@ class User {
   static async getManagedSections(userId) {
     try {
       const [rows] = await pool.execute(`
-        SELECT DISTINCT usr.section_code as sectionCode, s.section_name as sectionName
+        SELECT DISTINCT usr.section_code as sectionCode, s.section_name as sectionName, s.sort_order as sortOrder
         FROM user_section_roles usr
         LEFT JOIN sections s ON s.section_code = usr.section_code
         WHERE usr.user_id = ? AND usr.role_type = 'section_admin'
