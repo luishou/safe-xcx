@@ -41,7 +41,7 @@
       >
         <!-- 用户信息 -->
         <view class="user-info">
-          <image class="user-avatar" src="{{item.avatarUrl}}" mode="aspectFill"></image>
+          <view class="user-avatar default-avatar">👤</view>
           <view class="user-details">
             <view class="user-name">{{item.nickName}}</view>
             <view class="submitted-name">提交姓名：{{item.realName || '未填写'}}</view>
@@ -85,7 +85,7 @@
       >
         <!-- 用户信息 -->
         <view class="user-info">
-          <image class="user-avatar" src="{{item.avatarUrl}}" mode="aspectFill"></image>
+          <view class="user-avatar default-avatar">👤</view>
           <view class="user-details">
             <view class="user-name-row">
               <view class="user-name">{{item.nickName}}</view>

@@ -109,9 +109,12 @@ class VerificationController {
   async getUnverifiedUsers(req, res) {
     try {
       const adminUser = await User.findById(req.user.userId);
+      const { section } = req.query;  // 支持按指定标段过滤
 
       // 获取管理员管理的标段
       const managedSections = await User.getManagedSections(req.user.userId);
+
+      let sectionCodes = [];
 
       if (managedSections.length === 0) {
         // 向后兼容：检查旧的 managed_sections 字段
@@ -123,35 +126,30 @@ class VerificationController {
             legacySections = [];
           }
         }
+        sectionCodes = legacySections;
+      } else {
+        // 使用新的角色系统
+        sectionCodes = managedSections.map(s => s.sectionCode);
+      }
 
-        if (legacySections.length === 0) {
-          return res.json({
-            success: true,
-            data: { users: [] }
-          });
-        }
-
-        // 使用旧方式获取数据
-        const users = await UserVerification.findPendingBySections(legacySections);
+      if (sectionCodes.length === 0) {
         return res.json({
           success: true,
-          data: {
-            users: users.map(u => ({
-              id: u.userId,
-              verificationId: u.id,
-              nickName: u.nickName,
-              avatarUrl: u.avatarUrl,
-              realName: u.realName,
-              sectionCode: u.sectionCode,
-              sectionName: u.sectionName,
-              submittedAt: u.submittedAt
-            }))
-          }
+          data: { users: [] }
         });
       }
 
-      // 使用新的角色系统
-      const sectionCodes = managedSections.map(s => s.sectionCode);
+      // 如果指定了标段参数，只查询该标段（且必须在管理范围内）
+      if (section) {
+        if (!sectionCodes.includes(section)) {
+          return res.status(403).json({
+            success: false,
+            message: '您没有该标段的管理权限'
+          });
+        }
+        sectionCodes = [section];
+      }
+
       const users = await UserVerification.findPendingBySections(sectionCodes);
 
       res.json({
@@ -183,9 +181,12 @@ class VerificationController {
   async getVerifiedUsers(req, res) {
     try {
       const adminUser = await User.findById(req.user.userId);
+      const { section } = req.query;  // 支持按指定标段过滤
 
       // 获取管理员管理的标段
       const managedSections = await User.getManagedSections(req.user.userId);
+
+      let sectionCodes = [];
 
       if (managedSections.length === 0) {
         // 向后兼容：检查旧的 managed_sections 字段
@@ -197,35 +198,30 @@ class VerificationController {
             legacySections = [];
           }
         }
+        sectionCodes = legacySections;
+      } else {
+        // 使用新的角色系统
+        sectionCodes = managedSections.map(s => s.sectionCode);
+      }
 
-        if (legacySections.length === 0) {
-          return res.json({
-            success: true,
-            data: { users: [] }
-          });
-        }
-
-        // 使用旧方式获取数据
-        const users = await UserVerification.findApprovedBySections(legacySections);
+      if (sectionCodes.length === 0) {
         return res.json({
           success: true,
-          data: {
-            users: users.map(u => ({
-              id: u.userId,
-              verificationId: u.id,
-              nickName: u.nickName,
-              avatarUrl: u.avatarUrl,
-              realName: u.realName,
-              sectionCode: u.sectionCode,
-              sectionName: u.sectionName,
-              reviewedAt: u.reviewedAt
-            }))
-          }
+          data: { users: [] }
         });
       }
 
-      // 使用新的角色系统
-      const sectionCodes = managedSections.map(s => s.sectionCode);
+      // 如果指定了标段参数，只查询该标段（且必须在管理范围内）
+      if (section) {
+        if (!sectionCodes.includes(section)) {
+          return res.status(403).json({
+            success: false,
+            message: '您没有该标段的管理权限'
+          });
+        }
+        sectionCodes = [section];
+      }
+
       const users = await UserVerification.findApprovedBySections(sectionCodes);
 
       res.json({

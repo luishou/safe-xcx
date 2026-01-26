@@ -13,6 +13,7 @@ Page({
     verifiedUsers: [],
     isLoading: false,
     currentTabLabel: '待认证',
+    currentSection: null,  // 当前标段
     // 自定义认证弹窗
     showConfirmModal: false,
     selectedUser: null,
@@ -20,6 +21,9 @@ Page({
   },
 
   onLoad() {
+    // 获取当前标段
+    const currentSection = app.globalData.currentSection
+    this.setData({ currentSection })
     this.loadData()
   },
 
@@ -48,8 +52,14 @@ Page({
   loadUnverifiedUsers() {
     this.setData({ isLoading: true })
 
+    // 按当前标段过滤
+    const sectionCode = this.data.currentSection?.section_code
+    const url = sectionCode
+      ? `${app.globalData.baseUrl}/verifications/unverified?section=${sectionCode}`
+      : `${app.globalData.baseUrl}/verifications/unverified`
+
     wx.request({
-      url: `${app.globalData.baseUrl}/verifications/unverified`,
+      url: url,
       method: 'GET',
       header: { 'Authorization': `Bearer ${wx.getStorageSync('token')}` },
       success: (res) => {
@@ -72,8 +82,14 @@ Page({
   loadVerifiedUsers() {
     this.setData({ isLoading: true })
 
+    // 按当前标段过滤
+    const sectionCode = this.data.currentSection?.section_code
+    const url = sectionCode
+      ? `${app.globalData.baseUrl}/verifications/verified?section=${sectionCode}`
+      : `${app.globalData.baseUrl}/verifications/verified`
+
     wx.request({
-      url: `${app.globalData.baseUrl}/verifications/verified`,
+      url: url,
       method: 'GET',
       header: { 'Authorization': `Bearer ${wx.getStorageSync('token')}` },
       success: (res) => {

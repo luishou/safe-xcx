@@ -6,8 +6,8 @@ App({
     currentSection: null,
     sections: [],
     notifications: [],
-    //baseUrl: 'http://localhost:3300/api',
-    baseUrl: 'https://safe.sulei.xyz/api', 
+    baseUrl: 'http://localhost:3300/api',
+    //baseUrl: 'https://safe.sulei.xyz/api', 
     token: null,  
     isVerified: false,
     db: {
