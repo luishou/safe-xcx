@@ -13,12 +13,12 @@
         </view>
     </view>
 
-    <!-- 授权状态检查 -->
-    <view wx:if="{{!isAuthorized}}" class="auth-section">
+    <!-- 授权提示卡片（可选，可跳过） -->
+    <view wx:if="{{!isAuthorized && showAuthPrompt}}" class="auth-section">
         <view class="auth-content">
             <view class="auth-icon">👤</view>
             <view class="auth-title">欢迎使用安全举报系统</view>
-            <view class="auth-desc">使用前需要获取您的个人信息以确保使用安全</view>
+            <view class="auth-desc">登录后可享受更多功能服务</view>
         </view>
 
         <view class="auth-buttons">
@@ -26,11 +26,12 @@
                 <text class="btn-icon">✓</text>
                 <text class="btn-text">微信授权登录</text>
             </button>
+            <button class="skip-btn" bindtap="skipAuth">稍后登录</button>
         </view>
     </view>
 
     <!-- 用户信息展示 -->
-    <view wx:else class="user-info-section">
+    <view wx:if="{{isAuthorized}}" class="user-info-section">
         <view class="user-avatar">
             <image wx:if="{{userInfo.avatarUrl}}" src="{{userInfo.avatarUrl}}" class="avatar-img" mode="aspectFill"></image>
             <view wx:else class="default-avatar">👤</view>
@@ -41,8 +42,14 @@
         </view>
     </view>
 
-    <!-- 标段选择 -->
-    <view wx:if="{{isAuthorized}}" class="section-selection">
+    <!-- 未授权时的登录入口 -->
+    <view wx:if="{{!isAuthorized && !showAuthPrompt}}" class="login-prompt">
+        <text class="login-prompt-text">登录后可享受更多功能服务</text>
+        <button class="login-link-btn" bindtap="showLoginPrompt">立即登录</button>
+    </view>
+
+    <!-- 标段选择（所有用户可见） -->
+    <view class="section-selection">
         <view class="section-title">请选择您所在的标段</view>
         <view class="section-list">
             <view wx:for="{{sections}}" wx:key="code" class="section-item" 

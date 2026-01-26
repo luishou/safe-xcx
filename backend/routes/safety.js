@@ -3,22 +3,24 @@ const router = express.Router();
 const { authenticateToken, requireRole } = require('../middleware/auth');
 const ctrl = require('../controllers/safetyController');
 
-// 所有接口需要登录
-router.use(authenticateToken);
+// ========== 公开接口（不需要认证） ==========
 
-// 分类 - 获取（所有用户可读）
+// 分类 - 获取（所有用户可读，允许未登录用户浏览安全知识）
 router.get('/categories', ctrl.listCategories);
+
+// 文章 - 获取（所有用户可读，允许未登录用户浏览安全知识）
+router.get('/articles', ctrl.listArticles);
+
+// 获取所有文章作为分类展示（用于标段首页安全知识）
+router.get('/articles-as-categories', ctrl.getAllArticlesAsCategories);
+
+// ========== 以下接口需要认证 ==========
+router.use(authenticateToken);
 
 // 分类 - 新增/更新/删除（管理员）
 router.post('/categories', requireRole(['admin']), ctrl.createCategory);
 router.put('/categories/:id', requireRole(['admin']), ctrl.updateCategory);
 router.delete('/categories/:id', requireRole(['admin']), ctrl.deleteCategory);
-
-// 文章 - 获取（所有用户可读）
-router.get('/articles', ctrl.listArticles);
-
-// 获取所有文章作为分类展示（用于标段首页安全知识）
-router.get('/articles-as-categories', ctrl.getAllArticlesAsCategories);
 
 // 文章 - 新增/更新/删除（管理员）
 router.post('/articles', requireRole(['admin']), ctrl.createArticle);

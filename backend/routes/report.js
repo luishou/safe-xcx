@@ -3,10 +3,15 @@ const router = express.Router();
 const { authenticateToken } = require('../middleware/auth');
 const reportController = require('../controllers/reportController');
 
-// 临时修复图片数据（仅用于修复，生产环境应移除）- 不需要认证
+// ========== 公开接口（不需要认证） ==========
+
+// 临时修复图片数据（仅用于修复，生产环境应移除）
 router.post('/fix-images', reportController.fixImageData);
 
-// 其他举报路由都需要认证
+// 获取公示举报列表（隐藏举报人信息）- 公开接口，允许未登录用户浏览
+router.get('/public', reportController.getPublicReports);
+
+// ========== 以下接口需要认证 ==========
 router.use(authenticateToken);
 
 // 提交举报
@@ -21,8 +26,8 @@ router.get('/personal-reports', reportController.getPersonalReports);
 // 获取个人举报列表（员工使用）
 router.get('/my-reports', reportController.getMyReports);
 
-// 获取公示举报列表（隐藏举报人信息）
-router.get('/public-reports', reportController.getPublicReports);
+// 注意：/public-reports 已移至公开接口区域（/public），此处保留认证版本供管理后台使用
+// router.get('/public-reports', reportController.getPublicReports);
 
 // 获取统计数据
 router.get('/stats', reportController.getStats);

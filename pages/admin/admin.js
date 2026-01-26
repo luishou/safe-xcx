@@ -56,8 +56,16 @@ Page({
   loadData() {
     const app = getApp();
     const currentSection = app.globalData.currentSection;
+    const isAdmin = this.data.isAdmin;
 
-    if (!currentSection || !app.globalData.token) {
+    // 举报公示（isAdmin=false）允许未登录用户浏览
+    if (!currentSection) {
+      this.setData({ loading: false });
+      return;
+    }
+
+    // 如果是管理功能（数据中心），需要登录
+    if (isAdmin && !app.globalData.token) {
       this.setData({ loading: false });
       return;
     }
@@ -135,14 +143,41 @@ Page({
     };
 
     const fetchByStatuses = (statuses, onSuccess) => {
+      const isAdmin = this.data.isAdmin;
+      const token = app.globalData.token;
+      
+      // 如果是举报公示（isAdmin=false），使用公开接口，不需要token
+      // 如果是数据中心（isAdmin=true），使用管理接口，需要token
+      const url = isAdmin 
+        ? app.globalData.baseUrl + '/report/list'
+        : app.globalData.baseUrl + '/report/public';
+      
+      const headers = isAdmin && token 
+        ? { 'Authorization': 'Bearer ' + token }
+        : {};
+      
+      const requestData = {
+        section: currentSection.section_code
+      };
+      
+      // 管理接口可以按状态筛选，公开接口返回所有
+      if (isAdmin && statuses.length > 0) {
+        requestData.status = statuses.join(',');
+      }
+
       wx.request({
-        url: app.globalData.baseUrl + '/report/list',
+        url: url,
         method: 'GET',
-        header: { 'Authorization': 'Bearer ' + app.globalData.token },
-        data: { section: currentSection.section_code, status: statuses.join(',') },
+        header: headers,
+        data: requestData,
         success: (res) => {
           if (res.data?.success) {
-            onSuccess(res.data.data.reports || []);
+            let reports = res.data.data.reports || [];
+            // 如果是公开接口，需要按状态筛选
+            if (!isAdmin && statuses.length > 0) {
+              reports = reports.filter(r => statuses.includes(r.status));
+            }
+            onSuccess(reports);
           } else {
             wx.showToast({ title: '获取举报记录失败', icon: 'none' });
             onSuccess([]);

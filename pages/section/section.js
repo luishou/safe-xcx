@@ -115,6 +115,23 @@ Page({
     },
 
     directToReport: function () {
+        // 举报需要登录，未登录时先提示登录
+        if (!app.globalData.currentUser || !app.globalData.token) {
+            wx.showModal({
+                title: '提示',
+                content: '提交举报需要登录，是否现在登录？',
+                confirmText: '去登录',
+                cancelText: '取消',
+                success: (res) => {
+                    if (res.confirm) {
+                        // 返回首页进行登录
+                        wx.navigateTo({ url: '/pages/index/index' });
+                    }
+                }
+            });
+            return;
+        }
+
         if (this.data.sectionInfo) {
             app.globalData.currentSection = this.data.sectionInfo;
         }
@@ -132,12 +149,25 @@ Page({
     },
 
     showSafetyKnowledge: function () {
+        // 安全知识页面允许所有用户浏览，无需登录
         wx.navigateTo({ url: '/pages/safety-knowledge/safety-knowledge' })
     },
 
     handlePersonalCenter: function () {
-        if (!app.globalData.currentUser) {
-            wx.showToast({ title: '请先授权登录', icon: 'none', duration: 2000 });
+        // 任务管理需要登录，但允许用户选择
+        if (!app.globalData.currentUser || !app.globalData.token) {
+            wx.showModal({
+                title: '提示',
+                content: '登录后可查看和管理您的任务，是否现在登录？',
+                confirmText: '去登录',
+                cancelText: '取消',
+                success: (res) => {
+                    if (res.confirm) {
+                        // 返回首页进行登录
+                        wx.navigateTo({ url: '/pages/index/index' });
+                    }
+                }
+            });
             return;
         }
 
@@ -156,8 +186,20 @@ Page({
     },
 
     goToAdmin: function () {
-        if (!app.globalData.currentUser) {
-            wx.showToast({ title: '请先授权登录', icon: 'none', duration: 2000 });
+        // 数据中心需要登录，但允许用户选择
+        if (!app.globalData.currentUser || !app.globalData.token) {
+            wx.showModal({
+                title: '提示',
+                content: '数据中心功能需要登录后使用，是否现在登录？',
+                confirmText: '去登录',
+                cancelText: '取消',
+                success: (res) => {
+                    if (res.confirm) {
+                        // 返回首页进行登录
+                        wx.navigateTo({ url: '/pages/index/index' });
+                    }
+                }
+            });
             return;
         }
 
@@ -174,8 +216,20 @@ Page({
     },
 
     goToVerificationAdmin: function () {
-        if (!app.globalData.currentUser) {
-            wx.showToast({ title: '请先授权登录', icon: 'none', duration: 2000 });
+        // 认证管理需要登录，但允许用户选择
+        if (!app.globalData.currentUser || !app.globalData.token) {
+            wx.showModal({
+                title: '提示',
+                content: '认证管理功能需要登录后使用，是否现在登录？',
+                confirmText: '去登录',
+                cancelText: '取消',
+                success: (res) => {
+                    if (res.confirm) {
+                        // 返回首页进行登录
+                        wx.navigateTo({ url: '/pages/index/index' });
+                    }
+                }
+            });
             return;
         }
 
@@ -192,11 +246,7 @@ Page({
     },
 
     goToReportPublic: function () {
-        if (!app.globalData.currentUser) {
-            wx.showToast({ title: '请先授权登录', icon: 'none', duration: 2000 });
-            return;
-        }
-
+        // 举报公示允许所有用户浏览，无需登录
         if (this.data.sectionInfo) {
             app.globalData.currentSection = this.data.sectionInfo;
         } else {

@@ -9,11 +9,18 @@ Page({
         showNicknameModal: false,
         tempNickname: '',
         tempAvatarUrl: '/images/user.png',
-        authRetryCount: 0
+        authRetryCount: 0,
+        showAuthPrompt: true  // 控制是否显示授权提示卡片
     },
 
     onLoad: function (options) {
+        // 检查授权状态，但不强制显示授权提示
         this.checkAuthorization();
+        // 检查用户是否之前选择过跳过授权
+        const skipAuth = wx.getStorageSync('skipAuth');
+        if (skipAuth) {
+            this.setData({ showAuthPrompt: false });
+        }
     },
 
     onShow: function () {
@@ -147,17 +154,35 @@ Page({
         return [];
     },
 
-    // 检查授权后选择标段
+    // 选择标段（允许未授权用户浏览）
     selectSection: function (e) {
         const section = e.currentTarget.dataset.section;
         const sectionInfo = e.currentTarget.dataset.sectionInfo;
         const app = getApp();
 
+        // 如果未授权，提示但不强制，允许继续浏览
         if (!this.data.isAuthorized || !app.globalData.token) {
-            wx.showToast({ title: '请先授权个人信息', icon: 'none', duration: 2000 });
+            wx.showModal({
+                title: '提示',
+                content: '登录后可享受更多功能服务，是否现在登录？',
+                confirmText: '去登录',
+                cancelText: '继续浏览',
+                success: (res) => {
+                    if (res.confirm) {
+                        // 用户选择登录
+                        this.getUserProfile();
+                    } else {
+                        // 用户选择继续浏览，允许进入标段页面
+                        app.globalData.currentSection = sectionInfo;
+                        this.setData({ currentSection: section });
+                        wx.navigateTo({ url: `/pages/section/section?section=${section}` });
+                    }
+                }
+            });
             return;
         }
 
+        // 已授权用户正常流程
         app.globalData.currentSection = sectionInfo;
         this.setData({ currentSection: section });
 
@@ -187,6 +212,20 @@ Page({
                 wx.navigateTo({ url: `/pages/section/section?section=${section}` });
             }
         });
+    },
+
+    // 跳过授权
+    skipAuth: function () {
+        this.setData({ showAuthPrompt: false });
+        // 保存跳过授权的选择，下次进入不再显示
+        wx.setStorageSync('skipAuth', true);
+    },
+
+    // 显示登录提示
+    showLoginPrompt: function () {
+        this.setData({ showAuthPrompt: true });
+        // 清除跳过授权的标记
+        wx.removeStorageSync('skipAuth');
     },
 
     // 手动重新授权
@@ -304,8 +343,12 @@ Page({
                     this.setData({
                         isAuthorized: true,
                         isVerified: isVerified,
-                        userInfo: userInfo
+                        userInfo: userInfo,
+                        showAuthPrompt: false
                     });
+
+                    // 清除跳过授权的标记
+                    wx.removeStorageSync('skipAuth');
 
                     wx.showToast({ title: '授权成功', icon: 'success', duration: 2000 });
                     this.logAuthorization('success', userInfo);
